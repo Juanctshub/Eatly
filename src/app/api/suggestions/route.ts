@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { zaIWebDevSdk } from 'z-ai-web-dev-sdk';
+import ZAI from 'z-ai-web-dev-sdk';
 
 export async function POST(req: Request) {
   try {
@@ -29,30 +29,23 @@ Retorna las recomendaciones estrictamente en formato JSON como un objeto con est
   ]
 }`;
 
-    const { ZAIResponse } = await zaIWebDevSdk({
-      userMessage: "Genera las recomendaciones de comida ahora mismo.",
-      systemMessage: systemPrompt,
-      isAutoFormatEnabled: true,
-      autoFormatConstraints: {
-         "generalTip": "string",
-         "suggestions": [{
-            "name": "string",
-            "ingredients": ["string"],
-            "safetyReason": "string",
-            "nutritionalBenefits": "string",
-            "prepTime": "number",
-            "calories": "number",
-            "imageEmoji": "string"
-         }]
-      }
+    const zai = await ZAI.create();
+    
+    const response = await zai.chat.completions.create({
+      messages: [
+        { role: 'system', content: systemPrompt },
+        { role: 'user', content: 'Genera las recomendaciones de comida ahora mismo y retorna SÓLO código JSON válido.' }
+      ]
     });
 
+    const content = response.choices?.[0]?.message?.content || response.message?.content || response.data?.content || JSON.stringify(response);
+
     try {
-      if (typeof ZAIResponse === 'string') {
-        const cleaned = ZAIResponse.replace(/```json/g, '').replace(/```/g, '');
+      if (typeof content === 'string') {
+        const cleaned = content.replace(/```json/gi, '').replace(/```/g, '').trim();
         return NextResponse.json(JSON.parse(cleaned));
       }
-      return NextResponse.json(ZAIResponse);
+      return NextResponse.json(content);
     } catch (parseError) {
       console.error('Error parsing AI response:', parseError);
       return NextResponse.json({
