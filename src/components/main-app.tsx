@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import { signOut } from 'next-auth/react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useTheme } from '@/contexts/ThemeContext';
-import AIChat from '@/components/shared/AIChat';
+import RokoChat from '@/components/shared/RokoChat';
 import AIChatSection from '@/components/shared/AIChatSection';
 import RestaurantMap from '@/components/shared/RestaurantMap';
 import BarcodeScanner from '@/components/shared/BarcodeScanner';
@@ -578,10 +578,10 @@ export default function EatlyApp() {
       transition={{ duration: 0.3 }}
     >
       {/* Header with elegant gradient */}
-      <div className="relative -mx-4 px-4 pt-8 pb-6 bg-gradient-to-b from-green-50 via-emerald-50/50 to-transparent dark:from-black dark:via-black/80 dark:to-transparent">
-        {/* Decorative circles */}
-        <div className="absolute top-0 right-0 w-32 h-32 bg-green-200/30 dark:bg-green-900/10 rounded-full blur-3xl opacity-50" />
-        <div className="absolute top-10 left-0 w-24 h-24 bg-emerald-200/20 dark:bg-emerald-900/10 rounded-full blur-2xl opacity-50" />
+      <div className="relative -mx-4 px-4 pt-8 pb-6 bg-background">
+        {/* Decorative circles - subtler for dark mode */}
+        <div className="absolute top-0 right-0 w-32 h-32 bg-green-500/10 rounded-full blur-3xl opacity-20 pointer-events-none" />
+        <div className="absolute top-10 left-0 w-24 h-24 bg-emerald-500/10 rounded-full blur-2xl opacity-20 pointer-events-none" />
         
         <motion.div
           className="flex items-center justify-between mb-6 relative z-10"
@@ -594,11 +594,11 @@ export default function EatlyApp() {
           </div>
           <motion.button
             onClick={() => setShowSettings(true)}
-            className="w-12 h-12 bg-white/80 dark:bg-gray-700/80 backdrop-blur-xl rounded-2xl flex items-center justify-center shadow-lg shadow-gray-200/50 dark:shadow-gray-900/50 border border-white/50 dark:border-gray-600"
+            className="w-12 h-12 bg-card backdrop-blur-xl rounded-2xl flex items-center justify-center shadow-lg shadow-black/5 border border-border"
             whileHover={{ scale: 1.05, rotate: 15 }}
             whileTap={{ scale: 0.95 }}
           >
-            <Settings className="w-5 h-5 text-gray-600 dark:text-gray-300" />
+            <Settings className="w-5 h-5 text-foreground" />
           </motion.button>
         </motion.div>
 
@@ -662,7 +662,7 @@ export default function EatlyApp() {
         animate="animate"
       >
         <motion.div
-          className="bg-white dark:bg-gray-800 rounded-3xl p-5 shadow-sm border border-gray-100/80 dark:border-gray-700 relative overflow-hidden"
+          className="bg-card rounded-3xl p-5 shadow-sm border border-border relative overflow-hidden"
           variants={staggerItem}
           whileHover={{ y: -3, boxShadow: '0 12px 40px rgba(0,0,0,0.08)' }}
         >
@@ -677,7 +677,7 @@ export default function EatlyApp() {
         </motion.div>
 
         <motion.div
-          className="bg-white dark:bg-gray-800 rounded-3xl p-5 shadow-sm border border-gray-100/80 dark:border-gray-700 relative overflow-hidden"
+          className="bg-card rounded-3xl p-5 shadow-sm border border-border relative overflow-hidden"
           variants={staggerItem}
           whileHover={{ y: -3, boxShadow: '0 12px 40px rgba(0,0,0,0.08)' }}
         >
@@ -737,7 +737,7 @@ export default function EatlyApp() {
             playSound('click');
             vibrate(30);
           }}
-          className="w-full bg-white dark:bg-gray-800 rounded-3xl p-5 shadow-sm border border-gray-100/80 dark:border-gray-700 flex items-center gap-4 relative overflow-hidden group"
+          className="w-full bg-card rounded-3xl p-5 shadow-sm border border-border flex items-center gap-4 relative overflow-hidden group"
           variants={staggerItem}
           whileHover={{ y: -2, boxShadow: '0 10px 30px rgba(0,0,0,0.08)' }}
           whileTap={{ scale: 0.99 }}
@@ -762,7 +762,7 @@ export default function EatlyApp() {
             playSound('click');
             vibrate(30);
           }}
-          className="w-full bg-white dark:bg-gray-800 rounded-3xl p-5 shadow-sm border border-gray-100/80 dark:border-gray-700 flex items-center gap-4 relative overflow-hidden group"
+          className="w-full bg-card rounded-3xl p-5 shadow-sm border border-border flex items-center gap-4 relative overflow-hidden group"
           variants={staggerItem}
           whileHover={{ y: -2, boxShadow: '0 10px 30px rgba(0,0,0,0.08)' }}
           whileTap={{ scale: 0.99 }}
