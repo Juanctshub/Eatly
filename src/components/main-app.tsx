@@ -1627,7 +1627,7 @@ export default function EatlyApp() {
   );
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-gray-50 to-white pb-36">
+    <div className="min-h-screen bg-background pb-36">
       {/* Main Content */}
       <div className="max-w-lg mx-auto px-4">
         <AnimatePresence mode="wait">
@@ -1646,7 +1646,7 @@ export default function EatlyApp() {
         transition={{ type: 'spring', damping: 25, stiffness: 300 }}
       >
         {/* Floating Navigation Bar Container */}
-        <div className="bg-white rounded-[28px] shadow-lg shadow-black/10 border border-gray-200/80 px-4 py-3">
+        <div className="bg-card/90 backdrop-blur-xl rounded-[28px] shadow-lg shadow-black/10 border border-border px-4 py-3">
           {/* 5 Column Grid Layout */}
           <div className="grid grid-cols-5 items-center">
             {tabs.map((tab, index) => {
@@ -1686,8 +1686,8 @@ export default function EatlyApp() {
                   {/* Icon Container - Circle with border */}
                   <div className={`w-11 h-11 rounded-full flex items-center justify-center border transition-all duration-200 ${
                     isActive 
-                      ? 'border-green-500 bg-green-50' 
-                      : 'border-gray-200 bg-white'
+                      ? 'border-green-500 bg-green-500/10' 
+                      : 'border-border bg-card'
                   }`}>
                     <Icon
                       className={`w-5 h-5 transition-all duration-200 ${
@@ -1731,7 +1731,7 @@ export default function EatlyApp() {
               transition={{ type: 'spring', damping: 30, stiffness: 300 }}
             >
               {/* Header */}
-              <div className="sticky top-0 bg-white z-10 px-6 py-4 border-b border-gray-100">
+              <div className="sticky top-0 bg-card z-10 px-6 py-4 border-b border-border">
                 <div className="flex items-center justify-between">
                   <motion.button
                     onClick={() => {
@@ -1769,7 +1769,7 @@ export default function EatlyApp() {
                     {/* Profile Section */}
                     <motion.button
                       onClick={() => setSettingsSection('profile')}
-                      className="w-full bg-gradient-to-r from-green-50 to-emerald-50 rounded-2xl p-4 flex items-center gap-4 border border-green-100"
+                      className="w-full bg-card rounded-2xl p-4 flex items-center gap-4 border border-border"
                       whileHover={{ scale: 1.01 }}
                       whileTap={{ scale: 0.99 }}
                     >
@@ -1813,8 +1813,8 @@ export default function EatlyApp() {
                     {/* Logout */}
                     <motion.button
                       onClick={handleLogout}
-                      className="w-full bg-white rounded-2xl p-4 flex items-center gap-4 border border-gray-100 shadow-sm"
-                      whileHover={{ scale: 1.01, backgroundColor: '#fef2f2' }}
+                      className="w-full bg-card rounded-2xl p-4 flex items-center gap-4 border border-border shadow-sm"
+                      whileHover={{ scale: 1.01, backgroundColor: 'rgba(239, 68, 68, 0.05)' }}
                       whileTap={{ scale: 0.99 }}
                     >
                       <div className="w-12 h-12 bg-gradient-to-br from-red-400 to-red-500 rounded-xl flex items-center justify-center shadow-lg shadow-red-500/25">
@@ -1829,8 +1829,8 @@ export default function EatlyApp() {
                     {/* Delete Account */}
                     <motion.button
                       onClick={() => setShowDeleteConfirm(true)}
-                      className="w-full bg-white rounded-2xl p-4 flex items-center gap-4 border border-gray-100 shadow-sm"
-                      whileHover={{ scale: 1.01, backgroundColor: '#fef2f2' }}
+                      className="w-full bg-card rounded-2xl p-4 flex items-center gap-4 border border-border shadow-sm"
+                      whileHover={{ scale: 1.01, backgroundColor: 'rgba(239, 68, 68, 0.05)' }}
                       whileTap={{ scale: 0.99 }}
                     >
                       <div className="w-12 h-12 bg-gradient-to-br from-gray-400 to-gray-500 rounded-xl flex items-center justify-center shadow-lg">
@@ -1869,8 +1869,8 @@ export default function EatlyApp() {
                       { icon: Mail, label: 'Email', value: userData.email, key: 'email' },
                       { icon: Phone, label: 'Teléfono', value: userData.phone, key: 'phone' },
                     ].map((field) => (
-                      <div key={field.key} className="bg-white rounded-2xl p-4 border border-gray-100 shadow-sm">
-                        <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide">{field.label}</label>
+                      <div key={field.key} className="bg-card rounded-2xl p-4 border border-border shadow-sm">
+                        <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">{field.label}</label>
                         <div className="flex items-center gap-3 mt-2">
                           <field.icon className="w-5 h-5 text-gray-400" />
                           <input
@@ -2104,7 +2104,7 @@ export default function EatlyApp() {
                     exit={{ opacity: 0 }}
                   >
                     <motion.div
-                      className="bg-white rounded-3xl p-6 max-w-sm w-full"
+                      className="bg-card rounded-3xl p-6 max-w-sm w-full border border-border"
                       initial={{ scale: 0.9, opacity: 0 }}
                       animate={{ scale: 1, opacity: 1 }}
                       exit={{ scale: 0.9, opacity: 0 }}
@@ -2142,7 +2142,7 @@ export default function EatlyApp() {
       </AnimatePresence>
 
       {/* AI Chat Modal */}
-      <AIChat
+      <RokoChat
         isOpen={showAIChat}
         onClose={() => setShowAIChat(false)}
         restrictions={restrictions}
