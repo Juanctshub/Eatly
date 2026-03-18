@@ -1,0 +1,48 @@
+{
+  "name": "Eatly",
+  "short_name": "Eatly",
+  "description": "Tu asistente de alimentación segura con Roko, tu nutriólogo IA",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#22c55e",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "/icons/icon-144x144.png",
+      "sizes": "144x144",
+      "type": "image/png",
+      "purpose": "maskable any"
+    },
+    {
+      "src": "/icons/icon-192x192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "maskable any"
+    },
+    {
+      "src": "/icons/icon-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable any"
+    }
+  ],
+  "categories": ["health", "lifestyle", "medical"],
+  "screenshots": [],
+  "shortcuts": [
+    {
+      "name": "Chatear con Roko",
+      "short_name": "Roko",
+      "description": "Habla con tu nutriólogo IA",
+      "url": "/?action=chat",
+      "icons": [{ "src": "/icons/icon-144x144.png", "sizes": "144x144" }]
+    },
+    {
+      "name": "Restaurantes cercanos",
+      "short_name": "Restaurantes",
+      "description": "Encuentra lugares seguros para comer",
+      "url": "/?action=restaurants",
+      "icons": [{ "src": "/icons/icon-144x144.png", "sizes": "144x144" }]
+    }
+  ]
+}
