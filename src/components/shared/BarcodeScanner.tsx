@@ -61,19 +61,34 @@ export default function BarcodeScanner({
 
   // Load TensorFlow Model
   useEffect(() => {
+    let isMounted = true;
     const loadModel = async () => {
       try {
+        console.log('Initializing TensorFlow...');
         await tf.ready();
-        const loadedModel = await mobilenet.load({ version: 2, alpha: 1.0 });
-        setModel(loadedModel);
-        setIsModelLoading(false);
+        if (!isMounted) return;
+        
+        console.log('Loading MobileNet v2...');
+        const loadedModel = await mobilenet.load({ 
+          version: 2, 
+          alpha: 1.0 
+        });
+        
+        if (isMounted) {
+          setModel(loadedModel);
+          setIsModelLoading(false);
+          console.log('IA Visual cargada con éxito');
+        }
       } catch (err) {
         console.error('Failed to load TF model:', err);
-        setError('Error cargando la IA visual local.');
-        setIsModelLoading(false);
+        if (isMounted) {
+          setError('Error cargando la IA visual local. Reintenta en unos segundos.');
+          setIsModelLoading(false);
+        }
       }
     };
     loadModel();
+    return () => { isMounted = false; };
   }, []);
 
   // Start camera
