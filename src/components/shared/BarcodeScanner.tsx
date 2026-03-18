@@ -297,12 +297,51 @@ export default function BarcodeScanner({
 
         {/* Scanning Frame */}
         <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-          <div className="w-64 h-32 border-2 border-white/50 rounded-2xl relative">
-            <div className="absolute top-0 left-0 w-8 h-8 border-t-4 border-l-4 border-green-500 rounded-tl-xl" />
-            <div className="absolute top-0 right-0 w-8 h-8 border-t-4 border-r-4 border-green-500 rounded-tr-xl" />
-            <div className="absolute bottom-0 left-0 w-8 h-8 border-b-4 border-l-4 border-green-500 rounded-bl-xl" />
-            <div className="absolute bottom-0 right-0 w-8 h-8 border-b-4 border-r-4 border-green-500 rounded-br-xl" />
+        {/* Professional Minimalist Visor */}
+        {!isModelLoading && !error && (
+          <div className="absolute inset-0 z-10 flex flex-col items-center justify-center">
+            {/* Ambient Overlay */}
+            <div className="absolute inset-0 bg-black/20 pointer-events-none" />
+            
+            {/* Visual Guide Border - Clean Apple Style */}
+            <div className="relative w-72 h-72">
+              {/* Corner Accents */}
+              <div className="absolute -top-1 -left-1 w-8 h-8 border-t-4 border-l-4 border-white/80 rounded-tl-2xl" />
+              <div className="absolute -top-1 -right-1 w-8 h-8 border-t-4 border-r-4 border-white/80 rounded-tr-2xl" />
+              <div className="absolute -bottom-1 -left-1 w-8 h-8 border-b-4 border-l-4 border-white/80 rounded-bl-2xl" />
+              <div className="absolute -bottom-1 -right-1 w-8 h-8 border-b-4 border-r-4 border-white/80 rounded-br-2xl" />
+              
+              {/* Scanning Laser Line */}
+              <motion.div 
+                className="absolute left-4 right-4 h-0.5 bg-gradient-to-r from-transparent via-green-400 to-transparent shadow-[0_0_15px_rgba(74,222,128,0.8)]"
+                animate={{ 
+                  top: ['10%', '90%', '10%'],
+                  opacity: [0.4, 1, 0.4]
+                }}
+                transition={{ 
+                  duration: 3, 
+                  repeat: Infinity, 
+                  ease: "easeInOut" 
+                }}
+              />
+            </div>
+
+            {/* Smart Detection Feedback */}
+            <div className="mt-12 text-center pointer-events-none px-6">
+              <motion.div 
+                className="bg-black/60 backdrop-blur-md px-6 py-3 rounded-2xl border border-white/10"
+                initial={{ opacity: 0, scale: 0.9 }}
+                animate={{ opacity: 1, scale: 1 }}
+              >
+                <div className="flex items-center gap-2 mb-1">
+                  <div className="w-2 h-2 bg-green-500 rounded-full animate-ping" />
+                  <span className="text-[10px] uppercase tracking-widest font-bold text-white/60">Análisis en curso</span>
+                </div>
+                <p className="text-white text-sm font-semibold">Enfoca el alimento claramente</p>
+              </motion.div>
+            </div>
           </div>
+        )}
         </div>
 
         {/* Loading overlay */}

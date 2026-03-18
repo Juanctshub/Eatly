@@ -17,7 +17,8 @@ import {
   Sun,
   Moon,
   Trash2,
-  ExternalLink
+  ExternalLink,
+  MessageSquare
 } from 'lucide-react';
 
 interface Restriction {
@@ -48,19 +49,12 @@ interface AIChatProps {
   mealType?: string;
 }
 
-// Quick action buttons for the chat
 const quickActions = [
-  { label: '¿Qué puedo comer?', icon: Utensils, prompt: '¿Qué puedo comer hoy con mis restricciones alimentarias?' },
-  { label: '¿Qué debo evitar?', icon: AlertTriangle, prompt: '¿Qué alimentos debo evitar según mis restricciones? Dame una lista clara.' },
-  { label: 'Recetas seguras', icon: ChefHat, prompt: 'Dame 3 recetas seguras para alguien con mis restricciones, con links a las recetas.' },
-  { label: 'Tips nutricionales', icon: Lightbulb, prompt: 'Dame consejos nutricionales personalizados para mi dieta y restricciones.' },
+  { label: '¿Qué comer?', icon: Utensils, prompt: '¿Qué puedo comer hoy sugerido para mi dieta?' },
+  { label: 'Peligros', icon: AlertTriangle, prompt: '¿Qué alimentos son peligrosos para mi específicamente?' },
+  { label: 'Recetas', icon: ChefHat, prompt: 'Dame 3 recetas rápidas para mis restricciones.' },
+  { label: 'Modo Vida', icon: Lightbulb, prompt: 'Consejos de salud para mis condiciones actuales.' },
 ];
-
-const mealTypeIcons: Record<string, any> = {
-  desayuno: Coffee,
-  almuerzo: Sun,
-  cena: Moon,
-};
 
 export default function AIChat({ isOpen, onClose, restrictions, foods, mealType = 'almuerzo' }: AIChatProps) {
   const [messages, setMessages] = useState<Message[]>([]);
@@ -71,22 +65,23 @@ export default function AIChat({ isOpen, onClose, restrictions, foods, mealType 
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
-  // Scroll to bottom on new messages
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [messages]);
+  }, [messages, isLoading]);
 
-  // Focus input on open
   useEffect(() => {
     if (isOpen) {
-      setTimeout(() => inputRef.current?.focus(), 300);
+      setTimeout(() => inputRef.current?.focus(), 400);
     }
   }, [isOpen]);
 
-  // Initial greeting
   useEffect(() => {
     if (isOpen && messages.length === 0) {
-      const greeting = getInitialGreeting();
+      const restrictionNames = restrictions.map(r => r.foodItem).join(', ');
+      const greeting = restrictions.length > 0 
+        ? `¡Hola! Soy Roko 🥗. Veo que tienes restricciones con: **${restrictionNames}**. \n\n¿Quieres que te sugiera algo seguro para tu ${mealType}?`
+        : "¡Hola! Soy Roko 🥗, tu asistente nutricional. \n\nCuéntame, ¿qué tienes pensado comer hoy o qué ingredientes tienes a mano?";
+        
       setMessages([{
         id: 'greeting',
         role: 'assistant',
@@ -95,20 +90,6 @@ export default function AIChat({ isOpen, onClose, restrictions, foods, mealType 
       }]);
     }
   }, [isOpen]);
-
-  const getInitialGreeting = () => {
-    const restrictionCount = restrictions.length;
-    const foodCount = foods.length;
-    
-    if (restrictionCount === 0) {
-      return `¡Hola! 👋 Soy Roko, tu nutriólogo personal con IA.\n\nNo tienes restricciones registradas aún. Puedo ayudarte a:\n\n✅ Sugerir recetas deliciosas\n✅ Darte tips nutricionales\n✅ Recomendar platillos para tu ${mealType}\n\n¿En qué puedo ayudarte hoy?`;
-    }
-    
-    const restrictionList = restrictions.slice(0, 3).map(r => r.foodItem).join(', ');
-    const moreCount = restrictionCount > 3 ? ` y ${restrictionCount - 3} más` : '';
-    
-    return `¡Hola! 👋 Soy Roko, tu nutriólogo personal con IA.\n\nVeo que tienes ${restrictionCount} restricción${restrictionCount > 1 ? 'es' : ''}: ${restrictionList}${moreCount}\n\nPara tu ${mealType}, puedo ayudarte a:\n\n✅ Encontrar recetas seguras\n⛔ Identificar qué evitar\n💡 Darte consejos personalizados\n\n¿Qué te gustaría saber?`;
-  };
 
   const sendMessage = async (messageText: string = input) => {
     if (!messageText.trim() || isLoading) return;
@@ -131,273 +112,187 @@ export default function AIChat({ isOpen, onClose, restrictions, foods, mealType 
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           message: messageText.trim(),
-          restrictions: restrictions.map(r => ({
-            foodItem: r.foodItem,
-            reason: r.reason,
-            severity: r.severity
-          })),
-          foods: foods.map(f => ({
-            name: f.name,
-            category: f.category
-          })),
+          restrictions: restrictions.map(r => ({ foodItem: r.foodItem, reason: r.reason, severity: r.severity })),
+          foods,
           mealType,
-          conversationHistory: messages.slice(-6).map(m => ({
-            role: m.role,
-            content: m.content
-          }))
+          conversationHistory: messages.slice(-4).map(m => ({ role: m.role, content: m.content }))
         })
       });
 
       const data = await response.json();
+      if (!data.success) throw new Error(data.error || 'Fallo de IA');
 
-      if (!data.success) {
-        throw new Error(data.error || 'Error al procesar mensaje');
-      }
-
-      const assistantMessage: Message = {
+      setMessages(prev => [...prev, {
         id: `assistant-${Date.now()}`,
         role: 'assistant',
         content: data.response,
         timestamp: data.timestamp
-      };
-
-      setMessages(prev => [...prev, assistantMessage]);
-
+      }]);
     } catch (err: any) {
-      setError(err.message || 'Error de conexión');
-      console.error('Chat error:', err);
+      setError('Lo siento, tuve un problema al procesar tu mensaje. ¡Por favor inténtalo de nuevo!');
     } finally {
       setIsLoading(false);
     }
   };
 
-  const handleKeyPress = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter' && !e.shiftKey) {
-      e.preventDefault();
-      sendMessage();
-    }
-  };
-
   const clearChat = () => {
-    setMessages([{
-      id: 'greeting-new',
-      role: 'assistant',
-      content: getInitialGreeting(),
-      timestamp: new Date().toISOString()
-    }]);
+    setMessages([]);
     setError(null);
-  };
-
-  // Format message content with links
-  const formatContent = (content: string) => {
-    // Convert URLs to links
-    const urlRegex = /(https?:\/\/[^\s]+)/g;
-    const parts = content.split(urlRegex);
-    
-    return parts.map((part, index) => {
-      if (part.match(urlRegex)) {
-        return (
-          <a
-            key={index}
-            href={part}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="text-green-600 dark:text-green-400 hover:underline inline-flex items-center gap-1"
-          >
-            {part.length > 40 ? part.substring(0, 40) + '...' : part}
-            <ExternalLink className="w-3 h-3" />
-          </a>
-        );
-      }
-      return part;
-    });
   };
 
   if (!isOpen) return null;
 
   return (
     <motion.div
-      className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50"
+      className="fixed inset-0 bg-black/40 backdrop-blur-md z-[100] flex items-end justify-center"
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
     >
       <motion.div
-        className="absolute inset-0 flex flex-col bg-white dark:bg-gray-800"
+        className="w-full max-w-lg bg-white dark:bg-black h-[92vh] rounded-t-[2.5rem] shadow-2xl flex flex-col overflow-hidden border-t border-white/10"
         initial={{ y: '100%' }}
         animate={{ y: 0 }}
         exit={{ y: '100%' }}
-        transition={{ type: 'spring', damping: 30, stiffness: 300 }}
+        transition={{ type: 'spring', damping: 25, stiffness: 200 }}
       >
-        {/* Header */}
-        <div className="bg-gradient-to-r from-violet-500 to-purple-600 p-4 shadow-lg">
+        {/* Apple Style Header */}
+        <div className="pt-2 px-6 pb-4 bg-white/80 dark:bg-black/80 backdrop-blur-xl border-b border-gray-100 dark:border-white/5 relative z-10">
+          <div className="w-10 h-1 bg-gray-300 dark:bg-gray-800 rounded-full mx-auto mt-1 mb-4" />
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <div className="w-12 h-12 bg-white/20 backdrop-blur-sm rounded-2xl flex items-center justify-center">
+              <div className="w-12 h-12 bg-gradient-to-br from-green-400 to-emerald-600 rounded-2xl flex items-center justify-center shadow-lg shadow-green-500/20">
                 <Sparkles className="w-6 h-6 text-white" />
               </div>
               <div>
-                <h2 className="text-lg font-bold text-white flex items-center gap-2">
-                  Roko 🥗
-                  <span className="text-xs bg-white/20 px-2 py-0.5 rounded-full">Tu Nutriólogo</span>
-                </h2>
-                <p className="text-sm text-white/80">
-                  Asistente de nutrición con IA
-                </p>
+                <h2 className="text-xl font-bold text-gray-900 dark:text-white leading-none mb-1">Roko AI</h2>
+                <div className="flex items-center gap-1.5">
+                  <div className="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse" />
+                  <span className="text-[10px] uppercase tracking-widest font-bold text-gray-400">Nutriólogo Oficial</span>
+                </div>
               </div>
             </div>
-            <div className="flex items-center gap-2">
-              <motion.button
-                onClick={clearChat}
-                className="w-10 h-10 bg-white/20 rounded-full flex items-center justify-center"
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
+            <div className="flex gap-2">
+              <motion.button 
+                onClick={clearChat} 
+                className="w-10 h-10 bg-gray-100 dark:bg-white/5 rounded-full flex items-center justify-center text-gray-500 hover:text-red-500 transition-colors"
+                whileTap={{ scale: 0.9 }}
               >
-                <Trash2 className="w-5 h-5 text-white" />
+                <Trash2 className="w-5 h-5" />
               </motion.button>
-              <motion.button
-                onClick={onClose}
-                className="w-10 h-10 bg-white/20 rounded-full flex items-center justify-center"
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
+              <motion.button 
+                onClick={onClose} 
+                className="w-10 h-10 bg-gray-100 dark:bg-white/5 rounded-full flex items-center justify-center text-gray-900 dark:text-white"
+                whileTap={{ scale: 0.9 }}
               >
-                <X className="w-5 h-5 text-white" />
+                <X className="w-5 h-5" />
               </motion.button>
             </div>
           </div>
-          
-          {/* Restrictions Summary */}
-          {restrictions.length > 0 && (
-            <div className="mt-3 flex flex-wrap gap-2">
-              {restrictions.slice(0, 4).map((r) => (
-                <span
-                  key={r.id}
-                  className="px-2 py-1 bg-white/20 rounded-full text-xs text-white flex items-center gap-1"
-                >
-                  ⛔ {r.foodItem}
-                </span>
-              ))}
-              {restrictions.length > 4 && (
-                <span className="px-2 py-1 bg-white/20 rounded-full text-xs text-white">
-                  +{restrictions.length - 4} más
-                </span>
-              )}
-            </div>
-          )}
         </div>
 
-        {/* Messages */}
-        <div className="flex-1 overflow-y-auto p-4 space-y-4">
-          <AnimatePresence>
+        {/* Messaging Area */}
+        <div className="flex-1 overflow-y-auto px-5 py-6 space-y-6 scrollbar-hide bg-gray-50/50 dark:bg-black/20">
+          <AnimatePresence initial={false}>
             {messages.map((message) => (
               <motion.div
                 key={message.id}
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
+                initial={{ opacity: 0, y: 10, scale: 0.98 }}
+                animate={{ opacity: 1, y: 0, scale: 1 }}
                 className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}
               >
-                <div
-                  className={`max-w-[85%] rounded-2xl p-4 ${
-                    message.role === 'user'
-                      ? 'bg-violet-500 text-white rounded-br-md'
-                      : 'bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-white rounded-bl-md'
-                  }`}
-                >
-                  <div className="flex items-start gap-2">
-                    {message.role === 'assistant' && (
-                      <Bot className="w-5 h-5 text-violet-500 flex-shrink-0 mt-0.5" />
-                    )}
-                    <div className="whitespace-pre-wrap text-sm leading-relaxed">
-                      {formatContent(message.content)}
-                    </div>
-                    {message.role === 'user' && (
-                      <User className="w-5 h-5 text-white/80 flex-shrink-0 mt-0.5" />
-                    )}
+                <div className={`flex flex-col gap-1.5 max-w-[88%] ${message.role === 'user' ? 'items-end' : 'items-start'}`}>
+                  <div
+                    className={`px-5 py-3.5 rounded-3xl text-sm leading-relaxed ${
+                      message.role === 'user'
+                        ? 'bg-gradient-to-br from-green-500 to-emerald-600 text-white rounded-br-none shadow-lg shadow-green-500/20'
+                        : 'bg-white dark:bg-gray-900 text-gray-800 dark:text-gray-100 rounded-bl-none shadow-sm border border-gray-100 dark:border-white/5'
+                    }`}
+                  >
+                    {message.content.split('\n').map((line, i) => (
+                      <p key={i} className={i > 0 ? 'mt-2' : ''}>
+                        {line}
+                      </p>
+                    ))}
                   </div>
+                  <span className="text-[10px] text-gray-400 font-medium px-2">
+                    {new Date(message.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                  </span>
                 </div>
               </motion.div>
             ))}
           </AnimatePresence>
 
-          {/* Loading indicator */}
           {isLoading && (
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              className="flex justify-start"
-            >
-              <div className="bg-gray-100 dark:bg-gray-700 rounded-2xl rounded-bl-md p-4">
-                <div className="flex items-center gap-2">
-                  <Bot className="w-5 h-5 text-violet-500" />
-                  <Loader2 className="w-5 h-5 animate-spin text-violet-500" />
-                  <span className="text-sm text-gray-500 dark:text-gray-400">Pensando...</span>
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex justify-start">
+              <div className="bg-white dark:bg-gray-900 px-5 py-4 rounded-3xl rounded-bl-none border border-gray-100 dark:border-white/5 shadow-sm flex items-center gap-3">
+                <div className="flex gap-1.5">
+                  <div className="w-1.5 h-1.5 bg-green-500 rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
+                  <div className="w-1.5 h-1.5 bg-green-500 rounded-full animate-bounce" style={{ animationDelay: '200ms' }} />
+                  <div className="w-1.5 h-1.5 bg-green-500 rounded-full animate-bounce" style={{ animationDelay: '400ms' }} />
                 </div>
+                <span className="text-xs font-semibold text-gray-400 uppercase tracking-tighter">Roko está pensando</span>
               </div>
             </motion.div>
           )}
 
-          {/* Error */}
           {error && (
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-2xl p-4"
-            >
-              <p className="text-sm text-red-600 dark:text-red-400">
-                ⚠️ {error}
-              </p>
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="bg-red-50 dark:bg-red-900/10 border border-red-100 dark:border-red-900/30 p-4 rounded-3xl">
+              <div className="flex gap-3 text-red-600 dark:text-red-400">
+                <AlertTriangle className="w-5 h-5 flex-shrink-0" />
+                <p className="text-xs font-medium leading-relaxed">{error}</p>
+              </div>
             </motion.div>
           )}
-
           <div ref={messagesEndRef} />
         </div>
 
-        {/* Quick Actions */}
-        {messages.length <= 1 && (
-          <div className="px-4 py-2 border-t border-gray-100 dark:border-gray-700">
-            <p className="text-xs text-gray-500 dark:text-gray-400 mb-2">Preguntas rápidas:</p>
-            <div className="flex flex-wrap gap-2">
+        {/* Interaction Area */}
+        <div className="p-6 bg-white dark:bg-black border-t border-gray-100 dark:border-white/5">
+          {messages.length < 3 && !isLoading && (
+            <div className="mb-5 flex flex-wrap gap-2">
               {quickActions.map((action) => (
                 <motion.button
                   key={action.label}
                   onClick={() => sendMessage(action.prompt)}
-                  className="px-3 py-2 bg-gray-100 dark:bg-gray-700 rounded-xl text-xs font-medium text-gray-700 dark:text-gray-300 flex items-center gap-1.5"
-                  whileHover={{ scale: 1.02 }}
-                  whileTap={{ scale: 0.98 }}
+                  className="px-4 py-2 bg-gray-50 dark:bg-white/5 rounded-full text-xs font-bold text-gray-600 dark:text-gray-300 flex items-center gap-2 border border-gray-100 dark:border-white/5"
+                  whileHover={{ scale: 1.05, backgroundColor: 'rgba(34, 197, 94, 0.1)' }}
+                  whileTap={{ scale: 0.95 }}
                 >
                   <action.icon className="w-3.5 h-3.5" />
                   {action.label}
                 </motion.button>
               ))}
             </div>
-          </div>
-        )}
+          )}
 
-        {/* Input */}
-        <div className="p-4 border-t border-gray-100 dark:border-gray-700 bg-white dark:bg-gray-800">
           <div className="flex items-center gap-3">
-            <input
-              ref={inputRef}
-              type="text"
-              value={input}
-              onChange={(e) => setInput(e.target.value)}
-              onKeyPress={handleKeyPress}
-              placeholder="Pregúntame qué puedes comer..."
-              className="flex-1 px-4 py-3 bg-gray-100 dark:bg-gray-700 rounded-2xl text-gray-900 dark:text-white placeholder-gray-400 outline-none focus:ring-2 focus:ring-violet-500"
-              disabled={isLoading}
-            />
-            <motion.button
-              onClick={() => sendMessage()}
-              disabled={!input.trim() || isLoading}
-              className="w-12 h-12 bg-gradient-to-r from-violet-500 to-purple-600 rounded-2xl flex items-center justify-center shadow-lg shadow-violet-500/30 disabled:opacity-50"
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-            >
-              <Send className="w-5 h-5 text-white" />
-            </motion.button>
+            <div className="flex-1 relative group">
+              <input
+                ref={inputRef}
+                type="text"
+                value={input}
+                onChange={(e) => setInput(e.target.value)}
+                onKeyDown={(e) => e.key === 'Enter' && sendMessage()}
+                placeholder="Pregunta a Roko..."
+                className="w-full pl-5 pr-12 py-4 bg-gray-100 dark:bg-white/5 rounded-2xl text-sm font-medium text-gray-900 dark:text-white outline-none focus:ring-2 focus:ring-green-500/50 transition-all border border-transparent focus:bg-white dark:focus:bg-black dark:focus:border-white/10"
+                disabled={isLoading}
+              />
+              <div className="absolute right-3 top-1/2 -translate-y-1/2">
+                <motion.button
+                  onClick={() => sendMessage()}
+                  disabled={!input.trim() || isLoading}
+                  className="w-9 h-9 bg-green-500 rounded-xl flex items-center justify-center text-white shadow-lg shadow-green-500/40 disabled:opacity-30 disabled:shadow-none"
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                >
+                  <Send className="w-4 h-4" />
+                </motion.button>
+              </div>
+            </div>
           </div>
-          <p className="text-xs text-gray-400 mt-2 text-center">
-            Las recomendaciones son orientativas. Consulta siempre a un profesional de salud.
+          <p className="mt-4 text-[10px] text-center text-gray-400 font-medium leading-relaxed">
+            Roko usa IA para asesorarte. Siempre valida con un médico profesional.
           </p>
         </div>
       </motion.div>
