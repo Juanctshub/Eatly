@@ -578,10 +578,10 @@ export default function EatlyApp() {
       transition={{ duration: 0.3 }}
     >
       {/* Header with elegant gradient */}
-      <div className="relative -mx-4 px-4 pt-8 pb-6 bg-gradient-to-b from-green-50 via-emerald-50/50 to-transparent dark:from-gray-800 dark:via-gray-800/50 dark:to-transparent">
+      <div className="relative -mx-4 px-4 pt-8 pb-6 bg-gradient-to-b from-green-50 via-emerald-50/50 to-transparent dark:from-black dark:via-black/80 dark:to-transparent">
         {/* Decorative circles */}
-        <div className="absolute top-0 right-0 w-32 h-32 bg-green-200/30 dark:bg-green-900/30 rounded-full blur-3xl" />
-        <div className="absolute top-10 left-0 w-24 h-24 bg-emerald-200/20 dark:bg-emerald-900/20 rounded-full blur-2xl" />
+        <div className="absolute top-0 right-0 w-32 h-32 bg-green-200/30 dark:bg-green-900/10 rounded-full blur-3xl opacity-50" />
+        <div className="absolute top-10 left-0 w-24 h-24 bg-emerald-200/20 dark:bg-emerald-900/10 rounded-full blur-2xl opacity-50" />
         
         <motion.div
           className="flex items-center justify-between mb-6 relative z-10"
