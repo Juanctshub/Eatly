@@ -27,10 +27,10 @@ REGLAS DE RESPUESTA:
       { role: 'user', content: message }
     ];
 
-    console.log('Attempting to connect to AI server at http://172.25.136.193:8080/v1/chat/completions');
+    console.log('Attempting to connect to AI server at https://spa-attach-latest-try.trycloudflare.com/v1/chat/completions');
     const startTime = Date.now();
     
-    const response = await fetch('http://172.25.136.193:8080/v1/chat/completions', {
+    const response = await fetch('https://spa-attach-latest-try.trycloudflare.com/v1/chat/completions', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
