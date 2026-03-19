@@ -1631,10 +1631,10 @@ export default function EatlyApp() {
       {/* Main Content */}
       <div className="max-w-lg mx-auto px-4">
         <AnimatePresence mode="wait">
-          {activeTab === 'home' && <div key="home">{renderHome()}</div>}
-          {activeTab === 'restrictions' && <div key="restrictions">{renderRestrictions()}</div>}
-          {activeTab === 'foods' && <div key="foods">{renderFoods()}</div>}
-          {activeTab === 'suggestions' && <div key="suggestions">{renderSuggestions()}</div>}
+          {activeTab === 'home' && <div key="home" className="bg-background">{renderHome()}</div>}
+          {activeTab === 'restrictions' && <div key="restrictions" className="bg-background">{renderRestrictions()}</div>}
+          {activeTab === 'foods' && <div key="foods" className="bg-background">{renderFoods()}</div>}
+          {activeTab === 'suggestions' && <div key="suggestions" className="bg-background">{renderSuggestions()}</div>}
         </AnimatePresence>
       </div>
 
@@ -1667,7 +1667,7 @@ export default function EatlyApp() {
                       whileTap={{ scale: 0.95 }}
                     >
                       {/* Elevated Center Button - Black/Green Style */}
-                      <div className="w-16 h-16 bg-gradient-to-br from-green-500 to-emerald-600 rounded-full flex items-center justify-center shadow-[0_8px_20px_rgba(34,197,94,0.4)] border-4 border-white">
+                      <div className="w-16 h-16 bg-gradient-to-br from-green-500 to-emerald-600 rounded-full flex items-center justify-center shadow-[0_8px_20px_rgba(34,197,94,0.4)] border-4 border-background">
                         <Plus className="w-7 h-7 text-white" strokeWidth={2.5} />
                       </div>
                     </motion.button>
@@ -1724,7 +1724,7 @@ export default function EatlyApp() {
             exit={{ opacity: 0 }}
           >
             <motion.div
-              className="absolute inset-x-0 bottom-0 bg-white rounded-t-[2rem] max-h-[90vh] overflow-y-auto"
+              className="absolute inset-x-0 bottom-0 bg-background rounded-t-[2rem] max-h-[90vh] overflow-y-auto border-t border-border shadow-2xl shadow-black/50"
               initial={{ y: '100%' }}
               animate={{ y: 0 }}
               exit={{ y: '100%' }}
@@ -1792,7 +1792,7 @@ export default function EatlyApp() {
                       <motion.button
                         key={item.id}
                         onClick={() => setSettingsSection(item.id)}
-                        className="w-full bg-white rounded-2xl p-4 flex items-center gap-4 border border-gray-100 shadow-sm"
+                        className="w-full bg-card rounded-2xl p-4 flex items-center gap-4 border border-border shadow-sm"
                         whileHover={{ scale: 1.01, boxShadow: '0 4px 20px rgba(0,0,0,0.08)' }}
                         whileTap={{ scale: 0.99 }}
                       >
@@ -1855,7 +1855,7 @@ export default function EatlyApp() {
                         <User className="w-12 h-12 text-white" />
                       </div>
                       <motion.button
-                        className="px-4 py-2 bg-green-100 text-green-600 rounded-xl font-semibold text-sm"
+                        className="px-4 py-2 bg-green-500/10 text-green-500 rounded-xl font-semibold text-sm border border-green-500/20"
                         whileHover={{ scale: 1.05 }}
                         whileTap={{ scale: 0.95 }}
                       >
@@ -1872,14 +1872,14 @@ export default function EatlyApp() {
                       <div key={field.key} className="bg-card rounded-2xl p-4 border border-border shadow-sm">
                         <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">{field.label}</label>
                         <div className="flex items-center gap-3 mt-2">
-                          <field.icon className="w-5 h-5 text-gray-400" />
+                          <field.icon className="w-5 h-5 text-muted-foreground" />
                           <input
                             type="text"
                             value={field.value}
                             onChange={(e) => setUserData({ ...userData, [field.key]: e.target.value })}
-                            className="flex-1 text-gray-900 font-medium outline-none"
+                            className="flex-1 text-foreground bg-transparent font-medium outline-none"
                           />
-                          <Edit3 className="w-4 h-4 text-gray-400" />
+                          <Edit3 className="w-4 h-4 text-muted-foreground" />
                         </div>
                       </div>
                     ))}
@@ -1905,13 +1905,13 @@ export default function EatlyApp() {
                       { key: 'reminders', icon: Clock, label: 'Recordatorios', desc: 'Recordatorios de comidas' },
                       { key: 'tips', icon: Lightbulb, label: 'Consejos Diarios', desc: 'Tips de nutrición' },
                     ].map((item) => (
-                      <div key={item.key} className="bg-white rounded-2xl p-4 border border-gray-100 shadow-sm flex items-center gap-4">
-                        <div className="w-10 h-10 bg-blue-100 rounded-xl flex items-center justify-center">
+                      <div key={item.key} className="bg-card rounded-2xl p-4 border border-border shadow-sm flex items-center gap-4">
+                        <div className="w-10 h-10 bg-blue-500/10 rounded-xl flex items-center justify-center">
                           <item.icon className="w-5 h-5 text-blue-500" />
                         </div>
                         <div className="flex-1">
-                          <p className="font-semibold text-gray-900">{item.label}</p>
-                          <p className="text-sm text-gray-500">{item.desc}</p>
+                          <p className="font-semibold text-foreground">{item.label}</p>
+                          <p className="text-sm text-muted-foreground">{item.desc}</p>
                         </div>
                         <motion.button
                           className={`w-12 h-7 rounded-full p-1 transition-colors ${
@@ -1937,8 +1937,8 @@ export default function EatlyApp() {
                     animate={{ opacity: 1, x: 0 }}
                   >
                     {/* Theme Selection */}
-                    <div className="bg-white dark:bg-gray-800 rounded-2xl p-4 border border-gray-100 dark:border-gray-700 shadow-sm">
-                      <p className="font-semibold text-gray-900 dark:text-white mb-3">Tema de la App</p>
+                    <div className="bg-card rounded-2xl p-4 border border-border shadow-sm">
+                      <p className="font-semibold text-foreground mb-3">Tema de la App</p>
                       <div className="grid grid-cols-2 gap-3">
                         <motion.button
                           className={`p-4 rounded-xl border-2 flex flex-col items-center gap-2 transition-all ${
@@ -1953,7 +1953,7 @@ export default function EatlyApp() {
                           whileTap={{ scale: 0.98 }}
                         >
                           <Sun className="w-8 h-8 text-amber-500" />
-                          <span className="font-medium text-gray-900 dark:text-white">Claro</span>
+                          <span className="font-medium text-foreground">Claro</span>
                         </motion.button>
                         <motion.button
                           className={`p-4 rounded-xl border-2 flex flex-col items-center gap-2 transition-all ${
@@ -1968,19 +1968,19 @@ export default function EatlyApp() {
                           whileTap={{ scale: 0.98 }}
                         >
                           <Moon className="w-8 h-8 text-indigo-500" />
-                          <span className="font-medium text-gray-900 dark:text-white">Oscuro</span>
+                          <span className="font-medium text-foreground">Oscuro</span>
                         </motion.button>
                       </div>
                     </div>
 
                     {/* Sound & Vibration */}
-                    <div className="bg-white dark:bg-gray-800 rounded-2xl p-4 border border-gray-100 dark:border-gray-700 shadow-sm">
-                      <p className="font-semibold text-gray-900 dark:text-white mb-3">Efectos</p>
+                    <div className="bg-card rounded-2xl p-4 border border-border shadow-sm">
+                      <p className="font-semibold text-foreground mb-3">Efectos</p>
                       <div className="space-y-3">
                         <div className="flex items-center justify-between">
                           <div className="flex items-center gap-3">
-                            <Volume2 className="w-5 h-5 text-gray-500 dark:text-gray-400" />
-                            <span className="text-gray-700 dark:text-gray-300">Sonidos</span>
+                            <Volume2 className="w-5 h-5 text-muted-foreground" />
+                            <span className="text-foreground">Sonidos</span>
                           </div>
                           <motion.button
                             className={`w-12 h-7 rounded-full p-1 transition-colors ${
@@ -2001,8 +2001,8 @@ export default function EatlyApp() {
                         </div>
                         <div className="flex items-center justify-between">
                           <div className="flex items-center gap-3">
-                            <Vibrate className="w-5 h-5 text-gray-500 dark:text-gray-400" />
-                            <span className="text-gray-700 dark:text-gray-300">Vibración</span>
+                            <Vibrate className="w-5 h-5 text-muted-foreground" />
+                            <span className="text-foreground">Vibración</span>
                           </div>
                           <motion.button
                             className={`w-12 h-7 rounded-full p-1 transition-colors ${
@@ -2037,7 +2037,7 @@ export default function EatlyApp() {
                       { key: 'location', icon: Lock, label: 'Ubicación', desc: 'Para encontrar restaurantes cercanos' },
                       { key: 'microphone', icon: Eye, label: 'Micrófono', desc: 'Para comandos de voz' },
                     ].map((item) => (
-                      <div key={item.key} className="bg-white dark:bg-gray-800 rounded-2xl p-4 border border-gray-100 dark:border-gray-700 shadow-sm flex items-center gap-4">
+                      <div key={item.key} className="bg-card rounded-2xl p-4 border border-border shadow-sm flex items-center gap-4">
                         <div className={`w-10 h-10 rounded-xl flex items-center justify-center transition-colors ${
                           permissions[item.key as keyof typeof permissions].granted 
                             ? 'bg-green-100 dark:bg-green-900/30' 
@@ -2050,8 +2050,8 @@ export default function EatlyApp() {
                           }`} />
                         </div>
                         <div className="flex-1">
-                          <p className="font-semibold text-gray-900 dark:text-white">{item.label}</p>
-                          <p className="text-sm text-gray-500 dark:text-gray-400">{item.desc}</p>
+                          <p className="font-semibold text-foreground">{item.label}</p>
+                          <p className="text-sm text-muted-foreground">{item.desc}</p>
                         </div>
                         
                         {permissions[item.key as keyof typeof permissions].loading ? (

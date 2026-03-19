@@ -33,7 +33,12 @@ REGLAS DE RESPUESTA:
       messages: messages as any
     });
 
-    const aiContent = response.choices?.[0]?.message?.content || response.message?.content || response.data?.content || "Lo siento, no pude procesar tu solicitud.";
+    const aiContent = 
+      response.choices?.[0]?.message?.content || 
+      response.message?.content || 
+      response.data?.content || 
+      response.content ||
+      (typeof response === 'string' ? response : "Lo siento, no pude procesar tu solicitud.");
 
     return NextResponse.json({
       success: true,
