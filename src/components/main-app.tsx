@@ -162,6 +162,7 @@ export default function EatlyApp() {
   const [restrictions, setRestrictions] = useState<Restriction[]>([]);
   const [foods, setFoods] = useState<Food[]>([]);
   const [suggestions, setSuggestions] = useState<{ suggestions: Suggestion[]; generalTip: string } | null>(null);
+  const [showSplash, setShowSplash] = useState(true);
   const [selectedMealType, setSelectedMealType] = useState('almuerzo');
   const [loading, setLoading] = useState(false);
   const [showAddModal, setShowAddModal] = useState(false);
@@ -917,8 +918,8 @@ export default function EatlyApp() {
         animate={{ opacity: 1, y: 0 }}
       >
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Restricciones</h1>
-          <p className="text-gray-500 text-sm mt-1">{restrictions.length} alimentos registrados</p>
+          <h1 className="text-2xl font-bold text-foreground">Restricciones</h1>
+          <p className="text-muted-foreground text-sm mt-1">{restrictions.length} alimentos registrados</p>
         </div>
         <motion.button
           onClick={() => {
@@ -935,12 +936,12 @@ export default function EatlyApp() {
 
       {/* Quick Add Common */}
       <motion.div
-        className="bg-gradient-to-r from-amber-50 to-orange-50 rounded-3xl p-4 border border-amber-100"
+        className="bg-amber-500/10 rounded-3xl p-4 border border-amber-500/20"
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.2 }}
       >
-        <p className="text-sm font-semibold text-amber-800 mb-3">Agregar rápidamente</p>
+        <p className="text-sm font-semibold text-amber-500 mb-3">Agregar rápidamente</p>
         <div className="flex flex-wrap gap-2">
           {commonRestrictions.slice(0, 4).map((cr) => (
             <motion.button
@@ -958,7 +959,7 @@ export default function EatlyApp() {
                   console.error('Error adding restriction:', error);
                 }
               }}
-              className="px-3 py-1.5 bg-white rounded-full text-sm font-medium text-gray-700 shadow-sm hover:shadow-md transition-all"
+              className="px-3 py-1.5 bg-card rounded-full text-sm font-medium text-foreground shadow-sm hover:shadow-md transition-all border border-border"
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
             >
@@ -981,8 +982,8 @@ export default function EatlyApp() {
           >
             <Check className="w-10 h-10 text-green-500" />
           </motion.div>
-          <p className="text-gray-900 font-bold text-xl">¡Sin restricciones!</p>
-          <p className="text-gray-500 text-sm mt-2 mb-6">No tienes restricciones registradas aún</p>
+          <p className="text-foreground font-bold text-xl">¡Sin restricciones!</p>
+          <p className="text-muted-foreground text-sm mt-2 mb-6">No tienes restricciones registradas aún</p>
           <motion.button
             onClick={() => {
               setAddType('restriction');
@@ -1625,6 +1626,54 @@ export default function EatlyApp() {
       </motion.div>
     </motion.div>
   );
+
+  if (showSplash) {
+    return (
+      <motion.div 
+        className="fixed inset-0 z-[100] flex flex-col items-center justify-center bg-background"
+        initial={{ opacity: 1 }}
+        exit={{ opacity: 0 }}
+        onAnimationComplete={() => setTimeout(() => setShowSplash(false), 2000)}
+      >
+        <motion.div
+          initial={{ scale: 0.8, opacity: 0 }}
+          animate={{ scale: 1, opacity: 1 }}
+          transition={{ duration: 0.5, ease: "easeOut" }}
+          className="text-center"
+        >
+          <div className="w-24 h-24 bg-gradient-to-br from-green-400 to-emerald-600 rounded-[2.5rem] flex items-center justify-center shadow-2xl shadow-green-500/20 mx-auto mb-6">
+            <ChefHat className="w-12 h-12 text-white" />
+          </div>
+          <motion.h1 
+            className="text-3xl font-bold text-foreground"
+            initial={{ y: 10, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            transition={{ delay: 0.3 }}
+          >
+            ¡Hola!, {userData.name.split(' ')[0]}
+          </motion.h1>
+          <motion.p 
+            className="text-muted-foreground mt-2"
+            initial={{ y: 10, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            transition={{ delay: 0.4 }}
+          >
+            Preparando tu menú saludable...
+          </motion.p>
+          <div className="mt-8 flex justify-center gap-1.5">
+            {[0, 1, 2].map((i) => (
+              <motion.div
+                key={i}
+                className="w-2 h-2 bg-green-500 rounded-full"
+                animate={{ scale: [1, 1.5, 1], opacity: [0.3, 1, 0.3] }}
+                transition={{ duration: 1, repeat: Infinity, delay: i * 0.2 }}
+              />
+            ))}
+          </div>
+        </motion.div>
+      </motion.div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-background pb-36">
