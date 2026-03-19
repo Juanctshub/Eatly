@@ -27,6 +27,9 @@ REGLAS DE RESPUESTA:
       { role: 'user', content: message }
     ];
 
+    console.log('Attempting to connect to AI server at http://172.25.136.193:8080/v1/chat/completions');
+    const startTime = Date.now();
+    
     const response = await fetch('http://172.25.136.193:8080/v1/chat/completions', {
       method: 'POST',
       headers: {
@@ -39,12 +42,16 @@ REGLAS DE RESPUESTA:
         messages: messages,
         temperature: 0.7,
         max_tokens: 2000
-      })
+      }),
+      signal: AbortSignal.timeout(8000) // 8 second timeout
     });
 
+    const duration = Date.now() - startTime;
+    console.log(`AI Response received in ${duration}ms status: ${response.status}`);
+
     if (!response.ok) {
-      const errorData = await response.json().catch(() => ({}));
-      throw new Error(errorData.error?.message || `API error: ${response.status}`);
+      const errorText = await response.text().catch(() => 'No error details');
+      throw new Error(`API error ${response.status}: ${errorText}`);
     }
 
     const data = await response.json();
