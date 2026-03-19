@@ -1009,7 +1009,7 @@ export default function EatlyApp() {
               return (
                 <motion.div
                   key={restriction.id}
-                  className="bg-white rounded-3xl p-5 shadow-sm border border-gray-100"
+                  className="bg-card rounded-3xl p-5 shadow-sm border border-border"
                   variants={staggerItem}
                   layout
                   exit={{ opacity: 0, x: -100 }}
@@ -1023,11 +1023,11 @@ export default function EatlyApp() {
                           <span className="text-xl">{reasonInfo.icon}</span>
                         </div>
                         <div>
-                          <h3 className="font-bold text-gray-900 text-xl">{restriction.foodItem}</h3>
+                          <h3 className="font-bold text-foreground text-xl">{restriction.foodItem}</h3>
                         </div>
                       </div>
                       <div className="flex flex-wrap gap-2">
-                        <span className="px-3 py-1.5 bg-gray-100 text-gray-700 rounded-xl text-xs font-semibold">
+                        <span className="px-3 py-1.5 bg-muted text-foreground rounded-xl text-xs font-semibold">
                           {reasonInfo.label}
                         </span>
                         <span
@@ -1037,7 +1037,7 @@ export default function EatlyApp() {
                         </span>
                       </div>
                       {restriction.notes && (
-                        <p className="text-sm text-gray-500 mt-3 bg-gray-50 rounded-xl p-3">
+                        <p className="text-sm text-muted-foreground mt-3 bg-muted rounded-xl p-3">
                           {restriction.notes}
                         </p>
                       )}
@@ -1075,8 +1075,8 @@ export default function EatlyApp() {
         animate={{ opacity: 1, y: 0 }}
       >
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Alimentos</h1>
-          <p className="text-gray-500 text-sm mt-1">{foods.length} alimentos disponibles</p>
+          <h1 className="text-2xl font-bold text-foreground">Alimentos</h1>
+          <p className="text-muted-foreground text-sm mt-1">{foods.length} alimentos disponibles</p>
         </div>
         <motion.button
           onClick={() => {
@@ -1103,7 +1103,7 @@ export default function EatlyApp() {
           className={`px-5 py-2.5 rounded-2xl text-sm font-semibold whitespace-nowrap transition-all ${
             selectedMealType === ''
               ? 'bg-gradient-to-r from-green-500 to-emerald-500 text-white shadow-lg shadow-green-500/30'
-              : 'bg-white text-gray-600 border border-gray-200'
+              : 'bg-card text-muted-foreground border border-border'
           }`}
           whileHover={{ scale: 1.02 }}
           whileTap={{ scale: 0.98 }}
@@ -1117,7 +1117,7 @@ export default function EatlyApp() {
             className={`px-5 py-2.5 rounded-2xl text-sm font-semibold whitespace-nowrap transition-all ${
               selectedMealType === meal.id
                 ? 'bg-gradient-to-r from-green-500 to-emerald-500 text-white shadow-lg shadow-green-500/30'
-                : 'bg-white text-gray-600 border border-gray-200'
+                : 'bg-card text-muted-foreground border border-border'
             }`}
             whileHover={{ scale: 1.02 }}
             whileTap={{ scale: 0.98 }}
@@ -1129,7 +1129,7 @@ export default function EatlyApp() {
 
       {foods.length === 0 ? (
         <motion.div
-          className="bg-white rounded-3xl p-10 shadow-sm border border-gray-100 text-center mt-4"
+          className="bg-card rounded-3xl p-10 shadow-sm border border-border text-center mt-4"
           initial={{ opacity: 0, scale: 0.95 }}
           animate={{ opacity: 1, scale: 1 }}
         >
@@ -1140,8 +1140,8 @@ export default function EatlyApp() {
           >
             <Apple className="w-10 h-10 text-green-500" />
           </motion.div>
-          <p className="text-gray-900 font-bold text-xl">Sin alimentos</p>
-          <p className="text-gray-500 text-sm mt-2 mb-6">Agrega alimentos disponibles para recibir sugerencias</p>
+          <p className="text-foreground font-bold text-xl">Sin alimentos</p>
+          <p className="text-muted-foreground text-sm mt-2 mb-6">Agrega alimentos disponibles para recibir sugerencias</p>
           <motion.button
             onClick={() => {
               setAddType('food');
@@ -1167,7 +1167,7 @@ export default function EatlyApp() {
               .map((food) => (
                 <motion.div
                   key={food.id}
-                  className="bg-white rounded-3xl p-4 shadow-sm border border-gray-100 relative group"
+                  className="bg-card rounded-3xl p-4 shadow-sm border border-border relative group"
                   variants={staggerItem}
                   layout
                   exit={{ opacity: 0, scale: 0.8 }}
@@ -1184,10 +1184,10 @@ export default function EatlyApp() {
                   <div className="w-12 h-12 bg-gradient-to-br from-green-100 to-emerald-100 rounded-2xl flex items-center justify-center mb-3 border border-green-200/50">
                     <ChefHat className="w-6 h-6 text-green-600" />
                   </div>
-                  <h3 className="font-semibold text-gray-900 text-base">{food.name}</h3>
-                  {food.category && <p className="text-xs text-gray-500 mt-1">{food.category}</p>}
+                  <h3 className="font-semibold text-foreground text-base">{food.name}</h3>
+                  {food.category && <p className="text-xs text-muted-foreground mt-1">{food.category}</p>}
                   {food.mealType && (
-                    <span className="inline-block mt-3 px-3 py-1 bg-gradient-to-r from-green-50 to-emerald-50 text-green-600 rounded-full text-xs font-semibold border border-green-100">
+                    <span className="inline-block mt-3 px-3 py-1 bg-green-500/10 text-green-500 rounded-full text-xs font-semibold border border-green-500/20">
                       {mealTypes.find((m) => m.id === food.mealType)?.emoji}{' '}
                       {mealTypes.find((m) => m.id === food.mealType)?.label}
                     </span>
@@ -1210,20 +1210,20 @@ export default function EatlyApp() {
       exit="exit"
     >
       <motion.div className="pt-6" initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }}>
-        <h1 className="text-2xl font-bold text-gray-900">Sugerencias</h1>
-        <p className="text-gray-500 text-sm mt-1">Recomendaciones personalizadas con IA</p>
+        <h1 className="text-2xl font-bold text-foreground">Sugerencias</h1>
+        <p className="text-muted-foreground text-sm mt-1">Recomendaciones personalizadas con IA</p>
       </motion.div>
 
       {/* Meal Type Selector */}
       <motion.div
-        className="bg-white rounded-3xl p-5 shadow-sm border border-gray-100"
+        className="bg-card rounded-3xl p-5 shadow-sm border border-border"
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.1 }}
       >
         <div className="flex items-center gap-2 mb-4">
           <Zap className="w-4 h-4 text-amber-500" />
-          <h2 className="text-sm font-semibold text-gray-700">Selecciona el tipo de comida</h2>
+          <h2 className="text-sm font-semibold text-muted-foreground">Selecciona el tipo de comida</h2>
         </div>
         <div className="flex gap-3">
           {mealTypes.map((meal) => (
@@ -1240,7 +1240,7 @@ export default function EatlyApp() {
             >
               <span className="text-2xl block mb-2">{meal.emoji}</span>
               <p className="font-semibold">{meal.label}</p>
-              <p className={`text-xs mt-1 ${selectedMealType === meal.id ? 'text-white/70' : 'text-gray-400'}`}>
+              <p className={`text-xs mt-1 ${selectedMealType === meal.id ? 'text-white/70' : 'text-muted-foreground'}`}>
                 {meal.time}
               </p>
             </motion.button>
@@ -1331,7 +1331,7 @@ export default function EatlyApp() {
           >
             {suggestions.generalTip && (
               <motion.div
-                className="bg-gradient-to-r from-green-50 to-emerald-50 rounded-3xl p-5 border border-green-100"
+                className="bg-green-500/10 rounded-3xl p-5 border border-green-500/20"
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
               >
@@ -1339,16 +1339,16 @@ export default function EatlyApp() {
                   <div className="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center">
                     <Sparkles className="w-4 h-4 text-green-600" />
                   </div>
-                  <p className="text-sm font-semibold text-green-700">Consejo del día</p>
+                  <p className="text-sm font-semibold text-green-500">Consejo del día</p>
                 </div>
-                <p className="text-green-600 text-sm leading-relaxed">{suggestions.generalTip}</p>
+                <p className="text-green-500/80 text-sm leading-relaxed">{suggestions.generalTip}</p>
               </motion.div>
             )}
 
             {suggestions.suggestions.map((suggestion, index) => (
               <motion.div
                 key={index}
-                className="bg-white rounded-3xl p-5 shadow-sm border border-gray-100"
+                className="bg-card rounded-3xl p-5 shadow-sm border border-border"
                 initial={{ opacity: 0, y: 30 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.1 * index }}
@@ -1364,8 +1364,8 @@ export default function EatlyApp() {
                     <span className="text-3xl">{suggestion.imageEmoji || '🍽️'}</span>
                   </motion.div>
                   <div className="flex-1">
-                    <h3 className="font-bold text-gray-900 text-xl">{suggestion.name}</h3>
-                    <div className="flex items-center gap-4 mt-2 text-xs text-gray-500">
+                    <h3 className="font-bold text-foreground text-xl">{suggestion.name}</h3>
+                    <div className="flex items-center gap-4 mt-2 text-xs text-muted-foreground">
                       {suggestion.prepTime && (
                         <span className="flex items-center gap-1">
                           <Clock className="w-3 h-3" />
@@ -1383,14 +1383,14 @@ export default function EatlyApp() {
                 </div>
 
                 <div className="mt-4">
-                  <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">
+                  <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">
                     Ingredientes
                   </p>
                   <div className="flex flex-wrap gap-2">
                     {suggestion.ingredients.map((ing, i) => (
                       <motion.span
                         key={i}
-                        className="px-3 py-1.5 bg-gray-100 text-gray-700 rounded-xl text-sm font-medium"
+                        className="px-3 py-1.5 bg-muted text-foreground rounded-xl text-sm font-medium border border-border"
                         initial={{ opacity: 0, scale: 0.8 }}
                         animate={{ opacity: 1, scale: 1 }}
                         transition={{ delay: 0.3 + i * 0.05 }}
@@ -1401,21 +1401,21 @@ export default function EatlyApp() {
                   </div>
                 </div>
 
-                <div className="p-4 bg-gradient-to-r from-green-50 to-emerald-50 rounded-2xl border border-green-100 mt-4">
+                <div className="p-4 bg-green-500/10 rounded-2xl border border-green-500/20 mt-4">
                   <div className="flex items-center gap-2 mb-2">
-                    <Shield className="w-4 h-4 text-green-600" />
-                    <p className="text-xs font-semibold text-green-700 uppercase tracking-wider">
+                    <Shield className="w-4 h-4 text-green-500" />
+                    <p className="text-xs font-semibold text-green-500 uppercase tracking-wider">
                       ¿Por qué es seguro?
                     </p>
                   </div>
-                  <p className="text-sm text-green-600 leading-relaxed">{suggestion.safetyReason}</p>
+                  <p className="text-sm text-green-500/80 leading-relaxed">{suggestion.safetyReason}</p>
                 </div>
 
                 <div className="mt-4">
-                  <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">
+                  <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">
                     Beneficios nutricionales
                   </p>
-                  <p className="text-sm text-gray-600 leading-relaxed">{suggestion.nutritionalBenefits}</p>
+                  <p className="text-sm text-muted-foreground leading-relaxed">{suggestion.nutritionalBenefits}</p>
                 </div>
               </motion.div>
             ))}
@@ -1435,14 +1435,14 @@ export default function EatlyApp() {
       onClick={() => setShowAddModal(false)}
     >
       <motion.div
-        className="bg-white rounded-t-[2rem] w-full max-w-lg p-6 max-h-[90vh] overflow-y-auto"
+        className="bg-card rounded-t-[2rem] w-full max-w-lg p-6 max-h-[90vh] overflow-y-auto border-t border-border shadow-2xl"
         initial={{ y: '100%' }}
         animate={{ y: 0 }}
         exit={{ y: '100%' }}
         transition={{ type: 'spring', damping: 30, stiffness: 300 }}
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="w-12 h-1.5 bg-gray-300 rounded-full mx-auto mb-6" />
+        <div className="w-12 h-1.5 bg-muted-foreground/20 rounded-full mx-auto mb-6" />
 
         <motion.div
           className="flex items-center gap-4 mb-6"
@@ -1463,10 +1463,10 @@ export default function EatlyApp() {
             )}
           </div>
           <div>
-            <h2 className="text-2xl font-bold text-gray-900">
+            <h2 className="text-2xl font-bold text-foreground">
               {addType === 'restriction' ? 'Nueva restricción' : 'Nuevo alimento'}
             </h2>
-            <p className="text-gray-500 text-sm">
+            <p className="text-muted-foreground text-sm">
               {addType === 'restriction' ? 'Registra un alimento a evitar' : 'Agrega un alimento disponible'}
             </p>
           </div>
@@ -1482,13 +1482,13 @@ export default function EatlyApp() {
               exit={{ opacity: 0, x: -20 }}
             >
               <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-3">Alimento</label>
+                <label className="block text-sm font-semibold text-muted-foreground mb-3">Alimento</label>
                 <input
                   type="text"
                   value={newRestriction.foodItem}
                   onChange={(e) => setNewRestriction({ ...newRestriction, foodItem: e.target.value })}
                   placeholder="Ej: Soya, Pimienta, Lactosa..."
-                  className="w-full px-5 py-4 rounded-2xl border-2 border-gray-200 focus:border-green-500 focus:ring-0 outline-none transition-colors text-gray-900 placeholder:text-gray-400"
+                  className="w-full px-5 py-4 rounded-2xl border-2 border-border bg-muted focus:border-green-500 focus:ring-0 outline-none transition-colors text-foreground placeholder:text-muted-foreground/50"
                 />
               </div>
 
@@ -1499,16 +1499,16 @@ export default function EatlyApp() {
                     <motion.button
                       key={option.id}
                       onClick={() => setNewRestriction({ ...newRestriction, reason: option.id })}
-                      className={`p-4 rounded-2xl text-left transition-all ${
+                      className={`p-4 rounded-2xl text-left transition-all border-2 ${
                         newRestriction.reason === option.id
-                          ? 'bg-green-50 border-2 border-green-500'
-                          : 'bg-gray-50 border-2 border-transparent hover:bg-gray-100'
+                          ? 'bg-green-500/10 border-green-500'
+                          : 'bg-muted border-transparent hover:bg-muted/80'
                       }`}
                       whileHover={{ scale: 1.02 }}
                       whileTap={{ scale: 0.98 }}
                     >
                       <span className="text-xl">{option.icon}</span>
-                      <p className="font-semibold text-gray-900 mt-1">{option.label}</p>
+                      <p className="font-semibold text-foreground mt-1">{option.label}</p>
                     </motion.button>
                   ))}
                 </div>
@@ -1524,7 +1524,7 @@ export default function EatlyApp() {
                       className={`flex-1 py-4 rounded-2xl text-sm font-semibold transition-all ${
                         newRestriction.severity === option.id
                           ? `bg-gradient-to-r ${option.color} text-white shadow-lg`
-                          : 'bg-gray-100 text-gray-600'
+                          : 'bg-muted text-muted-foreground'
                       }`}
                       whileHover={{ scale: 1.02 }}
                       whileTap={{ scale: 0.98 }}
@@ -1536,7 +1536,7 @@ export default function EatlyApp() {
               </div>
 
               <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-3">
+                <label className="block text-sm font-semibold text-muted-foreground mb-3">
                   Notas adicionales (opcional)
                 </label>
                 <input
@@ -1544,7 +1544,7 @@ export default function EatlyApp() {
                   value={newRestriction.notes}
                   onChange={(e) => setNewRestriction({ ...newRestriction, notes: e.target.value })}
                   placeholder="Ej: Reacción severa, consultar siempre..."
-                  className="w-full px-5 py-4 rounded-2xl border-2 border-gray-200 focus:border-green-500 focus:ring-0 outline-none transition-colors text-gray-900 placeholder:text-gray-400"
+                  className="w-full px-5 py-4 rounded-2xl border-2 border-border bg-muted focus:border-green-500 focus:ring-0 outline-none transition-colors text-foreground placeholder:text-muted-foreground/50"
                 />
               </div>
 
@@ -1567,29 +1567,29 @@ export default function EatlyApp() {
               exit={{ opacity: 0, x: -20 }}
             >
               <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-3">Alimento</label>
+                <label className="block text-sm font-semibold text-muted-foreground mb-3">Alimento</label>
                 <input
                   type="text"
                   value={newFood.name}
                   onChange={(e) => setNewFood({ ...newFood, name: e.target.value })}
                   placeholder="Ej: Pollo, Arroz, Brócoli..."
-                  className="w-full px-5 py-4 rounded-2xl border-2 border-gray-200 focus:border-green-500 focus:ring-0 outline-none transition-colors text-gray-900 placeholder:text-gray-400"
+                  className="w-full px-5 py-4 rounded-2xl border-2 border-border bg-muted focus:border-green-500 focus:ring-0 outline-none transition-colors text-foreground placeholder:text-muted-foreground/50"
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-3">Categoría (opcional)</label>
+                <label className="block text-sm font-semibold text-muted-foreground mb-3">Categoría (opcional)</label>
                 <input
                   type="text"
                   value={newFood.category}
                   onChange={(e) => setNewFood({ ...newFood, category: e.target.value })}
                   placeholder="Ej: Proteína, Vegetal, Carbohidrato..."
-                  className="w-full px-5 py-4 rounded-2xl border-2 border-gray-200 focus:border-green-500 focus:ring-0 outline-none transition-colors text-gray-900 placeholder:text-gray-400"
+                  className="w-full px-5 py-4 rounded-2xl border-2 border-border bg-muted focus:border-green-500 focus:ring-0 outline-none transition-colors text-foreground placeholder:text-muted-foreground/50"
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-3">Tipo de comida</label>
+                <label className="block text-sm font-semibold text-muted-foreground mb-3">Tipo de comida</label>
                 <div className="flex gap-2">
                   {mealTypes.map((meal) => (
                     <motion.button
@@ -1598,7 +1598,7 @@ export default function EatlyApp() {
                       className={`flex-1 py-4 rounded-2xl text-sm font-medium transition-all ${
                         newFood.mealType === meal.id
                           ? 'bg-gradient-to-br from-green-500 to-emerald-500 text-white shadow-lg shadow-green-500/30'
-                          : 'bg-gray-100 text-gray-600'
+                          : 'bg-muted text-muted-foreground'
                       }`}
                       whileHover={{ scale: 1.02 }}
                       whileTap={{ scale: 0.98 }}
