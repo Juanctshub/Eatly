@@ -27,22 +27,18 @@ REGLAS DE RESPUESTA:
       { role: 'user', content: message }
     ];
 
-    console.log('Attempting to connect to AI server at https://spa-attach-latest-try.trycloudflare.com/v1/chat/completions');
+    console.log('Attempting to connect to AI server via GML5 Proxy at https://ready-weeks-listen.loca.lt/api/ai/chat');
     const startTime = Date.now();
     
-    const response = await fetch('https://spa-attach-latest-try.trycloudflare.com/v1/chat/completions', {
+    const response = await fetch('https://ready-weeks-listen.loca.lt/api/ai/chat', {
       method: 'POST',
       headers: {
-        'Content-Type': 'application/json',
-        'Authorization': 'Bearer Z.ai'
+        'Content-Type': 'application/json'
       },
       body: JSON.stringify({
-        model: 'default',
-        messages: messages,
-        temperature: 0.7,
-        max_tokens: 2000
+        messages: messages
       }),
-      signal: AbortSignal.timeout(8000) // 8 second timeout
+      signal: AbortSignal.timeout(10000) // 10 second timeout
     });
 
     const duration = Date.now() - startTime;
