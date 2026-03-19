@@ -970,7 +970,7 @@ export default function EatlyApp() {
 
       {restrictions.length === 0 ? (
         <motion.div
-          className="bg-white rounded-3xl p-10 shadow-sm border border-gray-100 text-center mt-4"
+          className="bg-card rounded-3xl p-10 shadow-sm border border-border text-center mt-4"
           initial={{ opacity: 0, scale: 0.95 }}
           animate={{ opacity: 1, scale: 1 }}
         >
@@ -1800,10 +1800,10 @@ export default function EatlyApp() {
                           <item.icon className="w-6 h-6 text-white" />
                         </div>
                         <div className="flex-1 text-left">
-                          <p className="font-semibold text-gray-900">{item.label}</p>
-                          <p className="text-sm text-gray-500">{item.desc}</p>
+                          <p className="font-semibold text-foreground">{item.label}</p>
+                          <p className="text-sm text-muted-foreground">{item.desc}</p>
                         </div>
-                        <ChevronRight className="w-5 h-5 text-gray-400" />
+                        <ChevronRight className="w-5 h-5 text-muted-foreground" />
                       </motion.button>
                     ))}
 
@@ -2112,8 +2112,8 @@ export default function EatlyApp() {
                       <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
                         <UserX className="w-8 h-8 text-red-500" />
                       </div>
-                      <h3 className="text-xl font-bold text-center text-gray-900 mb-2">¿Eliminar cuenta?</h3>
-                      <p className="text-gray-500 text-center mb-6">Esta acción es permanente y no se puede deshacer. Todos tus datos serán eliminados.</p>
+                      <h3 className="text-xl font-bold text-center text-foreground mb-2">¿Eliminar cuenta?</h3>
+                      <p className="text-muted-foreground text-center mb-6">Esta acción es permanente y no se puede deshacer. Todos tus datos serán eliminados.</p>
                       <div className="flex gap-3">
                         <motion.button
                           onClick={() => setShowDeleteConfirm(false)}

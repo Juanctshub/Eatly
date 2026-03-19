@@ -50,7 +50,8 @@ REGLAS DE RESPUESTA:
     console.error('Chat API Error:', error);
     return NextResponse.json({ 
       success: false, 
-      error: 'Lo siento, tuve un problema al procesar tu mensaje. Por favor intenta de nuevo.' 
+      error: 'Lo siento, tuve un problema al procesar tu mensaje. Por favor intenta de nuevo.',
+      details: error.message
     }, { status: 500 });
   }
 }
