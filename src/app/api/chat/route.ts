@@ -34,8 +34,7 @@ REGLAS DE RESPUESTA:
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': 'Bearer Z.ai',
-        'X-Token': 'Z.ai'
+        'Authorization': 'Bearer Z.ai'
       },
       body: JSON.stringify({
         model: 'default',
