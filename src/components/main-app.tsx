@@ -1747,7 +1747,7 @@ export default function EatlyApp() {
                   >
                     <ArrowLeft className="w-5 h-5 text-gray-600" />
                   </motion.button>
-                  <h2 className="text-lg font-bold text-gray-900">
+                  <h2 className="text-lg font-bold text-foreground">
                     {settingsSection === 'profile' ? 'Perfil' :
                      settingsSection === 'notifications' ? 'Notificaciones' :
                      settingsSection === 'personalization' ? 'Personalización' :
@@ -1777,8 +1777,8 @@ export default function EatlyApp() {
                         <User className="w-7 h-7 text-white" />
                       </div>
                       <div className="flex-1 text-left">
-                        <p className="font-bold text-gray-900">{userData.name}</p>
-                        <p className="text-sm text-gray-500">{userData.email}</p>
+                        <p className="font-bold text-foreground">{userData.name}</p>
+                        <p className="text-sm text-muted-foreground">{userData.email}</p>
                       </div>
                       <ChevronRight className="w-5 h-5 text-gray-400" />
                     </motion.button>

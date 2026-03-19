@@ -21,24 +21,34 @@ REGLAS DE RESPUESTA:
 4. Mantén tus respuestas concisas y fáciles de leer en dispositivos móviles.
 5. Usa links si sugieres recetas externas de sitios confiables.`;
 
-    const zai = await ZAI.create();
-    
     const messages = [
       { role: 'system', content: systemPrompt },
       ...(conversationHistory || []),
       { role: 'user', content: message }
     ];
 
-    const response = await zai.chat.completions.create({
-      messages: messages as any
+    const response = await fetch('http://172.25.136.193:8080/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer Z.ai',
+        'X-Token': 'Z.ai'
+      },
+      body: JSON.stringify({
+        model: 'default',
+        messages: messages,
+        temperature: 0.7,
+        max_tokens: 2000
+      })
     });
 
-    const aiContent = 
-      response.choices?.[0]?.message?.content || 
-      response.message?.content || 
-      response.data?.content || 
-      response.content ||
-      (typeof response === 'string' ? response : "Lo siento, no pude procesar tu solicitud.");
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      throw new Error(errorData.error?.message || `API error: ${response.status}`);
+    }
+
+    const data = await response.json();
+    const aiContent = data.choices?.[0]?.message?.content || "Lo siento, no pude procesar tu solicitud.";
 
     return NextResponse.json({
       success: true,
