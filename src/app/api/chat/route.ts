@@ -7,6 +7,12 @@ export async function POST(req: Request) {
 
     // Groq configuration
     const GROQ_API_KEY = process.env.GROQ_API_KEY;
+    if (!GROQ_API_KEY) {
+      return NextResponse.json({ 
+        success: false, 
+        error: 'Llave de Groq no encontrada. Por favor REINICIA tu servidor (npm run dev) para cargar el archivo .env.local.'
+      }, { status: 500 });
+    }
     const MODEL = 'llama-3.3-70b-versatile';
 
     const systemPrompt = `[ROL Y PROPÓSITO]
@@ -47,6 +53,7 @@ Momento del día: ${mealType || 'Actualidad'}
       { role: 'user', content: message }
     ];
 
+    console.log('Sending request to Groq...');
     const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
       method: 'POST',
       headers: {
@@ -63,8 +70,11 @@ Momento del día: ${mealType || 'Actualidad'}
       })
     });
 
+    console.log('Groq Response Status:', response.status);
     if (!response.ok) {
-      throw new Error(`Groq API Error: ${response.statusText}`);
+      const errorData = await response.text();
+      console.error('Groq Error Detail:', errorData);
+      throw new Error(`Groq API Error: ${response.statusText} - ${errorData}`);
     }
 
     const data = await response.json();

@@ -12,6 +12,9 @@ export async function POST(req: Request) {
 
     // Groq configuration
     const GROQ_API_KEY = process.env.GROQ_API_KEY;
+    if (!GROQ_API_KEY) {
+      throw new Error('Llave de Groq no encontrada. Por favor REINICIA el servidor.');
+    }
     const MODEL = 'llama-3.3-70b-versatile';
 
     const systemPrompt = `Eres el Nutriólogo Residente de "Antigravity". Tu estilo es directo, sin filtros, honesto y motivador (Tough Love).

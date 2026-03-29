@@ -139,6 +139,10 @@ export default function RokoPage({
         }),
       });
 
+      if (!response.ok) {
+        throw new Error('Servidor de IA fuera de servicio');
+      }
+
       const data = await response.json();
       if (data.success && data.response) {
         setMessages((prev) => [...prev, {
@@ -147,9 +151,17 @@ export default function RokoPage({
           content: data.response,
           timestamp: new Date(),
         }]);
+      } else {
+        throw new Error(data.error || 'Respuesta vacía de Groq');
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('Chat error:', error);
+      setMessages((prev) => [...prev, {
+        id: (Date.now() + 1).toString(),
+        role: 'assistant',
+        content: `⚠️ **Error de Conexión:** ${error.message}. Por favor, verifica tu conexión a internet o asegúrate de que el servidor esté configurado correctamente.`,
+        timestamp: new Date(),
+      }]);
     } finally {
       setLoading(false);
     }
