@@ -1,96 +1,86 @@
 import { NextResponse } from 'next/server';
-import ZAI from 'z-ai-web-dev-sdk';
 
 export async function POST(req: Request) {
   try {
     const body = await req.json();
-    const { message, restrictions, foods, mealType, conversationHistory } = body;
+    const { message, restrictions, foods, mealType, userData, conversationHistory } = body;
 
-    const systemPrompt = `Eres Roko, el asistente de nutrición inteligente oficial de la app Eatly. 
-Tu misión es ayudar al usuario a comer sano basándote en sus restricciones médicas y alimentos disponibles.
+    // Groq configuration
+    const GROQ_API_KEY = process.env.GROQ_API_KEY;
+    const MODEL = 'llama-3.3-70b-versatile';
 
-DATOS DEL USUARIO:
-- Restricciones/Alergias: ${restrictions?.map((r: any) => `${r.foodItem} (${r.reason} - ${r.severity})`).join(', ') || 'Ninguna'}
-- Alimentos en casa: ${foods?.map((f: any) => f.name).join(', ') || 'No especificados'}
-- Momento actual: ${mealType || 'Almuerzo'}
+    const systemPrompt = `[ROL Y PROPÓSITO]
+Eres el Nutriólogo Residente de la app "Antigravity". No eres una IA genérica ni un asistente médico aburrido de hospital. Eres un experto en nutrición de alto nivel, pero te comunicas como el mejor amigo del usuario: el que le dice la verdad sin rodeos, sin filtros, con confianza, humor y cero moralismo barato. Tu objetivo es ayudar al usuario a alcanzar sus metas físicas y de salud basándote en su contexto real, rompiendo los mitos de la nutrición y dándole soluciones prácticas, no sermones.
 
-REGLAS DE RESPUESTA:
-1. Sé amable, profesional y motivador. Usa emojis de comida 🥗🍎.
-2. NUNCA sugieras alimentos prohibidos por las restricciones del usuario.
-3. Si el usuario pregunta algo fuera de nutrición, redirígelo amablemente.
-4. Mantén tus respuestas concisas y fáciles de leer en dispositivos móviles.
-5. Usa links si sugieres recetas externas de sitios confiables.`;
+[CONTEXTO DEL USUARIO - DATOS DE ANTIGRAVITY]
+AQUÍ ESTÁ LA REALIDAD DEL USUARIO AL QUE LE HABLAS HOY:
+Nombre: ${userData?.name || 'Usuario'}
+Meta actual: ${userData?.goal || 'Mantenimiento'}
+Restricciones/Alergias: ${restrictions?.map((r: any) => `${r.foodItem} (${r.reason})`).join(', ') || 'Ninguna'}
+Alimentos Disponibles: ${foods?.map((f: any) => f.name).join(', ') || 'No especificados'}
+Nivel de actividad: ${userData?.activityLevel || 'Moderado'}
+Estado de ánimo/Progreso reciente: ${userData?.recentLogs || 'Sin registros recientes'}
+Momento del día: ${mealType || 'Actualidad'}
+
+[TONO Y PERSONALIDAD (EL "SIN FILTROS")]
+- Cero Formalidad Robótica: Prohibido usar frases como "Como modelo de lenguaje...", "Recuerda consultar a un profesional..." o "Es importante destacar...". Habla de tú a tú. Usa jerga relajada, analogías divertidas y sé crudo pero amistoso.
+- Honestidad Brutal pero Empática (Tough Love): Si el usuario falló, no lo regañes, pero dile la verdad y dale un plan de acción inmediato. "Cero culpas, pura acción".
+- Simplifica la Ciencia: Explica lo complejo como si estuvieran tomando un café.
+
+[REGLAS DE OPERACIÓN]
+1. Respeta las Restricciones a Muerte: NUNCA sugieras algo prohibido por sus alergias.
+2. Enfoque Práctico: Dale opciones de comida real que pueda encontrar fácil.
+3. Mentalidad Antigravity: Fomenta desafiar los límites y elevar su estilo de vida.
+
+[ESTRUCTURA DE TUS RESPUESTAS]
+1. El Gancho: Empieza directo y con personalidad.
+2. El Análisis sin Filtros: Di lo que piensas de su situación.
+3. El Plan de Acción: 1 o 2 recomendaciones hiper-prácticas adaptadas a lo que SÍ puede comer.
+4. El Cierre: Frase motivadora o graciosa.`;
 
     const messages = [
       { role: 'system', content: systemPrompt },
-      ...(conversationHistory || []),
+      ...(conversationHistory || []).map((m: any) => ({
+        role: m.role === 'ai' ? 'assistant' : m.role,
+        content: m.content
+      })),
       { role: 'user', content: message }
     ];
 
-    // Use environment variable or fallback to the previous URL
-    const AI_URL = process.env.AI_SERVER_URL || 'https://ready-weeks-listen.loca.lt/api/ai/chat';
-    
-    console.log(`Attempting to connect to AI server at ${AI_URL}`);
-    const startTime = Date.now();
-    
-    try {
-      const response = await fetch(AI_URL, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          messages: messages
-        }),
-        signal: AbortSignal.timeout(8000) // 8 second timeout
-      });
+    const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${GROQ_API_KEY}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        model: MODEL,
+        messages: messages,
+        temperature: 0.8,
+        max_tokens: 1024,
+        top_p: 1,
+        stream: false
+      })
+    });
 
-      if (response.ok) {
-        const data = await response.json();
-        const aiContent = data.choices?.[0]?.message?.content || data.response || "Lo siento, no pude procesar tu solicitud.";
-
-        return NextResponse.json({
-          success: true,
-          response: aiContent,
-          timestamp: new Date().toISOString()
-        });
-      }
-    } catch (fetchError) {
-      console.warn('AI fetch failed, using internal fallback logic:', fetchError);
+    if (!response.ok) {
+      throw new Error(`Groq API Error: ${response.statusText}`);
     }
 
-    // --- SMART FALLBACK LOGIC ---
-    // If API fails, Roko uses internal knowledge to stay useful
-    const lowerMsg = message.toLowerCase();
-    let fallbackMsg = "Como tu asistente Roko 🥗, he analizado tu petición. Basado en tus restricciones ";
-    
-    if (restrictions && restrictions.length > 0) {
-      const resList = restrictions.map((r: any) => r.foodItem).join(', ');
-      fallbackMsg += `de **${resList}**, te recomiendo optar por ingredientes naturales frescos. `;
-    } else {
-      fallbackMsg += "generales, te sugiero priorizar proteínas magras y vegetales de temporada. ";
-    }
-
-    if (lowerMsg.includes('receta') || lowerMsg.includes('cocinar')) {
-      fallbackMsg += "\n\nPara una receta rápida: Saltea tus vegetales favoritos con aceite de oliva, agrega una proteína segura (pollo o tofu) y sazona con hierbas naturales en lugar de salsas procesadas.";
-    } else if (lowerMsg.includes('restaurante') || lowerMsg.includes('comer fuera')) {
-      fallbackMsg += "\n\nSi sales a comer, siempre informa al mesero sobre tus alergias y pide platos 'al natural' para evitar contaminaciones ocultas.";
-    } else {
-      fallbackMsg += "\n\n¿Tienes algún ingrediente específico que quieras verificar ahora mismo?";
-    }
+    const data = await response.json();
+    const aiContent = data.choices[0].message.content;
 
     return NextResponse.json({
       success: true,
-      response: fallbackMsg,
-      timestamp: new Date().toISOString(),
-      isFallback: true
+      response: aiContent,
+      timestamp: new Date().toISOString()
     });
 
   } catch (error: any) {
-    console.error('Chat API Fatal Error:', error);
+    console.error('Chat API Error:', error);
     return NextResponse.json({ 
       success: false, 
-      error: 'Hubo un problema técnico, pero sigo aquí para ayudarte.',
+      error: 'Hubo un problema con la conexión a Groq.',
       details: error.message
     }, { status: 500 });
   }

@@ -6,6 +6,7 @@ import { signOut } from 'next-auth/react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useTheme } from '@/contexts/ThemeContext';
 import RokoChat from '@/components/shared/RokoChat';
+import RokoPage from '@/components/shared/RokoPage';
 import AIChatSection from '@/components/shared/AIChatSection';
 import RestaurantMap from '@/components/shared/RestaurantMap';
 import BarcodeScanner from '@/components/shared/BarcodeScanner';
@@ -39,6 +40,7 @@ import {
   Palette,
   Key,
   UserX,
+  Target,
   Moon,
   Sun,
   Volume2,
@@ -104,7 +106,7 @@ const tabs = [
   { id: 'restrictions', label: 'Restricciones', icon: AlertTriangle },
   { id: 'add', label: '', icon: Plus },
   { id: 'foods', label: 'Comidas', icon: Utensils },
-  { id: 'suggestions', label: 'Sugerencias', icon: Lightbulb },
+  { id: 'roko', label: 'Roko', icon: Sparkles },
 ];
 
 const mealTypes = [
@@ -187,6 +189,9 @@ export default function EatlyApp() {
     name: 'Usuario',
     email: 'usuario@email.com',
     phone: '+52 123 456 7890',
+    goal: 'Bajar de peso',
+    activityLevel: 'Moderado',
+    recentLogs: 'He comido sano hoy',
   });
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   
@@ -1647,7 +1652,16 @@ export default function EatlyApp() {
           {activeTab === 'home' && <div key="home" className="bg-background">{renderHome()}</div>}
           {activeTab === 'restrictions' && <div key="restrictions" className="bg-background">{renderRestrictions()}</div>}
           {activeTab === 'foods' && <div key="foods" className="bg-background">{renderFoods()}</div>}
-          {activeTab === 'suggestions' && <div key="suggestions" className="bg-background">{renderSuggestions()}</div>}
+          {activeTab === 'roko' && (
+            <div key="roko" className="bg-background h-full">
+              <RokoPage 
+                restrictions={restrictions} 
+                foods={foods} 
+                mealType={selectedMealType} 
+                userData={userData}
+              />
+            </div>
+          )}
         </AnimatePresence>
       </div>
 
@@ -1880,7 +1894,9 @@ export default function EatlyApp() {
                     {[
                       { icon: User, label: 'Nombre', value: userData.name, key: 'name' },
                       { icon: Mail, label: 'Email', value: userData.email, key: 'email' },
-                      { icon: Phone, label: 'Teléfono', value: userData.phone, key: 'phone' },
+                      { icon: Target, label: 'Meta', value: userData.goal, key: 'goal' },
+                      { icon: Zap, label: 'Actividad', value: userData.activityLevel, key: 'activityLevel' },
+                      { icon: Edit3, label: 'Estado/Logs', value: userData.recentLogs, key: 'recentLogs' },
                     ].map((field) => (
                       <div key={field.key} className="bg-card rounded-2xl p-4 border border-border shadow-sm">
                         <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">{field.label}</label>
