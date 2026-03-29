@@ -39,7 +39,7 @@ function AppContent() {
       if (!localStorage.getItem('dietadvisor_user')) {
         setAppState('auth');
       }
-    }, 2000);
+    }, 1000); // Reduced from 2000
 
     return () => clearTimeout(splashTimer);
   }, []);
@@ -56,7 +56,7 @@ function AppContent() {
     if (appState === 'loading') {
       const timer = setTimeout(() => {
         setAppState('app');
-      }, 3500);
+      }, 1500); // Reduced from 3500
       return () => clearTimeout(timer);
     }
   }, [appState]);

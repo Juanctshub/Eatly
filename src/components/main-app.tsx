@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useMemo, useCallback } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { signOut } from 'next-auth/react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useTheme } from '@/contexts/ThemeContext';
@@ -157,6 +157,7 @@ const staggerItem = {
 
 export default function EatlyApp() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { theme, toggleTheme, setTheme } = useTheme();
   const [activeTab, setActiveTab] = useState('home');
   const [restrictions, setRestrictions] = useState<Restriction[]>([]);
@@ -213,6 +214,18 @@ export default function EatlyApp() {
     category: '',
     mealType: '',
   });
+
+  // Handle URL actions (Deep linking support)
+  useEffect(() => {
+    const action = searchParams.get('action');
+    if (action === 'chat') {
+      setShowRokoSection(true);
+    } else if (action === 'restaurants') {
+      setShowRestaurantMap(true);
+    } else if (action === 'scan') {
+      setShowScanner(true);
+    }
+  }, [searchParams]);
 
   // Fetch data on mount (from local storage)
   useEffect(() => {
