@@ -70,7 +70,9 @@ export default function RokoPage({
   // Initial greeting and proactive suggestion
   useEffect(() => {
     if (messages.length === 0) {
-      const greeting = `¡Hola! Soy Roko, tu asistente nutricional inteligente. He analizado tus **${restrictions.length} restricciones** y noto que tienes **${foods.length} alimentos seguros** registrados. Estaba pensando en una recomendación para tu ${mealType || 'próxima comida'}...`;
+      const greeting = `¡Hola, **${userData.name}**! Te estaba esperando. Veo que sigues enfocado en **${userData.goal}**. Tengo presente tus **${restrictions.length} restricciones** (especialmente lo relacionado a ${restrictions[0]?.foodItem || 'tus alergias'}) y los alimentos que tienes a mano. 
+
+¿En qué puedo ayudarte hoy con tu alimentación?`;
       
       const timer = setTimeout(() => {
         setMessages([{

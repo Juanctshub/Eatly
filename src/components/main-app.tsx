@@ -848,31 +848,6 @@ export default function EatlyApp() {
         <ChevronRight className="w-6 h-6 text-white/70 relative z-10" />
       </motion.button>
 
-      {/* Roko AI Chat Card */}
-      <motion.button
-        onClick={() => {
-          setShowRokoSection(true);
-          playSound('click');
-          vibrate(30);
-        }}
-        className="w-full bg-gradient-to-r from-violet-500 to-purple-600 rounded-3xl p-5 shadow-lg shadow-violet-500/25 flex items-center gap-4 relative overflow-hidden"
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.2 }}
-        whileHover={{ scale: 1.01 }}
-        whileTap={{ scale: 0.99 }}
-      >
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_80%_20%,rgba(255,255,255,0.15),transparent_50%)]" />
-        <div className="w-14 h-14 bg-white/20 backdrop-blur-sm rounded-2xl flex items-center justify-center relative z-10">
-          <span className="text-3xl">🤖</span>
-        </div>
-        <div className="text-left flex-1 relative z-10">
-          <p className="font-semibold text-white text-lg">Roko tu Nutriólogo</p>
-          <p className="text-sm text-white/80">Chatea con tu asistente de dieta</p>
-        </div>
-        <Sparkles className="w-6 h-6 text-white/70 relative z-10" />
-      </motion.button>
-
       {/* Active Restrictions */}
       {restrictions.length > 0 && (
         <motion.div
@@ -1370,7 +1345,7 @@ export default function EatlyApp() {
                 initial={{ opacity: 0, y: 30 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.1 * index }}
-                whileHover={{ y: -2, shadow: '0 10px 40px rgba(0,0,0,0.1)' }}
+                whileHover={{ y: -2, boxShadow: '0 10px 40px rgba(0,0,0,0.1)' }}
               >
                 <div className="flex items-start gap-4">
                   <motion.div
