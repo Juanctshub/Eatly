@@ -355,8 +355,8 @@ export default function EatlyApp() {
         playSound('success');
         vibrate([50, 100, 50]);
       } else {
-        console.error('[Eatly] Error en API Onboarding:', result.error);
-        setErrorToast(`Error: ${result.error || 'Roko no pudo guardar tu perfil. Reintenta.'}`);
+        console.error('[Eatly] Error en API Onboarding:', result.error, result.details);
+        setErrorToast(`Error: ${result.error}. Detalle: ${result.details || 'Reintenta.'}`);
       }
     } catch (error: any) {
       console.error('[Eatly] Fallo crítico de red en Onboarding:', error.message);
@@ -1819,7 +1819,10 @@ export default function EatlyApp() {
     <div className="min-h-screen bg-gray-50 dark:bg-gray-950 text-gray-900 dark:text-gray-100 flex flex-col font-sans overflow-hidden">
       <AnimatePresence>
         {showOnboarding && (
-          <OnboardingRoko onComplete={handleOnboardingComplete} />
+          <OnboardingRoko 
+            onComplete={handleOnboardingComplete} 
+            isSubmitting={loading}
+          />
         )}
       </AnimatePresence>
       

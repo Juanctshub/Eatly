@@ -15,9 +15,10 @@ import {
 
 interface OnboardingProps {
   onComplete: (data: any) => void;
+  isSubmitting?: boolean;
 }
 
-export default function OnboardingRoko({ onComplete }: OnboardingProps) {
+export default function OnboardingRoko({ onComplete, isSubmitting = false }: OnboardingProps) {
   const [step, setStep] = useState(0);
   const [formData, setFormData] = useState({
     name: '',
@@ -27,7 +28,6 @@ export default function OnboardingRoko({ onComplete }: OnboardingProps) {
   });
   const [currentInput, setCurrentInput] = useState('');
   const [isTyping, setIsTyping] = useState(false);
-  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const steps = [
     {
@@ -82,7 +82,6 @@ export default function OnboardingRoko({ onComplete }: OnboardingProps) {
         setCurrentInput('');
         setStep(step + 1);
       } else {
-        setIsSubmitting(true);
         onComplete(next);
       }
       return next;
@@ -90,7 +89,6 @@ export default function OnboardingRoko({ onComplete }: OnboardingProps) {
   };
 
   const handleOptionClick = (option: string) => {
-    setIsSubmitting(true);
     setFormData(prev => {
       const finalData = { ...prev, activityLevel: option };
       onComplete(finalData);
