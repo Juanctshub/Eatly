@@ -54,6 +54,13 @@ export default function BarcodeScanner({
   const [manualCode, setManualCode] = useState('');
   const [cameraActive, setCameraActive] = useState(false);
   const [safetyStatus, setSafetyStatus] = useState<'safe' | 'warning' | 'danger' | null>(null);
+  const [aiAnalysis, setAiAnalysis] = useState<{
+    safety: 'safe' | 'warning' | 'danger';
+    verdict: string;
+    reason: string;
+    risks: string[];
+  } | null>(null);
+  const [aiLoading, setAiLoading] = useState(false);
   const videoRef = useRef<HTMLVideoElement>(null);
   const streamRef = useRef<MediaStream | null>(null);
   const [model, setModel] = useState<mobilenet.MobileNet | null>(null);
@@ -142,7 +149,7 @@ export default function BarcodeScanner({
       const response = await fetch(url);
       const data = await response.json();
 
-      let fetchedProduct = null;
+      let fetchedProduct: Product | null = null;
 
       if (isBarcode && data.status === 1) {
         fetchedProduct = data.product;
@@ -153,6 +160,11 @@ export default function BarcodeScanner({
       if (fetchedProduct) {
         setProduct(fetchedProduct);
         analyzeProductSafety(fetchedProduct);
+        
+        // Start AI Deep Analysis
+        if (fetchedProduct.ingredients_text) {
+          analyzeWithRoko(fetchedProduct.ingredients_text);
+        }
       } else {
         setError('No se pudo identificar el alimento. Intenta escribirlo de otra forma.');
       }
@@ -161,6 +173,24 @@ export default function BarcodeScanner({
       setError('Error al analizar la imagen. Verifica tu conexión.');
     } finally {
       setLoading(false);
+    }
+  };
+
+  // Deep AI Analysis
+  const analyzeWithRoko = async (ingredients: string) => {
+    setAiLoading(true);
+    try {
+      const res = await fetch('/api/ai/analyze-product', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ingredients, restrictions }),
+      });
+      const data = await res.json();
+      setAiAnalysis(data);
+    } catch (err) {
+      console.error('Roko Analysis Error:', err);
+    } finally {
+      setAiLoading(false);
     }
   };
 
@@ -372,25 +402,79 @@ export default function BarcodeScanner({
 
               {/* Safety Badge */}
               <div className="flex justify-center mb-6">
-                {safetyStatus === 'safe' && (
-                  <div className="flex items-center gap-2 bg-green-100 text-green-700 px-6 py-3 rounded-full">
-                    <CheckCircle className="w-6 h-6" />
-                    <span className="font-bold">Seguro para ti</span>
-                  </div>
-                )}
-                {safetyStatus === 'warning' && (
-                  <div className="flex items-center gap-2 bg-amber-100 text-amber-700 px-6 py-3 rounded-full">
-                    <AlertTriangle className="w-6 h-6" />
-                    <span className="font-bold">Precaución</span>
-                  </div>
-                )}
-                {safetyStatus === 'danger' && (
+                {safetyStatus === 'danger' || aiAnalysis?.safety === 'danger' ? (
                   <div className="flex items-center gap-2 bg-red-100 text-red-700 px-6 py-3 rounded-full">
                     <AlertTriangle className="w-6 h-6" />
                     <span className="font-bold">No recomendado</span>
                   </div>
+                ) : safetyStatus === 'warning' || aiAnalysis?.safety === 'warning' ? (
+                  <div className="flex items-center gap-2 bg-amber-100 text-amber-700 px-6 py-3 rounded-full">
+                    <AlertTriangle className="w-6 h-6" />
+                    <span className="font-bold">Precaución</span>
+                  </div>
+                ) : (
+                  <div className="flex items-center gap-2 bg-green-100 text-green-700 px-6 py-3 rounded-full">
+                    <CheckCircle className="w-6 h-6" />
+                    <span className="font-bold">{aiLoading ? 'Analizando...' : 'Seguro para ti'}</span>
+                  </div>
                 )}
               </div>
+
+              {/* Roko AI Verdict Section */}
+              <motion.div 
+                className={`mb-6 p-5 rounded-3xl border-2 transition-all ${
+                  aiLoading ? 'bg-violet-50 border-violet-100' :
+                  aiAnalysis?.safety === 'danger' ? 'bg-red-50 border-red-100' :
+                  aiAnalysis?.safety === 'warning' ? 'bg-amber-50 border-amber-100' :
+                  'bg-green-50 border-green-100'
+                }`}
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+              >
+                <div className="flex items-center gap-3 mb-2">
+                  <div className={`p-2 rounded-xl ${
+                    aiLoading ? 'bg-violet-500' :
+                    aiAnalysis?.safety === 'danger' ? 'bg-red-500' :
+                    aiAnalysis?.safety === 'warning' ? 'bg-amber-500' :
+                    'bg-green-500'
+                  }`}>
+                    <Shield className="w-5 h-5 text-white" />
+                  </div>
+                  <div>
+                    <h3 className="text-xs font-bold uppercase tracking-wider text-gray-500">Veredicto de Roko</h3>
+                    <p className={`font-bold ${
+                      aiLoading ? 'text-violet-600' :
+                      aiAnalysis?.safety === 'danger' ? 'text-red-700' :
+                      aiAnalysis?.safety === 'warning' ? 'text-amber-700' :
+                      'text-green-700'
+                    }`}>
+                      {aiLoading ? 'Analizando ingredientes complejos...' : aiAnalysis?.verdict || 'Análisis completado'}
+                    </p>
+                  </div>
+                </div>
+                
+                {aiLoading ? (
+                  <div className="flex items-center gap-2 mt-4">
+                    <Loader2 className="w-4 h-4 text-violet-500 animate-spin" />
+                    <p className="text-xs text-violet-400">Roko está detectando alérgenos ocultos...</p>
+                  </div>
+                ) : (
+                  <>
+                    <p className="text-sm text-gray-700 leading-relaxed mb-3">
+                      {aiAnalysis?.reason}
+                    </p>
+                    {aiAnalysis?.risks && aiAnalysis.risks.length > 0 && (
+                      <div className="flex flex-wrap gap-2">
+                        {aiAnalysis.risks.map((risk, i) => (
+                          <span key={i} className="px-2 py-1 bg-white/50 border border-red-100 text-red-600 text-[10px] font-bold rounded-lg uppercase">
+                            ⚠️ {risk}
+                          </span>
+                        ))}
+                      </div>
+                    )}
+                  </>
+                )}
+              </motion.div>
 
               {/* Product Info */}
               <div className="flex gap-4 mb-6">

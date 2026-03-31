@@ -147,6 +147,42 @@ Si no estás seguro, responde "Otro".`;
     }
   }
 
+  /**
+   * Deep analysis of ingredients against user restrictions
+   */
+  static async analyzeIngredients(ingredients: string, restrictions: any[]): Promise<{
+    safety: 'safe' | 'warning' | 'danger';
+    verdict: string;
+    reason: string;
+    risks: string[];
+  }> {
+    const userContext = restrictions.map(r => `${r.foodItem} (${r.reason})`).join(', ');
+    const systemPrompt = `Eres Roko, el experto en seguridad alimentaria de Antigravity. 
+Tu misión es analizar la lista de ingredientes proporcionada y compararla con las restricciones del usuario: [${userContext}].
+Detecta alérgenos ocultos, derivados químicos, trazas peligrosas y aditivos (ej: E322 lecitina de soja si hay alergia a soja).
+
+Responde ESTRICTAMENTE en formato JSON plano:
+{
+  "safety": "safe" | "warning" | "danger",
+  "verdict": "Breve frase motivadora o de advertencia",
+  "reason": "Explicación detallada de por qué es seguro o no",
+  "risks": ["lista de ingredientes detectados que activaron la alerta"]
+}`;
+
+    try {
+      const groqRes = await this.callGroq(`Analiza estos ingredientes: ${ingredients}`, {}, systemPrompt, true);
+      return JSON.parse(groqRes.content);
+    } catch (err) {
+      console.error('[Roko] Error en análisis profundo:', err);
+      return {
+        safety: 'warning',
+        verdict: 'Análisis incierto',
+        reason: 'No pude realizar el análisis de IA. Revisa los ingredientes manualmente.',
+        risks: []
+      };
+    }
+  }
+
   private static async callGroq(message: string, config: EngineConfig, systemPrompt: string, isJson: boolean = false) {
     const keys = [
       process.env.GROQ_API_KEY_1,

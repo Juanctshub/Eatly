@@ -53,6 +53,9 @@ model User {
   emailVerified DateTime?
   image         String?
   password      String? // Hashed password for credentials auth
+  goal          String? // Added for onboarding
+  activityLevel String? // Added for onboarding
+  recentLogs    String? // Added for onboarding
   accounts      Account[]
   sessions      Session[]
   restrictions  DietaryRestriction[]

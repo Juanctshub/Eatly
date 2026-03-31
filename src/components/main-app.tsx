@@ -6,6 +6,7 @@ import { signOut } from 'next-auth/react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useTheme } from '@/contexts/ThemeContext';
 import RokoChat from '@/components/shared/RokoChat';
+import OnboardingRoko from '@/components/shared/OnboardingRoko';
 import RokoPage from '@/components/shared/RokoPage';
 import AIChatSection from '@/components/shared/AIChatSection';
 import RestaurantMap from '@/components/shared/RestaurantMap';
@@ -168,6 +169,7 @@ export default function EatlyApp() {
   const [selectedMealType, setSelectedMealType] = useState('almuerzo');
   const [loading, setLoading] = useState(false);
   const [showAddModal, setShowAddModal] = useState(false);
+  const [showOnboarding, setShowOnboarding] = useState(false);
   const [addType, setAddType] = useState<'restriction' | 'food'>('restriction');
   const [showSettings, setShowSettings] = useState(false);
   const [showAIChat, setShowAIChat] = useState(false);
@@ -237,14 +239,20 @@ export default function EatlyApp() {
     const fetchData = async () => {
       try {
         setLoading(true);
-        const [resRest, resFood] = await Promise.all([
+        const [resRest, resFood, resOnboarding] = await Promise.all([
           fetch('/api/restrictions'),
-          fetch('/api/foods')
+          fetch('/api/foods'),
+          fetch('/api/user/onboarding')
         ]);
         
         const dataRest = await resRest.json();
         const dataFood = await resFood.json();
+        const dataOnboarding = await resOnboarding.json();
         
+        if (!dataOnboarding.onboarding) {
+          setShowOnboarding(true);
+        }
+
         if (Array.isArray(dataRest)) {
           setRestrictions(dataRest);
           localStorage.setItem('eatly_restrictions', JSON.stringify(dataRest));
@@ -285,6 +293,40 @@ export default function EatlyApp() {
       return;
     }
     setActiveTab(tabId);
+  };
+
+  const handleOnboardingComplete = async (data: any) => {
+    try {
+      setLoading(true);
+      const res = await fetch('/api/user/onboarding', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data),
+      });
+      
+      const result = await res.json();
+      if (result.success) {
+        setUserData({
+          ...userData,
+          name: data.name,
+          goal: data.goal,
+          activityLevel: data.activityLevel
+        });
+        
+        // Refresh restrictions from DB
+        const resRest = await fetch('/api/restrictions');
+        const updatedRest = await resRest.json();
+        setRestrictions(updatedRest);
+        
+        setShowOnboarding(false);
+        playSound('success');
+      }
+    } catch (error) {
+      console.error('Onboarding failed:', error);
+      setShowOnboarding(false);
+    } finally {
+      setLoading(false);
+    }
   };
 
   const addRestriction = async () => {
@@ -1696,7 +1738,13 @@ export default function EatlyApp() {
   );
 
   return (
-    <div className="min-h-screen bg-background pb-36">
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-950 text-gray-900 dark:text-gray-100 flex flex-col font-sans overflow-hidden">
+      <AnimatePresence>
+        {showOnboarding && (
+          <OnboardingRoko onComplete={handleOnboardingComplete} />
+        )}
+      </AnimatePresence>
+      
       {/* Main Content */}
       <div className="max-w-lg mx-auto px-4">
         <AnimatePresence mode="wait">
