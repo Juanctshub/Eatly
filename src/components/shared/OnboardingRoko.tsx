@@ -144,7 +144,13 @@ export default function OnboardingRoko({ onComplete }: OnboardingProps) {
             'bg-gradient-to-tr from-amber-500 to-orange-500 shadow-amber-500/20'
           }`}>
             <div className="absolute inset-0 bg-white/10 animate-pulse" />
-            <span className="text-4xl relative z-10">{isSubmitting ? '✨' : '🤖'}</span>
+            <motion.span 
+              className="text-4xl relative z-10"
+              animate={isSubmitting ? { rotate: [0, 10, -10, 0], scale: [1, 1.2, 1] } : {}}
+              transition={{ duration: 0.5, repeat: isSubmitting ? Infinity : 0 }}
+            >
+              {isSubmitting ? '✨' : '🤖'}
+            </motion.span>
           </div>
           <div className={`px-4 py-1.5 rounded-full transition-colors duration-500 ${
             currentColor === 'violet' ? 'bg-violet-100' :
@@ -169,10 +175,40 @@ export default function OnboardingRoko({ onComplete }: OnboardingProps) {
                 key="submitting"
                 initial={{ opacity: 0, scale: 0.9 }}
                 animate={{ opacity: 1, scale: 1 }}
-                className="text-center"
+                className="text-center relative"
               >
-                <h2 className="text-2xl font-bold text-gray-900 mb-2">¡Todo listo!</h2>
-                <p className="text-gray-500">Optimizando tu perfil de salud...</p>
+                {/* Floating Particles Simulation */}
+                {[...Array(6)].map((_, i) => (
+                  <motion.div
+                    key={i}
+                    className="absolute w-2 h-2 rounded-full blur-[1px]"
+                    style={{ 
+                      backgroundColor: i % 2 === 0 ? '#8b5cf6' : '#10b981',
+                      left: '50%',
+                      top: '50%'
+                    }}
+                    animate={{ 
+                      x: [0, (i - 2.5) * 40, (i - 2.5) * 60],
+                      y: [0, -40, -80],
+                      opacity: [0, 1, 0],
+                      scale: [0, 1, 0]
+                    }}
+                    transition={{ 
+                      duration: 2, 
+                      repeat: Infinity, 
+                      delay: i * 0.2,
+                      ease: "easeOut"
+                    }}
+                  />
+                ))}
+                
+                <h2 className="text-3xl font-black text-gray-900 mb-3 tracking-tight">¡Genial, {formData.name}!</h2>
+                <div className="bg-violet-500/5 border border-violet-500/10 rounded-2xl p-4 mb-4 backdrop-blur-sm">
+                   <p className="text-violet-600 font-bold text-sm mb-1 uppercase tracking-wider">Perfil Optimizado</p>
+                   <p className="text-gray-600 text-xs">Objetivo: <span className="font-bold text-gray-900">{formData.goal}</span></p>
+                   <p className="text-gray-600 text-xs">Actividad: <span className="font-bold text-gray-900">{formData.activityLevel}</span></p>
+                </div>
+                <p className="text-gray-400 text-sm animate-pulse">Sincronizando con Roko...</p>
               </motion.div>
             ) : !isTyping ? (
               <motion.h2 

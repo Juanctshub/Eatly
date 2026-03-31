@@ -163,9 +163,14 @@ export default function AIChat({ isOpen, onClose, restrictions, foods, mealType 
           <div className="w-10 h-1 bg-gray-300 dark:bg-gray-800 rounded-full mx-auto mt-1 mb-4" />
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <div className="w-12 h-12 bg-gradient-to-br from-green-400 to-emerald-600 rounded-2xl flex items-center justify-center shadow-lg shadow-green-500/20">
-                <Sparkles className="w-6 h-6 text-white" />
-              </div>
+              <motion.div 
+                className="w-12 h-12 bg-gradient-to-tr from-violet-500 to-indigo-500 rounded-2xl flex items-center justify-center shadow-lg shadow-violet-500/20 relative overflow-hidden"
+                animate={isLoading ? { scale: [1, 1.08, 1], rotate: [0, 5, -5, 0] } : {}}
+                transition={{ duration: 2, repeat: Infinity }}
+              >
+                <div className="absolute inset-0 bg-white/10 animate-pulse pointer-events-none" />
+                <span className="text-2xl relative z-10">{isLoading ? '✨' : '🤖'}</span>
+              </motion.div>
               <div>
                 <h2 className="text-xl font-bold text-gray-900 dark:text-white leading-none mb-1">Roko AI</h2>
                 <div className="flex items-center gap-1.5">
