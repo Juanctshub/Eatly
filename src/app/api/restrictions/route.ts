@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 
+export const dynamic = 'force-dynamic';
+
 const MASTER_EMAIL = 'roko.master@eatly.app';
 
 // GET all restrictions

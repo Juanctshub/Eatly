@@ -178,6 +178,7 @@ export default function EatlyApp() {
   const [showRestaurantMap, setShowRestaurantMap] = useState(false);
   const [showScanner, setShowScanner] = useState(false);
   const [isSyncing, setIsSyncing] = useState(false);
+  const [errorToast, setErrorToast] = useState<string | null>(null);
   const [voiceInitialMessage, setVoiceInitialMessage] = useState<string | undefined>(undefined);
   const [showActivityHistory, setShowActivityHistory] = useState(false);
   const [showNotifications, setShowNotifications] = useState(false);
@@ -269,8 +270,9 @@ export default function EatlyApp() {
         if (Array.isArray(dataFood)) {
           setFoods(dataFood);
         }
-      } catch (error) {
+      } catch (error: any) {
         console.error('Error fetching data from API:', error);
+        setErrorToast('Error de conexión con Roko: No se pudieron cargar tus datos.');
       } finally {
         setLoading(false);
       }
@@ -297,8 +299,11 @@ export default function EatlyApp() {
       }
       if (Array.isArray(dataRest)) setRestrictions(dataRest);
       if (Array.isArray(dataFood)) setFoods(dataFood);
-    } catch (err) {
+      
+      console.log('[Eatly] Datos refrescados con éxito.');
+    } catch (err: any) {
       console.error('Error refreshing data:', err);
+      setErrorToast('Error crítico al sincronizar con el servidor.');
     }
   };
 
@@ -2321,6 +2326,29 @@ export default function EatlyApp() {
         playSound={playSound}
         vibrate={vibrate}
       />
+
+      {/* Error Toast Notification */}
+      <AnimatePresence>
+        {errorToast && (
+          <motion.div
+            className="fixed bottom-24 left-6 right-6 bg-red-500 text-white p-4 rounded-2xl shadow-lg z-[210] flex items-center justify-between"
+            initial={{ y: 50, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            exit={{ y: 50, opacity: 0 }}
+          >
+            <div className="flex items-center gap-3">
+              <AlertCircle className="w-5 h-5 flex-shrink-0" />
+              <p className="text-sm font-medium">{errorToast}</p>
+            </div>
+            <button 
+              onClick={() => setErrorToast(null)}
+              className="p-1 hover:bg-white/20 rounded-full transition-colors"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* Profile Sync Overlay */}
       <AnimatePresence>
