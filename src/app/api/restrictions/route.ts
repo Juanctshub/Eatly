@@ -3,18 +3,14 @@ import { db } from '@/lib/db';
 
 export const dynamic = 'force-dynamic';
 
-const MASTER_EMAIL = 'roko.master@eatly.app';
-
 // GET all restrictions
-export async function GET() {
+export async function GET(req: NextRequest) {
   try {
-    let user = await db.user.findUnique({ where: { email: MASTER_EMAIL } });
-    
-    if (!user) {
-      user = await db.user.create({
-        data: { name: 'Usuario', email: MASTER_EMAIL }
-      });
-    }
+    const email = req.headers.get('x-user-email');
+    if (!email) return NextResponse.json([]);
+
+    let user = await db.user.findUnique({ where: { email } });
+    if (!user) return NextResponse.json([]);
 
     const restrictions = await db.dietaryRestriction.findMany({
       where: { userId: user.id },
@@ -22,7 +18,6 @@ export async function GET() {
     });
     return NextResponse.json(restrictions);
   } catch (error: any) {
-    console.error('[Restrictions API] Get Error:', error.message);
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 }
@@ -30,21 +25,17 @@ export async function GET() {
 // POST a new restriction
 export async function POST(req: NextRequest) {
   try {
+    const email = req.headers.get('x-user-email');
+    if (!email) return NextResponse.json({ error: 'No user email' }, { status: 401 });
+
     const data = await req.json();
-    
-    if (!data.foodItem) {
-      return NextResponse.json({ error: 'Falta el nombre del alimento' }, { status: 400 });
-    }
+    if (!data.foodItem) return NextResponse.json({ error: 'Falta el nombre' }, { status: 400 });
 
-    // Get the master user for consistency
-    let user = await db.user.findUnique({ where: { email: MASTER_EMAIL } });
+    let user = await db.user.findUnique({ where: { email } });
     if (!user) {
-      user = await db.user.create({
-        data: { name: 'Usuario', email: MASTER_EMAIL }
-      });
+      user = await db.user.create({ data: { name: 'Usuario', email } });
     }
 
-    // AI Categorization
     const { NeuralEngine } = await import('@/lib/neural-engine');
     const category = await NeuralEngine.categorizeFood(data.foodItem);
 
@@ -54,14 +45,13 @@ export async function POST(req: NextRequest) {
         foodItem: data.foodItem,
         reason: data.reason || 'alergia',
         severity: data.severity || 'moderada',
-        category: category,
+        category,
         notes: data.notes || '',
       },
     });
 
     return NextResponse.json(newRestriction);
   } catch (error: any) {
-    console.error('[Restrictions API] Create Error:', error.message);
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 }

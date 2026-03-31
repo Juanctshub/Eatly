@@ -244,10 +244,11 @@ export default function EatlyApp() {
     const fetchData = async () => {
       try {
         setLoading(true);
+        const headers = { 'x-user-email': JSON.parse(localStorage.getItem('dietadvisor_user') || '{}').email, 'Content-Type': 'application/json' };
         const [resRest, resFood, resOnboarding] = await Promise.all([
-          fetch('/api/restrictions'),
-          fetch('/api/foods'),
-          fetch('/api/user/onboarding')
+          fetch('/api/restrictions', { headers }),
+          fetch('/api/foods', { headers }),
+          fetch('/api/user/onboarding', { headers })
         ]);
         
         const dataRest = await resRest.json();
@@ -331,39 +332,32 @@ export default function EatlyApp() {
   const handleOnboardingComplete = async (data: any) => {
     try {
       setLoading(true);
-      setIsSyncing(true); // Bloquear UI para sincronización total
+      console.log('[Eatly] Onboarding completado:', data);
       
-      console.log('[Eatly] Iniciando guardado de onboarding:', data.name);
-      const res = await fetch('/api/user/onboarding', {
+      const user = JSON.parse(localStorage.getItem('dietadvisor_user') || '{}');
+      const email = user.email;
+
+      const response = await fetch('/api/user/onboarding', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+          'Content-Type': 'application/json',
+          'x-user-email': email
+        },
         body: JSON.stringify(data),
       });
-      
-      const result = await res.json();
-      if (result.success) {
-        console.log('[Eatly] Onboarding exitoso. Sincronizando perfil...');
-        
-        // Pausa táctica para asegurar que SQLite complete la escritura
-        await new Promise(resolve => setTimeout(resolve, 1000));
-        
-        // Recargar datos omniscientes
-        await refreshAllData();
-        
-        // Solo cerramos si el refresh funcionó o al menos lo intentó
-        setShowOnboarding(false);
-        playSound('success');
-        vibrate([50, 100, 50]);
-      } else {
-        console.error('[Eatly] Error en API Onboarding:', result.error, result.details);
-        setErrorToast(`Error: ${result.error}. Detalle: ${result.details || 'Reintenta.'}`);
+
+      if (!response.ok) {
+        throw new Error('Error al guardar el onboarding');
       }
-    } catch (error: any) {
-      console.error('[Eatly] Fallo crítico de red en Onboarding:', error.message);
-      setErrorToast('Error de conexión. Tus datos no se guardaron.');
+
+      setShowOnboarding(false);
+      await refreshAllData();
+      playSound('success');
+    } catch (error) {
+      console.error('Error in onboarding:', error);
+      setErrorToast('No se pudo guardar tu perfil. Intenta de nuevo.');
     } finally {
       setLoading(false);
-      setIsSyncing(false);
     }
   };
 
@@ -372,22 +366,28 @@ export default function EatlyApp() {
 
     try {
       setLoading(true);
-      const res = await fetch('/api/restrictions', {
+      const user = JSON.parse(localStorage.getItem('dietadvisor_user') || '{}');
+      const email = user.email;
+
+      const response = await fetch('/api/restrictions', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+          'Content-Type': 'application/json',
+          'x-user-email': email
+        },
         body: JSON.stringify(newRestriction),
       });
-      const data = await res.json();
-      
-      if (data.id) {
-        setRestrictions([data, ...restrictions]);
-        setNewRestriction({ foodItem: '', reason: 'alergia', severity: 'moderada', notes: '' });
-        setShowAddModal(false);
-        playSound('success');
-        vibrate([50, 100]);
-      }
+
+      if (!response.ok) throw new Error('Error al guardar');
+
+      const saved = await response.json();
+      setRestrictions([saved, ...restrictions]);
+      setNewRestriction({ foodItem: '', reason: 'alergia', severity: 'moderada', notes: '' });
+      setShowAddModal(false);
+      playSound('success');
+      vibrate(50);
     } catch (error) {
-      console.error('Error adding restriction:', error);
+      setErrorToast('Error al guardar restricción');
     } finally {
       setLoading(false);
     }
@@ -396,9 +396,10 @@ export default function EatlyApp() {
   const addQuickRestriction = async (cr: any) => {
     try {
       setLoading(true);
+      const user = JSON.parse(localStorage.getItem('dietadvisor_user') || '{}');
       const res = await fetch('/api/restrictions', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', 'x-user-email': user.email },
         body: JSON.stringify(cr),
       });
       const data = await res.json();
@@ -417,7 +418,11 @@ export default function EatlyApp() {
 
   const deleteRestriction = async (id: string) => {
     try {
-      await fetch(`/api/restrictions/${id}`, { method: 'DELETE' });
+      const user = JSON.parse(localStorage.getItem('dietadvisor_user') || '{}');
+      await fetch(`/api/restrictions/${id}`, { 
+        method: 'DELETE',
+        headers: { 'x-user-email': user.email }
+      });
       setRestrictions(restrictions.filter((r) => r.id !== id));
       playSound('click');
     } catch (error) {
@@ -430,6 +435,8 @@ export default function EatlyApp() {
 
     try {
       setLoading(true);
+      const user = JSON.parse(localStorage.getItem('dietadvisor_user') || '{}');
+      const email = user.email;
       let category = newFood.category;
 
       // AI Categorization if empty
@@ -438,7 +445,7 @@ export default function EatlyApp() {
         try {
           const res = await fetch('/api/ai/categorize', {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers: { 'Content-Type': 'application/json', 'x-user-email': email },
             body: JSON.stringify({ foodName: newFood.name }),
           });
           const data = await res.json();
@@ -451,16 +458,22 @@ export default function EatlyApp() {
       }
 
       // Save to database
-      const finalRes = await fetch('/api/foods', {
+      const response = await fetch('/api/foods', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+          'Content-Type': 'application/json',
+          'x-user-email': email
+        },
         body: JSON.stringify({
           name: newFood.name,
           category: category || 'General',
           mealType: selectedMealType
         }),
       });
-      const dataFinal = await finalRes.json();
+
+      if (!response.ok) throw new Error('Error al guardar');
+
+      const dataFinal = await response.json();
 
       if (dataFinal.id) {
         setFoods([dataFinal, ...foods]);
@@ -470,7 +483,7 @@ export default function EatlyApp() {
         vibrate([50, 100]);
       }
     } catch (error) {
-      console.error('Error adding food:', error);
+      setErrorToast('Error al guardar alimento');
     } finally {
       setLoading(false);
     }

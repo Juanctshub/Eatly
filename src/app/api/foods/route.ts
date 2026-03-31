@@ -3,15 +3,14 @@ import { db } from '@/lib/db';
 
 export const dynamic = 'force-dynamic';
 
-const MASTER_EMAIL = 'roko.master@eatly.app';
-
 // GET all available foods
-export async function GET() {
+export async function GET(req: NextRequest) {
   try {
-    const user = await db.user.findUnique({ where: { email: MASTER_EMAIL } });
-    if (!user) {
-      return NextResponse.json([]);
-    }
+    const email = req.headers.get('x-user-email');
+    if (!email) return NextResponse.json([]);
+
+    const user = await db.user.findUnique({ where: { email } });
+    if (!user) return NextResponse.json([]);
 
     const foods = await db.availableFood.findMany({
       where: { userId: user.id },
@@ -19,7 +18,6 @@ export async function GET() {
     });
     return NextResponse.json(foods);
   } catch (error: any) {
-    console.error('[Foods API] Get Error:', error.message);
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 }
@@ -27,18 +25,15 @@ export async function GET() {
 // POST a new available food
 export async function POST(req: NextRequest) {
   try {
-    const data = await req.json();
-    
-    if (!data.name) {
-      return NextResponse.json({ error: 'Falta el nombre del alimento' }, { status: 400 });
-    }
+    const email = req.headers.get('x-user-email');
+    if (!email) return NextResponse.json({ error: 'No user email' }, { status: 401 });
 
-    // Get the master user for consistency
-    let user = await db.user.findUnique({ where: { email: MASTER_EMAIL } });
+    const data = await req.json();
+    if (!data.name) return NextResponse.json({ error: 'Falta el nombre' }, { status: 400 });
+
+    let user = await db.user.findUnique({ where: { email } });
     if (!user) {
-      user = await db.user.create({
-        data: { name: 'Usuario', email: MASTER_EMAIL }
-      });
+      user = await db.user.create({ data: { name: 'Usuario', email } });
     }
 
     const newFood = await db.availableFood.create({
@@ -52,7 +47,6 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json(newFood);
   } catch (error: any) {
-    console.error('[Foods API] Create Error:', error.message);
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 }

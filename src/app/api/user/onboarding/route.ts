@@ -6,32 +6,32 @@ export const dynamic = 'force-dynamic';
 
 export async function POST(req: NextRequest) {
   try {
+    const email = req.headers.get('x-user-email');
+    if (!email) {
+      return NextResponse.json({ error: 'No se pudo identificar al usuario (Falta Header)' }, { status: 401 });
+    }
+
     const body = await req.json();
     const { name, goal, activityLevel, restrictions } = body;
 
-    console.log('[Onboarding API] Payload recibido:', {
+    console.log(`[Onboarding API] Payload para ${email}:`, {
       name: name ? 'SI' : 'NO',
       goal: goal ? 'SI' : 'NO',
       activityNum: restrictions?.length || 0
     });
 
     if (!name || !goal) {
-      console.warn('[Onboarding API] Validación fallida: faltan campos obligatorios.', { name, goal });
       return NextResponse.json({ 
         error: `Faltan campos obligatorios: ${!name ? 'Nombre ' : ''}${!goal ? 'Meta' : ''}`, 
         success: false 
       }, { status: 400 });
     }
 
-    // Hardened Identity: Always use the same master user for this demo
-    const MASTER_EMAIL = 'roko.master@eatly.app';
-    
     // 1. Upsert User Profile
-    console.log('[Onboarding] Sincronizando perfil para:', MASTER_EMAIL);
     let userId: string;
     try {
       const updatedUser = await db.user.upsert({
-        where: { email: MASTER_EMAIL },
+        where: { email },
         update: {
           name,
           goal,
@@ -39,7 +39,7 @@ export async function POST(req: NextRequest) {
           recentLogs: 'Perfil optimizado por Roko'
         },
         create: {
-          email: MASTER_EMAIL,
+          email,
           name,
           goal,
           activityLevel,
@@ -47,7 +47,6 @@ export async function POST(req: NextRequest) {
         }
       });
       userId = updatedUser.id;
-      console.log('[Onboarding] Perfil guardado con ID:', userId);
     } catch (err: any) {
       console.error('[Onboarding] Error upserting user:', err.message);
       return NextResponse.json({ error: 'Error al guardar el perfil de usuario', details: err.message }, { status: 500 });
@@ -60,28 +59,16 @@ export async function POST(req: NextRequest) {
         update: { onboarding: true },
         create: { userId, onboarding: true, theme: 'light' }
       });
-    } catch (err: any) {
-      console.error('[Onboarding] Error upserting preferences:', err.message);
-      // No bloqueamos por esto, pero lo logueamos
-    }
+    } catch (err: any) {}
 
-    // 3. Save initial restrictions with AI categorization
+    // 3. Save initial restrictions
     if (restrictions && Array.isArray(restrictions) && restrictions.length > 0) {
-      console.log(`[Onboarding] Procesando ${restrictions.length} restricciones...`);
       try {
-        // Clear previous restrictions for this master user
         await db.dietaryRestriction.deleteMany({ where: { userId } });
-
         for (const r of restrictions) {
           if (!r.foodItem) continue;
-          
           let category = 'Otro';
-          try {
-            category = await NeuralEngine.categorizeFood(r.foodItem);
-          } catch (e) {
-            console.warn(`[Onboarding] Falló la categorización de "${r.foodItem}", ignorando...`);
-          }
-          
+          try { category = await NeuralEngine.categorizeFood(r.foodItem); } catch (e) {}
           await db.dietaryRestriction.create({
             data: {
               userId,
@@ -93,29 +80,27 @@ export async function POST(req: NextRequest) {
             }
           });
         }
-        console.log('[Onboarding] Restricciones guardadas exitosamente.');
-      } catch (err: any) {
-        console.error('[Onboarding] Error saving restrictions:', err.message);
-      }
+      } catch (err: any) {}
     }
 
     return NextResponse.json({ success: true, userId });
   } catch (error: any) {
-    console.error('[Onboarding API Critical Error]:', error.message);
     return NextResponse.json({ error: error.message, success: false }, { status: 500 });
   }
 }
 
-// GET onboarding status and profile data
-export async function GET() {
+export async function GET(req: NextRequest) {
   try {
-    const MASTER_EMAIL = 'roko.master@eatly.app';
+    const email = req.headers.get('x-user-email');
+    if (!email) {
+      return NextResponse.json({ onboarding: false, user: null });
+    }
+
     const user = await db.user.findUnique({
-      where: { email: MASTER_EMAIL },
+      where: { email },
       include: { preferences: true }
     });
     
-    // If user doesn't exist, we definitely need onboarding
     if (!user) {
       return NextResponse.json({ onboarding: false, user: null });
     }
@@ -131,7 +116,6 @@ export async function GET() {
       }
     });
   } catch (error: any) {
-    console.error('[Onboarding GET Error]:', error.message);
     return NextResponse.json({ onboarding: false, user: null });
   }
 }
