@@ -232,18 +232,50 @@ export default function EatlyApp() {
     }
   }, [searchParams]);
 
-  // Fetch data on mount (from local storage)
+  // Initial data loading
   useEffect(() => {
-    try {
-      const storedRes = localStorage.getItem('eatly_restrictions');
-      const storedFoods = localStorage.getItem('eatly_foods');
-      
-      if (storedRes) setRestrictions(JSON.parse(storedRes));
-      if (storedFoods) setFoods(JSON.parse(storedFoods));
-    } catch (error) {
-      console.error('Error loading local data:', error);
-    }
+    const fetchData = async () => {
+      try {
+        setLoading(true);
+        const [resRest, resFood] = await Promise.all([
+          fetch('/api/restrictions'),
+          fetch('/api/foods')
+        ]);
+        
+        const dataRest = await resRest.json();
+        const dataFood = await resFood.json();
+        
+        if (Array.isArray(dataRest)) {
+          setRestrictions(dataRest);
+          localStorage.setItem('eatly_restrictions', JSON.stringify(dataRest));
+        }
+        if (Array.isArray(dataFood)) {
+          setFoods(dataFood);
+          localStorage.setItem('eatly_foods', JSON.stringify(dataFood));
+        }
+      } catch (error) {
+        console.error('Error fetching data from API, using local storage:', error);
+        // Fallback to local storage if API fails
+        const localRest = localStorage.getItem('eatly_restrictions');
+        const localFood = localStorage.getItem('eatly_foods');
+        if (localRest) setRestrictions(JSON.parse(localRest));
+        if (localFood) setFoods(JSON.parse(localFood));
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchData();
   }, []);
+
+  // Sync state changes with local storage as a cache
+  useEffect(() => {
+    localStorage.setItem('eatly_restrictions', JSON.stringify(restrictions));
+  }, [restrictions]);
+
+  useEffect(() => {
+    localStorage.setItem('eatly_foods', JSON.stringify(foods));
+  }, [foods]);
 
   const handleTabChange = (tabId: string) => {
     if (tabId === 'add') {
@@ -259,51 +291,55 @@ export default function EatlyApp() {
     if (!newRestriction.foodItem.trim()) return;
 
     try {
-      const newEntry = {
-        id: crypto.randomUUID(),
-        ...newRestriction,
-        createdAt: new Date().toISOString()
-      };
+      setLoading(true);
+      const res = await fetch('/api/restrictions', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(newRestriction),
+      });
+      const data = await res.json();
       
-      const updated = [newEntry, ...restrictions];
-      setRestrictions(updated);
-      localStorage.setItem('eatly_restrictions', JSON.stringify(updated));
-      
-      setNewRestriction({ foodItem: '', reason: 'alergia', severity: 'moderada', notes: '' });
-      setShowAddModal(false);
-      playSound('success');
-      vibrate([50, 100]);
+      if (data.id) {
+        setRestrictions([data, ...restrictions]);
+        setNewRestriction({ foodItem: '', reason: 'alergia', severity: 'moderada', notes: '' });
+        setShowAddModal(false);
+        playSound('success');
+        vibrate([50, 100]);
+      }
     } catch (error) {
       console.error('Error adding restriction:', error);
+    } finally {
+      setLoading(false);
     }
   };
 
-  const addQuickRestriction = (cr: any) => {
+  const addQuickRestriction = async (cr: any) => {
     try {
-      const newEntry = {
-        id: crypto.randomUUID(),
-        foodItem: cr.foodItem,
-        reason: cr.reason,
-        severity: cr.severity,
-        notes: 'Agregado rápido',
-        createdAt: new Date().toISOString()
-      };
+      setLoading(true);
+      const res = await fetch('/api/restrictions', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(cr),
+      });
+      const data = await res.json();
       
-      const updated = [newEntry, ...restrictions];
-      setRestrictions(updated);
-      localStorage.setItem('eatly_restrictions', JSON.stringify(updated));
-      playSound('success');
-      vibrate(50);
+      if (data.id) {
+        setRestrictions([data, ...restrictions]);
+        playSound('success');
+        vibrate(50);
+      }
     } catch (error) {
       console.error('Error in quick add:', error);
+    } finally {
+      setLoading(false);
     }
   };
 
   const deleteRestriction = async (id: string) => {
     try {
-      const filtered = restrictions.filter((r) => r.id !== id);
-      setRestrictions(filtered);
-      localStorage.setItem('eatly_restrictions', JSON.stringify(filtered));
+      await fetch(`/api/restrictions/${id}`, { method: 'DELETE' });
+      setRestrictions(restrictions.filter((r) => r.id !== id));
+      playSound('click');
     } catch (error) {
       console.error('Error deleting restriction:', error);
     }
@@ -334,22 +370,25 @@ export default function EatlyApp() {
         }
       }
 
-      const newEntry = {
-        id: crypto.randomUUID(),
-        ...newFood,
-        category: category || 'General',
-        mealType: selectedMealType,
-        createdAt: new Date().toISOString()
-      };
-      
-      const updated = [newEntry, ...foods];
-      setFoods(updated);
-      localStorage.setItem('eatly_foods', JSON.stringify(updated));
-      
-      setNewFood({ name: '', category: '', mealType: '' });
-      setShowAddModal(false);
-      playSound('success');
-      vibrate([50, 100]);
+      // Save to database
+      const finalRes = await fetch('/api/foods', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: newFood.name,
+          category: category || 'General',
+          mealType: selectedMealType
+        }),
+      });
+      const dataFinal = await finalRes.json();
+
+      if (dataFinal.id) {
+        setFoods([dataFinal, ...foods]);
+        setNewFood({ name: '', category: '', mealType: '' });
+        setShowAddModal(false);
+        playSound('success');
+        vibrate([50, 100]);
+      }
     } catch (error) {
       console.error('Error adding food:', error);
     } finally {
@@ -359,9 +398,9 @@ export default function EatlyApp() {
 
   const deleteFood = async (id: string) => {
     try {
-      const filtered = foods.filter((f) => f.id !== id);
-      setFoods(filtered);
-      localStorage.setItem('eatly_foods', JSON.stringify(filtered));
+      await fetch(`/api/foods/${id}`, { method: 'DELETE' });
+      setFoods(foods.filter((f) => f.id !== id));
+      playSound('click');
     } catch (error) {
       console.error('Error deleting food:', error);
     }
