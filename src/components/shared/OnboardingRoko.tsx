@@ -175,16 +175,16 @@ export default function OnboardingRoko({ onComplete, isSubmitting = false }: Onb
             {/* Robot Avatar - Premium Moods */}
             <motion.div 
               key={step}
-              className={`w-28 h-28 rounded-[35px] flex items-center justify-center shadow-2xl mb-8 relative group cursor-default`}
+              className={`w-20 h-20 sm:w-28 sm:h-28 rounded-[25px] sm:rounded-[35px] flex items-center justify-center shadow-2xl mb-6 sm:mb-8 relative group cursor-default`}
               initial={{ rotateY: 90, opacity: 0 }}
               animate={{ rotateY: 0, opacity: 1 }}
               transition={{ type: "spring", stiffness: 100 }}
             >
-              <div className={`absolute inset-0 rounded-[35px] bg-gradient-to-br opacity-20 blur-xl ${currentStep.color}`} />
-              <div className={`absolute inset-0 rounded-[35px] border border-white/20 bg-white/5`} />
+              <div className={`absolute inset-0 rounded-[25px] sm:rounded-[35px] bg-gradient-to-br opacity-20 blur-xl ${currentStep.color}`} />
+              <div className={`absolute inset-0 rounded-[25px] sm:rounded-[35px] border border-white/20 bg-white/5`} />
               
               <motion.span 
-                className="text-5xl relative z-10"
+                className="text-4xl sm:text-5xl relative z-10"
                 animate={isSubmitting ? { scale: [1, 1.2, 1], rotate: [0, 360] } : { y: [0, -5, 0] }}
                 transition={{ duration: 2, repeat: Infinity }}
               >
@@ -193,14 +193,14 @@ export default function OnboardingRoko({ onComplete, isSubmitting = false }: Onb
 
               {/* Floating Pulse Rings */}
               <motion.div 
-                className={`absolute inset-[-10px] border border-white/5 rounded-[45px]`}
+                className={`absolute inset-[-8px] sm:inset-[-10px] border border-white/5 rounded-[30px] sm:rounded-[45px]`}
                 animate={{ scale: [1, 1.1, 1], opacity: [0.1, 0.3, 0.1] }}
                 transition={{ duration: 3, repeat: Infinity }}
               />
             </motion.div>
 
             {/* Question Text - Premium Typography */}
-            <div className="min-h-[140px] w-full flex flex-col items-center justify-center mb-10">
+            <div className="min-h-[120px] sm:min-h-[140px] w-full flex flex-col items-center justify-center mb-8 sm:mb-10">
               <AnimatePresence mode="wait">
                 {isSubmitting ? (
                   <motion.div
@@ -209,17 +209,17 @@ export default function OnboardingRoko({ onComplete, isSubmitting = false }: Onb
                     animate={{ opacity: 1, y: 0 }}
                     className="text-center"
                   >
-                    <h2 className="text-4xl font-black text-white mb-4 tracking-tight bg-clip-text text-transparent bg-gradient-to-b from-white to-white/60">
+                    <h2 className="text-3xl sm:text-4xl font-black text-white mb-4 tracking-tight bg-clip-text text-transparent bg-gradient-to-b from-white to-white/60">
                       ¡Todo listo!
                     </h2>
-                    <p className="text-white/50 text-base font-medium tracking-wide animate-pulse">
+                    <p className="text-white/50 text-sm sm:text-base font-medium tracking-wide animate-pulse">
                       Optimizando tu perfil de salud...
                     </p>
                   </motion.div>
                 ) : !isTyping ? (
                   <motion.h2 
                     key={step}
-                    className="text-3xl md:text-4xl font-bold text-white text-center leading-[1.2] tracking-tight bg-clip-text text-transparent bg-gradient-to-b from-white to-white/70"
+                    className="text-2xl sm:text-3xl md:text-4xl font-bold text-white text-center leading-[1.2] tracking-tight bg-clip-text text-transparent bg-gradient-to-b from-white to-white/70 px-2"
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
                     exit={{ opacity: 0, y: -20 }}

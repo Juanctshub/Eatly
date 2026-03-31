@@ -1,4 +1,4 @@
-import { PrismaClient } from '@prisma/client'
+import { PrismaClient } from '../generated/client'
 import path from 'path'
 
 // Get Absolute Path for SQLite on Windows to avoid 'Error code 14'
