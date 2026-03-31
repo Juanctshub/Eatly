@@ -61,28 +61,33 @@ export default function OnboardingRoko({ onComplete }: OnboardingProps) {
   ];
 
   const handleNext = () => {
+    const currentStepId = steps[step].id;
+    let nextFormData = { ...formData };
+    
+    if (currentStepId === 'name') nextFormData = { ...formData, name: currentInput };
+    if (currentStepId === 'goal') nextFormData = { ...formData, goal: currentInput };
+    if (currentStepId === 'restrictions') {
+      const items = currentInput.split(',').filter(i => i.trim()).map(i => ({ foodItem: i.trim(), reason: 'alergia', severity: 'severa' }));
+      nextFormData = { ...formData, restrictions: items };
+    }
+    
+    setFormData(nextFormData);
+    
     if (step < steps.length - 1) {
-      const currentStepId = steps[step].id;
-      if (currentStepId === 'name') setFormData({ ...formData, name: currentInput });
-      if (currentStepId === 'goal') setFormData({ ...formData, goal: currentInput });
-      if (currentStepId === 'restrictions') {
-        const items = currentInput.split(',').filter(i => i.trim()).map(i => ({ foodItem: i.trim(), reason: 'alergia', severity: 'severa' }));
-        setFormData({ ...formData, restrictions: items });
-      }
-      
       setCurrentInput('');
       setStep(step + 1);
     } else {
       setIsSubmitting(true);
-      onComplete(formData);
+      onComplete(nextFormData);
     }
   };
 
   const handleOptionClick = (option: string) => {
-    setFormData({ ...formData, activityLevel: option });
+    const finalData = { ...formData, activityLevel: option };
+    setFormData(finalData);
     setIsSubmitting(true);
-    // Envio inmediato tras la selección
-    onComplete({ ...formData, activityLevel: option });
+    // Envio inmediato con los datos finales garantizados
+    onComplete(finalData);
   };
 
   useEffect(() => {

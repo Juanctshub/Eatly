@@ -26,6 +26,7 @@ interface AIChatSectionProps {
   restrictions: Array<{ foodItem: string; reason: string; severity: string }>;
   foods: Array<{ name: string; category?: string }>;
   mealType: string;
+  userData: any;
   onClose: () => void;
   initialMessage?: string;
 }
@@ -34,6 +35,7 @@ export default function AIChatSection({
   restrictions,
   foods,
   mealType,
+  userData,
   onClose,
   initialMessage,
 }: AIChatSectionProps) {
@@ -86,6 +88,7 @@ export default function AIChatSection({
           restrictions,
           foods,
           mealType,
+          userData,
           conversationHistory: messages.map((m) => ({
             role: m.role,
             content: m.content,

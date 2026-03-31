@@ -1970,7 +1970,10 @@ export default function EatlyApp() {
                   >
                     {/* Profile Section */}
                     <motion.button
-                      onClick={() => setSettingsSection('profile')}
+                      onClick={() => {
+                        refreshAllData();
+                        setSettingsSection('profile');
+                      }}
                       className="w-full bg-card rounded-2xl p-4 flex items-center gap-4 border border-border"
                       whileHover={{ scale: 1.01 }}
                       whileTap={{ scale: 0.99 }}
@@ -1979,8 +1982,8 @@ export default function EatlyApp() {
                         <User className="w-7 h-7 text-white" />
                       </div>
                       <div className="flex-1 text-left">
-                        <p className="font-bold text-foreground">{userData.name}</p>
-                        <p className="text-sm text-muted-foreground">{userData.email}</p>
+                        <p className="font-bold text-foreground truncate max-w-[200px]">{userData.name || 'Cargando...'}</p>
+                        <p className="text-sm text-muted-foreground truncate max-w-[200px]">{userData.email}</p>
                       </div>
                       <ChevronRight className="w-5 h-5 text-gray-400" />
                     </motion.button>
@@ -2465,6 +2468,7 @@ export default function EatlyApp() {
             restrictions={restrictions}
             foods={foods}
             mealType={selectedMealType}
+            userData={userData}
             onClose={() => {
               setShowRokoSection(false);
               setVoiceInitialMessage(undefined);

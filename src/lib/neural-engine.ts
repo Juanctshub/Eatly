@@ -138,9 +138,10 @@ Responde ÚNICAMENTE con una (1) palabra de esta lista:
 Si no estás seguro, responde "Otro".`;
 
     try {
-      const res = await this.callGroq(`Categoriza este alimento: ${foodName}`, {}, systemPrompt);
+      const res = await this.callGroq(`Categoriza este alimento en una sola palabra: ${foodName}`, {}, systemPrompt);
       // Limpiar respuesta por si acaso (quitar puntos, espacios extra)
-      return res.content.trim().replace(/[.]/g, '');
+      const cleaned = res.content.trim().replace(/[.]/g, '').split(' ').pop() || 'Otro';
+      return cleaned;
     } catch (err) {
       console.error('[Roko] Error categorizando alimento:', err);
       return 'Otro';
