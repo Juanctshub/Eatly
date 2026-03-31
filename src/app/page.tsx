@@ -39,16 +39,25 @@ function AppContent() {
       if (!localStorage.getItem('dietadvisor_user')) {
         setAppState('auth');
       }
-    }, 1000); // Reduced from 2000
+    }, 1000); 
 
     return () => clearTimeout(splashTimer);
   }, []);
 
   const handleAuthSuccess = useCallback((user: UserData) => {
-    // Save user to localStorage for persistence
+    // 1. Clear ALL legacy session data to ensure a clean slate
+    const keysToRemove = [
+      'eatly_restrictions', 
+      'eatly_foods', 
+      'dietadvisor_user'
+    ];
+    keysToRemove.forEach(k => localStorage.removeItem(k));
+
+    // 2. Save the new authenticated user
     localStorage.setItem('dietadvisor_user', JSON.stringify(user));
     setUserData(user);
     setAppState('loading');
+    console.log('[Eatly] Nueva sesión iniciada para:', user.email);
   }, []);
 
   // Auto-advance from loading after animation completes
@@ -56,7 +65,7 @@ function AppContent() {
     if (appState === 'loading') {
       const timer = setTimeout(() => {
         setAppState('app');
-      }, 1500); // Reduced from 3500
+      }, 1500);
       return () => clearTimeout(timer);
     }
   }, [appState]);

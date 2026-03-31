@@ -286,11 +286,15 @@ export default function EatlyApp() {
 
   const refreshAllData = async () => {
     try {
-      console.log('[Eatly] Refrescando datos omniscientes...');
+      console.log('[Eatly] Refrescando datos para el perfil activo...');
+      const user = JSON.parse(localStorage.getItem('dietadvisor_user') || '{}');
+      if (!user.email) return;
+
+      const headers = { 'x-user-email': user.email, 'Content-Type': 'application/json' };
       const [resRest, resFood, resOnboarding] = await Promise.all([
-        fetch('/api/restrictions'),
-        fetch('/api/foods'),
-        fetch('/api/user/onboarding')
+        fetch('/api/restrictions', { headers }),
+        fetch('/api/foods', { headers }),
+        fetch('/api/user/onboarding', { headers })
       ]);
       
       const dataRest = await resRest.json();
@@ -303,10 +307,10 @@ export default function EatlyApp() {
       if (Array.isArray(dataRest)) setRestrictions(dataRest);
       if (Array.isArray(dataFood)) setFoods(dataFood);
       
-      console.log('[Eatly] Datos refrescados con éxito.');
+      console.log('[Eatly] Sincronización completa con éxito.');
     } catch (err: any) {
       console.error('Error refreshing data:', err);
-      setErrorToast('Error crítico al sincronizar con el servidor.');
+      setErrorToast('Reintento de sincronización fallido.');
     }
   };
 
@@ -491,7 +495,11 @@ export default function EatlyApp() {
 
   const deleteFood = async (id: string) => {
     try {
-      await fetch(`/api/foods/${id}`, { method: 'DELETE' });
+      const user = JSON.parse(localStorage.getItem('dietadvisor_user') || '{}');
+      await fetch(`/api/foods/${id}`, { 
+        method: 'DELETE',
+        headers: { 'x-user-email': user.email }
+      });
       setFoods(foods.filter((f) => f.id !== id));
       playSound('click');
     } catch (error) {
@@ -504,10 +512,13 @@ export default function EatlyApp() {
     try {
       const foodsForMeal = foods.filter((f) => f.mealType === selectedMealType || !f.mealType);
       
-      // Fetch real Z-AI suggestions
+      const user = JSON.parse(localStorage.getItem('dietadvisor_user') || '{}');
       const res = await fetch('/api/suggestions', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+          'Content-Type': 'application/json',
+          'x-user-email': user.email
+        },
         body: JSON.stringify({
           mealType: selectedMealType,
           availableFoods: foodsForMeal.length > 0 ? foodsForMeal : foods,
