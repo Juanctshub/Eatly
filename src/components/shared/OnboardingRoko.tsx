@@ -34,31 +34,41 @@ export default function OnboardingRoko({ onComplete, isSubmitting = false }: Onb
       id: 'name',
       question: '¡Hola! Soy Roko, tu nuevo nutriólogo residente. Para empezar, ¿cómo te llamas?',
       placeholder: 'Escribe tu nombre...',
-      icon: <User className="w-6 h-6 text-violet-500" />,
-      color: 'violet',
+      icon: <User className="w-6 h-6 text-emerald-500" />,
+      color: 'from-emerald-500 to-teal-600',
+      mood: '👋',
+      bg: 'bg-emerald-50/30'
     },
     {
       id: 'goal',
       question: (name: string) => `Mucho gusto, ${name}. Cuéntame, ¿cuál es tu meta principal de salud hoy?`,
       placeholder: 'Ej: Bajar de peso, ganar músculo...',
-      icon: <Target className="w-6 h-6 text-blue-500" />,
-      color: 'blue',
+      icon: <Target className="w-6 h-6 text-violet-500" />,
+      color: 'from-violet-500 to-purple-600',
+      mood: '🎯',
+      bg: 'bg-violet-50/30'
     },
     {
       id: 'restrictions',
       question: 'Entendido. Ahora, ¿tienes alguna alergia o restricción alimentaria importante?',
       placeholder: 'Ej: Soya, Gluten, Maní...',
-      icon: <AlertTriangle className="w-6 h-6 text-amber-500" />,
-      color: 'amber',
+      icon: <AlertTriangle className="w-6 h-6 text-orange-500" />,
+      color: 'from-orange-500 to-amber-600',
+      mood: '⚠️',
+      bg: 'bg-orange-50/30'
     },
     {
       id: 'activity',
       question: 'Y por último, ¿cómo describirías tu nivel de actividad física diaria?',
       options: ['Sedentario', 'Moderado', 'Activo', 'Muy Activo'],
-      icon: <Activity className="w-6 h-6 text-green-500" />,
-      color: 'green',
+      icon: <Activity className="w-6 h-6 text-blue-500" />,
+      color: 'from-blue-500 to-indigo-600',
+      mood: '⚡',
+      bg: 'bg-blue-50/30'
     }
   ];
+
+  const currentStep = steps[step];
 
   const handleNext = () => {
     const currentStepId = steps[step].id;
@@ -102,231 +112,219 @@ export default function OnboardingRoko({ onComplete, isSubmitting = false }: Onb
     return () => clearTimeout(timer);
   }, [step]);
 
-  const currentColor = steps[step]?.color || 'violet';
-
   return (
-    <div className="fixed inset-0 bg-white z-[100] flex flex-col items-center justify-center p-6">
-      {/* Background decoration */}
+    <div className="fixed inset-0 bg-[#0c0c0e] z-[100] flex flex-col items-center justify-center p-6 overflow-hidden">
+      {/* Background decoration - Premium dynamic glow */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
         <motion.div 
-          className={`absolute top-[-10%] left-[-10%] w-80 h-80 rounded-full blur-3xl opacity-50 transition-colors duration-1000 ${
-            currentColor === 'violet' ? 'bg-violet-100' :
-            currentColor === 'green' ? 'bg-green-100' :
-            currentColor === 'blue' ? 'bg-blue-100' : 'bg-amber-100'
-          }`}
+          className={`absolute top-[-20%] left-[-10%] w-[500px] h-[500px] rounded-full blur-[120px] opacity-40 transition-all duration-1000 bg-gradient-to-br ${currentStep.color}`}
+          animate={{ 
+            scale: [1, 1.1, 1],
+            x: [0, 50, 0],
+            y: [0, -50, 0]
+          }}
+          transition={{ duration: 15, repeat: Infinity }}
         />
         <motion.div 
-          className={`absolute bottom-[-10%] right-[-10%] w-80 h-80 rounded-full blur-3xl opacity-50 transition-colors duration-1000 ${
-            currentColor === 'violet' ? 'bg-blue-100' :
-            currentColor === 'green' ? 'bg-emerald-100' :
-            currentColor === 'blue' ? 'bg-violet-100' : 'bg-orange-100'
-          }`}
+          className={`absolute bottom-[-20%] right-[-10%] w-[500px] h-[500px] rounded-full blur-[120px] opacity-30 transition-all duration-1000 bg-gradient-to-tr ${currentStep.color}`}
+          animate={{ 
+            scale: [1, 1.2, 1],
+            x: [0, -100, 0],
+            y: [0, 100, 0]
+          }}
+          transition={{ duration: 20, repeat: Infinity }}
         />
       </div>
 
-      <div className="w-full max-w-md relative z-10">
-        {/* Progress Bar */}
-        <div className="flex gap-2 mb-12">
+      <div className="w-full max-w-xl relative z-10">
+        {/* Progress Bar - Elite Design */}
+        <div className="flex gap-1.5 mb-16 px-4">
           {steps.map((s, i) => (
-            <div 
-              key={i} 
-              className={`h-1.5 flex-1 rounded-full transition-all duration-500 ${
-                i < step ? 'bg-gray-300' : 
-                i === step ? (
-                  currentColor === 'violet' ? 'bg-violet-500' :
-                  currentColor === 'green' ? 'bg-green-500' :
-                  currentColor === 'blue' ? 'bg-blue-500' : 'bg-amber-500'
-                ) : 'bg-gray-100'
-              }`} 
-            />
+            <div key={i} className="flex-1 relative h-1 group">
+               <div className={`absolute inset-0 rounded-full transition-all duration-700 ${
+                 i <= step ? 'bg-white/20' : 'bg-white/5'
+               }`} />
+               <motion.div 
+                 className={`absolute inset-0 rounded-full bg-gradient-to-r ${currentStep.color}`}
+                 initial={{ width: '0%' }}
+                 animate={{ width: i <= step ? '100%' : '0%' }}
+                 transition={{ duration: 0.8, ease: "circOut" }}
+               />
+               {i === step && (
+                 <motion.div 
+                   className="absolute -top-1 -right-1 w-3 h-3 bg-white rounded-full shadow-[0_0_15px_rgba(255,255,255,0.8)]"
+                   layoutId="progress-dot"
+                 />
+               )}
+            </div>
           ))}
         </div>
 
-        {/* Chat Avatar */}
+        {/* Global Transparent Glass Card */}
         <motion.div 
-          className="flex flex-col items-center mb-8"
-          initial={{ y: 20, opacity: 0 }}
-          animate={{ y: 0, opacity: 1 }}
+          layout
+          className="bg-white/[0.03] backdrop-blur-3xl border border-white/10 rounded-[40px] p-8 md:p-12 shadow-2xl relative overflow-hidden"
+          initial={{ opacity: 0, scale: 0.9 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ duration: 0.5 }}
         >
-          <div className={`w-20 h-20 rounded-3xl flex items-center justify-center shadow-xl mb-4 overflow-hidden relative transition-all duration-500 ${
-            currentColor === 'violet' ? 'bg-gradient-to-tr from-violet-500 to-indigo-500 shadow-violet-500/20' :
-            currentColor === 'green' ? 'bg-gradient-to-tr from-green-500 to-emerald-500 shadow-green-500/20' :
-            currentColor === 'blue' ? 'bg-gradient-to-tr from-blue-500 to-cyan-500 shadow-blue-500/20' :
-            'bg-gradient-to-tr from-amber-500 to-orange-500 shadow-amber-500/20'
-          }`}>
-            <div className="absolute inset-0 bg-white/10 animate-pulse" />
-            <motion.span 
-              className="text-4xl relative z-10"
-              animate={isSubmitting ? { rotate: [0, 10, -10, 0], scale: [1, 1.2, 1] } : {}}
-              transition={{ duration: 0.5, repeat: isSubmitting ? Infinity : 0 }}
+          {/* Subtle noise texture */}
+          <div className="absolute inset-0 opacity-[0.03] pointer-events-none bg-[url('https://grainy-gradients.vercel.app/noise.svg')]" />
+          
+          <div className="relative z-10 flex flex-col items-center">
+            {/* Robot Avatar - Premium Moods */}
+            <motion.div 
+              key={step}
+              className={`w-28 h-28 rounded-[35px] flex items-center justify-center shadow-2xl mb-8 relative group cursor-default`}
+              initial={{ rotateY: 90, opacity: 0 }}
+              animate={{ rotateY: 0, opacity: 1 }}
+              transition={{ type: "spring", stiffness: 100 }}
             >
-              {isSubmitting ? '✨' : '🤖'}
-            </motion.span>
-          </div>
-          <div className={`px-4 py-1.5 rounded-full transition-colors duration-500 ${
-            currentColor === 'violet' ? 'bg-violet-100' :
-            currentColor === 'green' ? 'bg-green-100' :
-            currentColor === 'blue' ? 'bg-blue-100' : 'bg-amber-100'
-          }`}>
-            <span className={`text-xs font-bold tracking-wider uppercase transition-colors duration-500 ${
-              currentColor === 'violet' ? 'text-violet-600' :
-              currentColor === 'green' ? 'text-green-600' :
-              currentColor === 'blue' ? 'text-blue-600' : 'text-amber-600'
-            }`}>
-              Nutriólogo Residente
-            </span>
+              <div className={`absolute inset-0 rounded-[35px] bg-gradient-to-br opacity-20 blur-xl ${currentStep.color}`} />
+              <div className={`absolute inset-0 rounded-[35px] border border-white/20 bg-white/5`} />
+              
+              <motion.span 
+                className="text-5xl relative z-10"
+                animate={isSubmitting ? { scale: [1, 1.2, 1], rotate: [0, 360] } : { y: [0, -5, 0] }}
+                transition={{ duration: 2, repeat: Infinity }}
+              >
+                {isSubmitting ? '✨' : currentStep.mood}
+              </motion.span>
+
+              {/* Floating Pulse Rings */}
+              <motion.div 
+                className={`absolute inset-[-10px] border border-white/5 rounded-[45px]`}
+                animate={{ scale: [1, 1.1, 1], opacity: [0.1, 0.3, 0.1] }}
+                transition={{ duration: 3, repeat: Infinity }}
+              />
+            </motion.div>
+
+            {/* Question Text - Premium Typography */}
+            <div className="min-h-[140px] w-full flex flex-col items-center justify-center mb-10">
+              <AnimatePresence mode="wait">
+                {isSubmitting ? (
+                  <motion.div
+                    key="submitting"
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="text-center"
+                  >
+                    <h2 className="text-4xl font-black text-white mb-4 tracking-tight bg-clip-text text-transparent bg-gradient-to-b from-white to-white/60">
+                      ¡Todo listo!
+                    </h2>
+                    <p className="text-white/50 text-base font-medium tracking-wide animate-pulse">
+                      Optimizando tu perfil de salud...
+                    </p>
+                  </motion.div>
+                ) : !isTyping ? (
+                  <motion.h2 
+                    key={step}
+                    className="text-3xl md:text-4xl font-bold text-white text-center leading-[1.2] tracking-tight bg-clip-text text-transparent bg-gradient-to-b from-white to-white/70"
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -20 }}
+                  >
+                    {typeof currentStep.question === 'function' 
+                      ? (currentStep.question as any)(formData.name) 
+                      : currentStep.question as string}
+                  </motion.h2>
+                ) : (
+                  <motion.div 
+                    key="typing"
+                    className="flex items-center justify-center gap-2"
+                  >
+                    {[0, 1, 2].map((i) => (
+                      <motion.div
+                        key={i}
+                        className="w-3 h-3 bg-white/20 rounded-full"
+                        animate={{ opacity: [0.3, 1, 0.3], scale: [1, 1.2, 1] }}
+                        transition={{ duration: 1, repeat: Infinity, delay: i * 0.2 }}
+                      />
+                    ))}
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
+
+            {/* Input & Options - Premium Controls */}
+            <div className="w-full">
+              <AnimatePresence mode="wait">
+                {!isSubmitting && (
+                  <motion.div 
+                    key={step}
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -10 }}
+                  >
+                    {currentStep.options ? (
+                      <div className="grid grid-cols-2 gap-4">
+                        {currentStep.options!.map((option) => (
+                          <motion.button
+                            key={option}
+                            onClick={() => handleOptionClick(option)}
+                            className="group relative h-20 bg-white/[0.03] border border-white/10 rounded-3xl text-base font-bold text-white transition-all overflow-hidden"
+                            whileHover={{ scale: 1.02, backgroundColor: 'rgba(255, 255, 255, 0.08)' }}
+                            whileTap={{ scale: 0.98 }}
+                          >
+                            <div className={`absolute inset-0 bg-gradient-to-r ${currentStep.color} opacity-0 group-hover:opacity-10 transition-opacity`} />
+                            {option}
+                          </motion.button>
+                        ))}
+                      </div>
+                    ) : (
+                      <div className="relative max-w-lg mx-auto">
+                        <div className="absolute left-6 top-1/2 -translate-y-1/2 opacity-40">
+                          {currentStep.icon}
+                        </div>
+                        <input 
+                          autoFocus
+                          type="text"
+                          value={currentInput}
+                          onChange={(e) => setCurrentInput(e.target.value)}
+                          onKeyDown={(e) => e.key === 'Enter' && currentInput.trim() && handleNext()}
+                          placeholder={currentStep.placeholder}
+                          className="w-full bg-white/[0.05] border border-white/10 rounded-[30px] py-6 pl-16 pr-24 text-white font-medium text-lg placeholder:text-white/20 outline-none focus:border-white/30 focus:bg-white/[0.08] transition-all"
+                        />
+                        {currentInput.trim().length > 0 && (
+                          <motion.button
+                            initial={{ opacity: 0, scale: 0.8 }}
+                            animate={{ opacity: 1, scale: 1 }}
+                            onClick={handleNext}
+                            className={`absolute right-3 top-1/2 -translate-y-1/2 px-6 h-12 bg-gradient-to-r ${currentStep.color} text-white font-bold rounded-2xl shadow-xl shadow-black/20 flex items-center gap-2`}
+                            whileHover={{ scale: 1.05 }}
+                            whileTap={{ scale: 0.95 }}
+                          >
+                            <span>Continuar</span>
+                            <ArrowRight className="w-5 h-5" />
+                          </motion.button>
+                        )}
+                      </div>
+                    )}
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
           </div>
         </motion.div>
 
-        {/* Question Area */}
-        <div className="min-h-[120px] mb-8 text-center px-4 flex items-center justify-center">
-          <AnimatePresence mode="wait">
-            {isSubmitting ? (
-              <motion.div
-                key="submitting"
-                initial={{ opacity: 0, scale: 0.9 }}
-                animate={{ opacity: 1, scale: 1 }}
-                className="text-center relative"
-              >
-                {/* Floating Particles Simulation */}
-                {[...Array(6)].map((_, i) => (
-                  <motion.div
-                    key={i}
-                    className="absolute w-2 h-2 rounded-full blur-[1px]"
-                    style={{ 
-                      backgroundColor: i % 2 === 0 ? '#8b5cf6' : '#10b981',
-                      left: '50%',
-                      top: '50%'
-                    }}
-                    animate={{ 
-                      x: [0, (i - 2.5) * 40, (i - 2.5) * 60],
-                      y: [0, -40, -80],
-                      opacity: [0, 1, 0],
-                      scale: [0, 1, 0]
-                    }}
-                    transition={{ 
-                      duration: 2, 
-                      repeat: Infinity, 
-                      delay: i * 0.2,
-                      ease: "easeOut"
-                    }}
-                  />
-                ))}
-                
-                <h2 className="text-3xl font-black text-gray-900 mb-3 tracking-tight">¡Genial, {formData.name}!</h2>
-                <div className="bg-violet-500/5 border border-violet-500/10 rounded-2xl p-4 mb-4 backdrop-blur-sm">
-                   <p className="text-violet-600 font-bold text-sm mb-1 uppercase tracking-wider">Perfil Optimizado</p>
-                   <p className="text-gray-600 text-xs">Objetivo: <span className="font-bold text-gray-900">{formData.goal}</span></p>
-                   <p className="text-gray-600 text-xs">Actividad: <span className="font-bold text-gray-900">{formData.activityLevel}</span></p>
-                </div>
-                <p className="text-gray-400 text-sm animate-pulse">Sincronizando con Roko...</p>
-              </motion.div>
-            ) : !isTyping ? (
-              <motion.h2 
-                key={step}
-                className="text-2xl font-bold text-gray-900 leading-tight"
-                initial={{ opacity: 0, x: 20 }}
-                animate={{ opacity: 1, x: 0 }}
-                exit={{ opacity: 0, x: -20 }}
-              >
-                {typeof steps[step].question === 'function' 
-                  ? (steps[step].question as any)(formData.name) 
-                  : steps[step].question as string}
-              </motion.h2>
-            ) : (
-              <motion.div 
-                key="typing"
-                className="flex items-center justify-center gap-1.5"
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-              >
-                <div className={`w-2 h-2 rounded-full animate-bounce ${
-                  currentColor === 'violet' ? 'bg-violet-400' :
-                  currentColor === 'green' ? 'bg-green-400' :
-                  currentColor === 'blue' ? 'bg-blue-400' : 'bg-amber-400'
-                }`} style={{ animationDelay: '0ms' }} />
-                <div className={`w-2 h-2 rounded-full animate-bounce ${
-                  currentColor === 'violet' ? 'bg-violet-400' :
-                  currentColor === 'green' ? 'bg-green-400' :
-                  currentColor === 'blue' ? 'bg-blue-400' : 'bg-amber-400'
-                }`} style={{ animationDelay: '150ms' }} />
-                <div className={`w-2 h-2 rounded-full animate-bounce ${
-                  currentColor === 'violet' ? 'bg-violet-400' :
-                  currentColor === 'green' ? 'bg-green-400' :
-                  currentColor === 'blue' ? 'bg-blue-400' : 'bg-amber-400'
-                }`} style={{ animationDelay: '300ms' }} />
-              </motion.div>
-            )}
-          </AnimatePresence>
-        </div>
-
-        {/* Input Area */}
-        <AnimatePresence>
-          {!isSubmitting && (
-            <motion.div 
-              className="space-y-4"
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.9 }}
-              transition={{ delay: 0.5 }}
-            >
-              {steps[step].options ? (
-                <div className="grid grid-cols-2 gap-3">
-                  {steps[step].options!.map((option) => (
-                    <motion.button
-                      key={option}
-                      onClick={() => handleOptionClick(option)}
-                      className="p-5 bg-white border-2 border-gray-100 rounded-3xl text-sm font-bold text-gray-700 hover:border-green-500 hover:bg-green-50 transition-all flex items-center justify-between group"
-                      whileHover={{ scale: 1.02 }}
-                      whileTap={{ scale: 0.98 }}
-                    >
-                      {option}
-                      <ChevronRight className="w-4 h-4 text-green-500 opacity-0 group-hover:opacity-100 transform translate-x-[-10px] group-hover:translate-x-0 transition-all" />
-                    </motion.button>
-                  ))}
-                </div>
-              ) : (
-                <div className="relative group">
-                  <div className="absolute left-5 top-1/2 -translate-y-1/2 opacity-70">
-                    {steps[step].icon}
-                  </div>
-                  <input 
-                    autoFocus
-                    type="text"
-                    value={currentInput}
-                    onChange={(e) => setCurrentInput(e.target.value)}
-                    onKeyDown={(e) => e.key === 'Enter' && currentInput.trim() && handleNext()}
-                    placeholder={steps[step].placeholder}
-                    className="w-full bg-gray-50 border-2 border-gray-100 rounded-3xl py-5 pl-14 pr-20 text-gray-900 font-medium outline-none focus:border-violet-500 focus:bg-white transition-all shadow-sm"
-                  />
-                  {currentInput.trim().length > 0 && (
-                    <motion.button
-                      initial={{ scale: 0, opacity: 0 }}
-                      animate={{ scale: 1, opacity: 1 }}
-                      onClick={handleNext}
-                      className={`absolute right-3 top-1/2 -translate-y-1/2 w-12 h-12 text-white rounded-2xl flex items-center justify-center shadow-lg transition-all ${
-                        currentColor === 'violet' ? 'bg-violet-500 shadow-violet-500/20' :
-                        currentColor === 'green' ? 'bg-green-500 shadow-green-500/20' :
-                        currentColor === 'blue' ? 'bg-blue-500 shadow-blue-500/20' : 'bg-amber-500 shadow-amber-500/20'
-                      }`}
-                    >
-                      <ArrowRight className="w-5 h-5" />
-                    </motion.button>
-                  )}
-                </div>
-              )}
-            </motion.div>
-          )}
-        </AnimatePresence>
-
-        {/* Footer info */}
+        {/* Footer Info - Subtle & Clean */}
         {!isSubmitting && (
-          <p className="mt-8 text-center text-xs text-gray-400 font-medium uppercase tracking-widest">
-            {step === 0 ? 'Toda la información es privada' : `Paso ${step + 1} de ${steps.length}`}
-          </p>
+          <motion.div 
+            className="mt-12 text-center"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 1 }}
+          >
+            <p className="text-white/20 text-xs font-bold uppercase tracking-[0.2em]">
+              Paso {step + 1} de {steps.length} • Perfil Privado & Seguro
+            </p>
+          </motion.div>
         )}
       </div>
+
+      {/* Decorative Floating Blobs */}
+      <div className="absolute top-[15%] right-[10%] w-32 h-32 border border-white/5 rounded-full animate-spin-slow pointer-events-none" />
+      <div className="absolute bottom-[20%] left-[5%] w-16 h-16 bg-white/5 rounded-full blur-xl animate-pulse pointer-events-none" />
     </div>
   );
 }
