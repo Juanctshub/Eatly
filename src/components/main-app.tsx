@@ -320,6 +320,9 @@ export default function EatlyApp() {
         
         setShowOnboarding(false);
         playSound('success');
+      } else {
+        console.warn('Onboarding API success was false, closing anyway');
+        setShowOnboarding(false);
       }
     } catch (error) {
       console.error('Onboarding failed:', error);

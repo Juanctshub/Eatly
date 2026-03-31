@@ -9,8 +9,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Faltan campos obligatorios' }, { status: 400 });
     }
 
-    // In this MVP we work with a single user (the first one or a default one)
-    // In a real app we'd use getSession() from NextAuth
+    // Get or Create User
     let user = await db.user.findFirst();
     if (!user) {
       user = await db.user.create({
@@ -18,40 +17,53 @@ export async function POST(req: NextRequest) {
       });
     }
 
-    // Update user profile
+    // Update User Profile basics
     const updatedUser = await db.user.update({
       where: { id: user.id },
       data: {
         name,
         goal,
         activityLevel,
-        recentLogs: 'Iniciando mi camino con Eatly',
-        preferences: {
-          upsert: {
-            create: { onboarding: true, theme: 'light' },
-            update: { onboarding: true }
-          }
-        }
+        recentLogs: 'Camino con Eatly iniciado'
       }
     });
 
+    // Handle Preferences separately for stability
+    const existingPrefs = await db.userPreferences.findUnique({
+      where: { userId: user.id }
+    });
+
+    if (existingPrefs) {
+      await db.userPreferences.update({
+        where: { id: existingPrefs.id },
+        data: { onboarding: true }
+      });
+    } else {
+      await db.userPreferences.create({
+        data: { userId: user.id, onboarding: true, theme: 'light' }
+      });
+    }
+
     // Save initial restrictions
     if (restrictions && Array.isArray(restrictions) && restrictions.length > 0) {
-      await db.dietaryRestriction.createMany({
-        data: restrictions.map((r: any) => ({
-          userId: user?.id,
-          foodItem: r.foodItem,
-          reason: r.reason || 'alergia',
-          severity: r.severity || 'moderada',
-          notes: 'Configurado en onboarding'
-        }))
-      });
+      // Use individual creates if createMany has issues with SQLite in this environment
+      for (const r of restrictions) {
+        await db.dietaryRestriction.create({
+          data: {
+            userId: user.id,
+            foodItem: r.foodItem,
+            reason: r.reason || 'alergia',
+            severity: r.severity || 'moderada',
+            notes: 'Onboarding'
+          }
+        });
+      }
     }
 
     return NextResponse.json({ success: true, user: updatedUser });
   } catch (error: any) {
-    console.error('[Onboarding API] Error:', error.message);
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    console.error('[Onboarding API Critical Error]:', error.message);
+    return NextResponse.json({ error: error.message, success: false }, { status: 500 });
   }
 }
 
