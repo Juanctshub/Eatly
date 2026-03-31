@@ -17,37 +17,33 @@ interface VoiceCommandsResult {
   resetTranscript: () => void;
 }
 
-// Command patterns with priorities
+// Command patterns with priorities - SPECIFIC REGEX FIRST
 const COMMAND_PATTERNS = [
+  // Specific action commands with parameters - TOP PRIORITY
+  { patterns: [/^(?:agregar|añadir) restricción (?:\s+de\s+)?(.+)$/i, /^(?:tengo|soy) (?:alergia|alérgico|alergico) (?:\s+a\s+)?(.+)$/i, /^(?:soy) intolerant[eo] (?:\s+a\s+)?(.+)$/i], command: 'add_restriction', data: 'voice' },
+  { patterns: [/^(?:agregar|añadir) alimento (?:\s+de\s+)?(.+)$/i, /^(?:tengo) (.+) disponible$/i, /^(?:agrega) (.+)$/i], command: 'add_food', data: 'voice' },
+  
   // Navigation commands - HIGH PRIORITY
-  { patterns: ['ir a inicio', 'ir al inicio', 've al inicio', 'ir a home', 'menú principal', 'menu principal'], command: 'navigate', data: 'home' },
-  { patterns: ['ir a restricciones', 've a restricciones', 'ver restricciones', 'mis restricciones'], command: 'navigate', data: 'restrictions' },
-  { patterns: ['ir a comidas', 've a comidas', 'ver comidas', 'mis comidas', 'ir a alimentos'], command: 'navigate', data: 'foods' },
-  { patterns: ['ir a sugerencias', 've a sugerencias', 'ver sugerencias', 'qué puedo comer', 'que puedo comer', 'dame sugerencias'], command: 'navigate', data: 'suggestions' },
+  { patterns: ['ir a inicio', 'ir al inicio', 've al inicio', 'regresar al inicio', 'ir a home', 'página principal', 'menú principal'], command: 'navigate', data: 'home' },
+  { patterns: ['ir a restricciones', 've a restricciones', 'ver mis restricciones', 'ver alergias', 'mis restricciones', 'lista de restricciones'], command: 'navigate', data: 'restrictions' },
+  { patterns: ['ir a comidas', 've a comidas', 'ver mis comidas', 'ver alimentos', 'mis comidas', 'ir a alimentos', 'lista de comidas'], command: 'navigate', data: 'foods' },
+  { patterns: ['ir a sugerencias', 've a sugerencias', 'ver sugerencias', 'qué puedo comer', 'que puedo comer', 'dame sugerencias', 'sugerencias de hoy'], command: 'navigate', data: 'suggestions' },
   
-  // Specific action commands - HIGH PRIORITY
-  { patterns: ['ver mapa', 'ver restaurantes', 'ir a restaurantes', 'restaurantes cercanos', 'donde comer', 'dónde comer'], command: 'restaurants', data: 'show' },
-  { patterns: ['escanear producto', 'escanear código', 'escanear codigo', 'abrir escáner', 'abrir escaner', 'escáner', 'escaner'], command: 'scan', data: 'barcode' },
+  // App Feature Toggle commands
+  { patterns: ['ver mapa', 'abrir mapa', 'ver restaurantes', 'ir a restaurantes', 'restaurantes cercanos', 'dónde comer', 'donde comer'], command: 'restaurants', data: 'show' },
+  { patterns: ['escanear producto', 'escanear código', 'escanear codigo', 'abrir escáner', 'abrir escaner', 'hacer escaneo', 'activar cámara'], command: 'scan', data: 'barcode' },
+  { patterns: ['abrir configuración', 'ir a configuración', 'ver configuración', 'editar mi perfil', 'ajustes', 'configurar'], command: 'settings', data: 'open' },
+  { patterns: ['chatear con roko', 'hablar con roko', 'abrir chat', 'ir al chat', 'abrir roko', 'preguntar a roko'], command: 'chat', data: 'open' },
   
-  // Add commands - MEDIUM PRIORITY (must capture the food item)
-  { patterns: [/^agregar restricción (.+)$/, /^añadir restricción (.+)$/, /^tengo alergia a (.+)$/, /^soy alérgico a (.+)$/, /^soy alergico a (.+)$/], command: 'add_restriction', data: 'voice' },
-  { patterns: [/^agregar alimento (.+)$/, /^añadir alimento (.+)$/, /^tengo (.+) disponible$/], command: 'add_food', data: 'voice' },
+  // Quick Actions without params
+  { patterns: ['ayuda', 'qué comandos hay', 'comandos de voz', 'qué puedo decir'], command: 'help', data: 'show' },
+  { patterns: ['nueva restricción', 'crear restricción'], command: 'add', data: 'restriction' },
+  { patterns: ['nuevo alimento', 'crear alimento'], command: 'add', data: 'food' },
   
-  // Open specific sections
-  { patterns: ['abrir configuración', 'ir a configuración', 'ver configuración', 'ajustes'], command: 'settings', data: 'open' },
-  { patterns: ['chatear con roko', 'hablar con roko', 'abrir chat', 'ir al chat', 'abrir roko'], command: 'chat', data: 'open' },
-  
-  // Help command
-  { patterns: ['ayuda', 'comandos de voz', 'qué puedo decir', 'que puedo decir'], command: 'help', data: 'show' },
-  
-  // Quick add modals
-  { patterns: ['nueva restricción', 'agregar restricción', 'añadir restricción'], command: 'add', data: 'restriction' },
-  { patterns: ['nuevo alimento', 'agregar alimento', 'añadir alimento'], command: 'add', data: 'food' },
-  
-  // Meal type selection
-  { patterns: ['para el desayuno', 'es para desayunar', 'tipo desayuno'], command: 'mealType', data: 'desayuno' },
-  { patterns: ['para el almuerzo', 'es para almorzar', 'tipo almuerzo'], command: 'mealType', data: 'almuerzo' },
-  { patterns: ['para la cena', 'es para cenar', 'tipo cena'], command: 'mealType', data: 'cena' },
+  // Contextual Selection
+  { patterns: ['desayuno', 'para desayunar', 'hora del desayuno'], command: 'mealType', data: 'desayuno' },
+  { patterns: ['almuerzo', 'comida', 'para almorzar', 'para comer'], command: 'mealType', data: 'almuerzo' },
+  { patterns: ['cena', 'cenar', 'para cenar'], command: 'mealType', data: 'cena' },
 ];
 
 export function useVoiceCommands({
@@ -126,7 +122,6 @@ export function useVoiceCommands({
           errorMessage = '⚠️ Error de conexión. El reconocimiento de voz requiere internet activo. Verifica tu conexión e intenta de nuevo.';
           break;
         case 'not-allowed':
-        case 'permission-denied':
           errorMessage = '❌ Permiso denegado. Habilita el micrófono en la configuración del navegador y recarga la página.';
           break;
         case 'no-speech':

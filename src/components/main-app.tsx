@@ -59,6 +59,7 @@ import {
   MessageCircle,
   Mic,
   MapPin,
+  AlertCircle,
 } from 'lucide-react';
 
 // Types
@@ -184,6 +185,7 @@ export default function EatlyApp() {
   const [showNotifications, setShowNotifications] = useState(false);
   const [settingsSection, setSettingsSection] = useState<string | null>(null);
   const [voiceError, setVoiceError] = useState<string | null>(null);
+  const [voiceCommandFeedback, setVoiceCommandFeedback] = useState<string | null>(null);
   const [notifications, setNotifications] = useState({
     push: true,
     email: true,
@@ -677,11 +679,39 @@ export default function EatlyApp() {
     vibrate([30, 50, 30]);
     setVoiceError(null);
     
+    // Feedback mapping
+    const feedbackMap: Record<string, string> = {
+      'navigate': 'Navegando...',
+      'restaurants': 'Buscando restaurantes...',
+      'add_restriction': 'Nueva restricción: ' + data,
+      'add_food': 'Nuevo alimento: ' + data,
+      'chat': 'Abriendo Roko Chat...',
+      'scan': 'Activando Escáner...',
+      'settings': 'Abriendo Configuración...',
+      'mealType': 'Cambiando a ' + data,
+      'help': 'Buscando ayuda...',
+      'ai_query': 'Preguntando a Roko...'
+    };
+
+    setVoiceCommandFeedback(feedbackMap[command] || 'Entendido');
+    setTimeout(() => setVoiceCommandFeedback(null), 2500);
+
+    // Navigation logic: Close all overlays first to avoid "same site" confusion
+    const resetOverlays = () => {
+      setShowSettings(false);
+      setShowAddModal(false);
+      setShowRestaurantMap(false);
+      setShowScanner(false);
+      setShowRokoSection(false);
+    };
+    
     switch (command) {
       case 'navigate':
+        resetOverlays();
         setActiveTab(data);
         break;
       case 'restaurants':
+        resetOverlays();
         setShowRestaurantMap(true);
         break;
       case 'add':
@@ -689,45 +719,52 @@ export default function EatlyApp() {
         setShowAddModal(true);
         break;
       case 'add_restriction':
-        // Voice captured a specific restriction
+        resetOverlays();
         setNewRestriction(prev => ({ ...prev, foodItem: data }));
         setAddType('restriction');
         setShowAddModal(true);
         break;
       case 'add_food':
-        // Voice captured a specific food
+        resetOverlays();
         setNewFood(prev => ({ ...prev, name: data }));
         setAddType('food');
         setShowAddModal(true);
         break;
       case 'chat':
+        resetOverlays();
         setShowRokoSection(true);
         break;
       case 'settings':
+        resetOverlays();
         setShowSettings(true);
         break;
       case 'mealType':
         setSelectedMealType(data);
-        setActiveTab('suggestions');
+        if (activeTab !== 'suggestions') {
+          resetOverlays();
+          setActiveTab('suggestions');
+        }
         break;
       case 'scan':
+        resetOverlays();
         setShowScanner(true);
         break;
       case 'help':
+        resetOverlays();
         setVoiceInitialMessage('¿Qué comandos de voz puedo usar?');
         setShowRokoSection(true);
         break;
       case 'ai_query':
-        // Generic query goes to Roko
+        resetOverlays();
         setVoiceInitialMessage(data);
         setShowRokoSection(true);
         break;
       default:
-        // Unknown command - send to AI
+        resetOverlays();
         setVoiceInitialMessage(data);
         setShowRokoSection(true);
     }
-  }, [playSound, vibrate]);
+  }, [playSound, vibrate, activeTab]);
 
   // Initialize voice commands
   const {
@@ -2346,6 +2383,23 @@ export default function EatlyApp() {
             >
               <X className="w-4 h-4" />
             </button>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Voice Command Feedback Toast */}
+      <AnimatePresence>
+        {voiceCommandFeedback && (
+          <motion.div
+            className="fixed top-24 left-1/2 -translate-x-1/2 bg-blue-600 text-white px-6 py-3 rounded-full shadow-2xl z-[220] flex items-center gap-3 border border-white/20"
+            initial={{ y: -50, x: '-50%', opacity: 0 }}
+            animate={{ y: 0, x: '-50%', opacity: 1 }}
+            exit={{ y: -50, x: '-50%', opacity: 0 }}
+          >
+            <div className="w-6 h-6 bg-white/20 rounded-full flex items-center justify-center animate-pulse">
+              <Mic className="w-3.5 h-3.5" />
+            </div>
+            <p className="text-sm font-bold tracking-tight whitespace-nowrap">{voiceCommandFeedback}</p>
           </motion.div>
         )}
       </AnimatePresence>
