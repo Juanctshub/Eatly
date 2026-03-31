@@ -1832,6 +1832,7 @@ export default function EatlyApp() {
           {activeTab === 'home' && <div key="home" className="bg-background">{renderHome()}</div>}
           {activeTab === 'restrictions' && <div key="restrictions" className="bg-background">{renderRestrictions()}</div>}
           {activeTab === 'foods' && <div key="foods" className="bg-background">{renderFoods()}</div>}
+          {activeTab === 'suggestions' && <div key="suggestions" className="bg-background">{renderSuggestions()}</div>}
           {activeTab === 'roko' && (
             <div key="roko" className="bg-background h-full">
               <RokoPage 
