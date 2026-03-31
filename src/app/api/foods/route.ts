@@ -23,8 +23,17 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Falta el nombre del alimento' }, { status: 400 });
     }
 
+    // Get the first user for now (demo stability)
+    let user = await db.user.findFirst();
+    if (!user) {
+      user = await db.user.create({
+        data: { name: 'Usuario', email: 'user@eatly.app' }
+      });
+    }
+
     const newFood = await db.availableFood.create({
       data: {
+        userId: user.id,
         name: data.name,
         category: data.category || 'General',
         mealType: data.mealType || 'Desayuno',

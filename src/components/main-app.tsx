@@ -255,27 +255,21 @@ export default function EatlyApp() {
         }
 
         if (dataOnboarding.user) {
-          setUserData({
-            ...userData,
+          console.log('[Eatly] Cargando perfil del usuario:', dataOnboarding.user.name);
+          setUserData(prev => ({
+            ...prev,
             ...dataOnboarding.user
-          });
+          }));
         }
 
         if (Array.isArray(dataRest)) {
           setRestrictions(dataRest);
-          localStorage.setItem('eatly_restrictions', JSON.stringify(dataRest));
         }
         if (Array.isArray(dataFood)) {
           setFoods(dataFood);
-          localStorage.setItem('eatly_foods', JSON.stringify(dataFood));
         }
       } catch (error) {
-        console.error('Error fetching data from API, using local storage:', error);
-        // Fallback to local storage if API fails
-        const localRest = localStorage.getItem('eatly_restrictions');
-        const localFood = localStorage.getItem('eatly_foods');
-        if (localRest) setRestrictions(JSON.parse(localRest));
-        if (localFood) setFoods(JSON.parse(localFood));
+        console.error('Error fetching data from API:', error);
       } finally {
         setLoading(false);
       }
@@ -283,6 +277,29 @@ export default function EatlyApp() {
 
     fetchData();
   }, []);
+
+  const refreshAllData = async () => {
+    try {
+      console.log('[Eatly] Refrescando datos omniscientes...');
+      const [resRest, resFood, resOnboarding] = await Promise.all([
+        fetch('/api/restrictions'),
+        fetch('/api/foods'),
+        fetch('/api/user/onboarding')
+      ]);
+      
+      const dataRest = await resRest.json();
+      const dataFood = await resFood.json();
+      const dataOnboarding = await resOnboarding.json();
+      
+      if (dataOnboarding.user) {
+        setUserData(prev => ({ ...prev, ...dataOnboarding.user }));
+      }
+      if (Array.isArray(dataRest)) setRestrictions(dataRest);
+      if (Array.isArray(dataFood)) setFoods(dataFood);
+    } catch (err) {
+      console.error('Error refreshing data:', err);
+    }
+  };
 
   // Sync state changes with local storage as a cache
   useEffect(() => {
@@ -314,17 +331,9 @@ export default function EatlyApp() {
       
       const result = await res.json();
       if (result.success) {
-        setUserData({
-          ...userData,
-          name: data.name,
-          goal: data.goal,
-          activityLevel: data.activityLevel
-        });
-        
-        // Refresh restrictions from DB
-        const resRest = await fetch('/api/restrictions');
-        const updatedRest = await resRest.json();
-        setRestrictions(updatedRest);
+        console.log('[Eatly] Onboarding exitoso, sincronizando UI...');
+        // Refresh everything from DB to ensure types and categories match
+        await refreshAllData();
         
         setShowOnboarding(false);
         playSound('success');
