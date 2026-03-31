@@ -177,6 +177,7 @@ export default function EatlyApp() {
   const [showRokoSection, setShowRokoSection] = useState(false);
   const [showRestaurantMap, setShowRestaurantMap] = useState(false);
   const [showScanner, setShowScanner] = useState(false);
+  const [isSyncing, setIsSyncing] = useState(false);
   const [voiceInitialMessage, setVoiceInitialMessage] = useState<string | undefined>(undefined);
   const [showActivityHistory, setShowActivityHistory] = useState(false);
   const [showNotifications, setShowNotifications] = useState(false);
@@ -323,6 +324,8 @@ export default function EatlyApp() {
   const handleOnboardingComplete = async (data: any) => {
     try {
       setLoading(true);
+      setIsSyncing(true); // Bloquear UI para sincronización total
+      
       const res = await fetch('/api/user/onboarding', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -331,12 +334,16 @@ export default function EatlyApp() {
       
       const result = await res.json();
       if (result.success) {
-        console.log('[Eatly] Onboarding exitoso, sincronizando UI...');
-        // Refresh everything from DB to ensure types and categories match
+        console.log('[Eatly] Onboarding exitoso, sincronizando perfil maestro...');
+        
+        // Pequeña pausa para asegurar commit en BD antes de re-fetch
+        await new Promise(resolve => setTimeout(resolve, 800));
+        
         await refreshAllData();
         
         setShowOnboarding(false);
         playSound('success');
+        vibrate([50, 100, 50]);
       } else {
         console.warn('Onboarding API success was false, closing anyway');
         setShowOnboarding(false);
@@ -346,6 +353,8 @@ export default function EatlyApp() {
       setShowOnboarding(false);
     } finally {
       setLoading(false);
+      // Mantener isSyncing un segundo extra para suavidad visual
+      setTimeout(() => setIsSyncing(false), 500);
     }
   };
 
@@ -2312,6 +2321,44 @@ export default function EatlyApp() {
         playSound={playSound}
         vibrate={vibrate}
       />
+
+      {/* Profile Sync Overlay */}
+      <AnimatePresence>
+        {isSyncing && (
+          <motion.div
+            className="fixed inset-0 bg-white/80 backdrop-blur-md z-[200] flex flex-col items-center justify-center p-6 text-center"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+          >
+            <div className="w-24 h-24 bg-gradient-to-tr from-green-500 to-emerald-500 rounded-[2.5rem] flex items-center justify-center shadow-xl shadow-green-500/30 mb-8 overflow-hidden relative">
+              <div className="absolute inset-0 bg-white/20 animate-pulse" />
+              <motion.div
+                animate={{ rotate: 360 }}
+                transition={{ duration: 3, repeat: Infinity, ease: 'linear' }}
+              >
+                <RefreshCw className="w-10 h-10 text-white" />
+              </motion.div>
+            </div>
+            
+            <h2 className="text-2xl font-black text-gray-900 mb-2">Optimizando tu perfil...</h2>
+            <p className="text-gray-500 max-w-[250px]">
+              Roko está procesando tus restricciones y metas de salud científicamente.
+            </p>
+            
+            <div className="mt-12 flex gap-1.5">
+              {[0, 1, 2].map(i => (
+                <motion.div
+                  key={i}
+                  className="w-2 h-2 bg-green-500 rounded-full"
+                  animate={{ y: [0, -10, 0] }}
+                  transition={{ duration: 0.6, repeat: Infinity, delay: i * 0.15 }}
+                />
+              ))}
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* Barcode Scanner Modal */}
       <AnimatePresence>

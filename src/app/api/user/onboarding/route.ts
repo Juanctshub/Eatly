@@ -10,54 +10,51 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Faltan campos obligatorios' }, { status: 400 });
     }
 
-    // Get or Create User
-    let user = await db.user.findFirst();
-    if (!user) {
-      user = await db.user.create({
-        data: { name, email: 'user@eatly.app' }
-      });
-    }
-
-    // Update User Profile basics
-    const updatedUser = await db.user.update({
-      where: { id: user.id },
-      data: {
+    // Hardened Identity: Always use the same master user for this demo
+    const MASTER_EMAIL = 'roko.master@eatly.app';
+    
+    // Upsert User Profile
+    const updatedUser = await db.user.upsert({
+      where: { email: MASTER_EMAIL },
+      update: {
         name,
         goal,
         activityLevel,
         recentLogs: 'Camino con Eatly iniciado'
+      },
+      create: {
+        email: MASTER_EMAIL,
+        name,
+        goal,
+        activityLevel,
+        recentLogs: 'Sesión iniciada'
       }
     });
 
-    // Handle Preferences separately for stability
-    const existingPrefs = await db.userPreferences.findUnique({
-      where: { userId: user.id }
-    });
+    const userId = updatedUser.id;
 
-    if (existingPrefs) {
-      await db.userPreferences.update({
-        where: { id: existingPrefs.id },
-        data: { onboarding: true }
-      });
-    } else {
-      await db.userPreferences.create({
-        data: { userId: user.id, onboarding: true, theme: 'light' }
-      });
-    }
+    // Handle Preferences
+    await db.userPreferences.upsert({
+      where: { userId },
+      update: { onboarding: true },
+      create: { userId, onboarding: true, theme: 'light' }
+    });
 
     // Save initial restrictions with AI categorization
     if (restrictions && Array.isArray(restrictions) && restrictions.length > 0) {
+      // Clear previous restrictions for this master user to avoid duplicates on re-onboarding
+      await db.dietaryRestriction.deleteMany({ where: { userId } });
+
       for (const r of restrictions) {
-        // AI Categorization for restrictions
         const category = await NeuralEngine.categorizeFood(r.foodItem);
         
         await db.dietaryRestriction.create({
           data: {
-            userId: user.id,
+            userId,
             foodItem: r.foodItem,
             reason: r.reason || 'alergia',
             severity: r.severity || 'moderada',
-            category: category, // SAVE IN NEW FIELD
+            category: category,
             notes: 'Configurado en onboarding'
           }
         });
@@ -74,7 +71,9 @@ export async function POST(req: NextRequest) {
 // GET onboarding status and profile data
 export async function GET() {
   try {
-    const user = await db.user.findFirst({
+    const MASTER_EMAIL = 'roko.master@eatly.app';
+    const user = await db.user.findUnique({
+      where: { email: MASTER_EMAIL },
       include: { preferences: true }
     });
     
@@ -89,6 +88,7 @@ export async function GET() {
       } : null
     });
   } catch (error: any) {
+    console.error('[Onboarding GET Error]:', error.message);
     return NextResponse.json({ onboarding: false, user: null });
   }
 }

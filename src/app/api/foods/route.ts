@@ -1,10 +1,18 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 
+const MASTER_EMAIL = 'roko.master@eatly.app';
+
 // GET all available foods
 export async function GET() {
   try {
+    const user = await db.user.findUnique({ where: { email: MASTER_EMAIL } });
+    if (!user) {
+      return NextResponse.json([]);
+    }
+
     const foods = await db.availableFood.findMany({
+      where: { userId: user.id },
       orderBy: { createdAt: 'desc' },
     });
     return NextResponse.json(foods);
@@ -23,11 +31,11 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Falta el nombre del alimento' }, { status: 400 });
     }
 
-    // Get the first user for now (demo stability)
-    let user = await db.user.findFirst();
+    // Get the master user for consistency
+    let user = await db.user.findUnique({ where: { email: MASTER_EMAIL } });
     if (!user) {
       user = await db.user.create({
-        data: { name: 'Usuario', email: 'user@eatly.app' }
+        data: { name: 'Usuario', email: MASTER_EMAIL }
       });
     }
 

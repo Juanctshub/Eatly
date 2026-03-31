@@ -79,9 +79,21 @@ export default function AIChat({ isOpen, onClose, restrictions, foods, mealType 
   useEffect(() => {
     if (isOpen && messages.length === 0) {
       const restrictionNames = restrictions.map(r => r.foodItem).join(', ');
-      const greeting = restrictions.length > 0 
-        ? `¡Hola! Soy Roko 🥗. Veo que tienes restricciones con: **${restrictionNames}**. \n\n¿Quieres que te sugiera algo seguro para tu ${mealType}?`
-        : "¡Hola! Soy Roko 🥗, tu asistente nutricional. \n\nCuéntame, ¿qué tienes pensado comer hoy o qué ingredientes tienes a mano?";
+      
+      let greeting = '';
+      if (userData?.name && userData.name !== 'Usuario') {
+        greeting = `¡Hola **${userData.name}**! 🥗 Soy Roko, tu nutriólogo residente. \n\nHe cargado tu meta: **"${userData.goal || 'Vivir mejor'}"**. `;
+        
+        if (restrictions.length > 0) {
+          greeting += `Recuerda que hoy vigilaremos juntos: **${restrictionNames}**. \n\n¿Tienes alguna duda sobre tu ${mealType} o necesitas que analice algún producto?`;
+        } else {
+          greeting += `¿Qué tienes planeado comer hoy para tu ${mealType}? Estoy listo para asesorarte.`;
+        }
+      } else {
+        greeting = restrictions.length > 0 
+          ? `¡Hola! Soy Roko 🥗. Veo que tienes restricciones con: **${restrictionNames}**. \n\n¿Quieres que te sugiera algo seguro para tu ${mealType}?`
+          : "¡Hola! Soy Roko 🥗, tu asistente nutricional. \n\nCuéntame, ¿qué tienes pensado comer hoy o qué ingredientes tienes a mano?";
+      }
         
       setMessages([{
         id: 'greeting',
