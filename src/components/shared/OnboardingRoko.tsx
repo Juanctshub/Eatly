@@ -257,12 +257,12 @@ export default function OnboardingRoko({ onComplete, isSubmitting = false }: Onb
                     exit={{ opacity: 0, y: -10 }}
                   >
                     {currentStep.options ? (
-                      <div className="grid grid-cols-2 gap-4">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
                         {currentStep.options!.map((option) => (
                           <motion.button
                             key={option}
                             onClick={() => handleOptionClick(option)}
-                            className="group relative h-20 bg-white/[0.03] border border-white/10 rounded-3xl text-base font-bold text-white transition-all overflow-hidden"
+                            className="group relative h-16 sm:h-20 bg-white/[0.03] border border-white/10 rounded-2xl sm:rounded-3xl text-sm sm:text-base font-bold text-white transition-all overflow-hidden"
                             whileHover={{ scale: 1.02, backgroundColor: 'rgba(255, 255, 255, 0.08)' }}
                             whileTap={{ scale: 0.98 }}
                           >
@@ -272,25 +272,27 @@ export default function OnboardingRoko({ onComplete, isSubmitting = false }: Onb
                         ))}
                       </div>
                     ) : (
-                      <div className="relative max-w-lg mx-auto">
-                        <div className="absolute left-6 top-1/2 -translate-y-1/2 opacity-40">
-                          {currentStep.icon}
+                      <div className="flex flex-col gap-4 max-w-lg mx-auto">
+                        <div className="relative">
+                          <div className="absolute left-5 top-1/2 -translate-y-1/2 opacity-40">
+                            {currentStep.icon}
+                          </div>
+                          <input 
+                            autoFocus
+                            type="text"
+                            value={currentInput}
+                            onChange={(e) => setCurrentInput(e.target.value)}
+                            onKeyDown={(e) => e.key === 'Enter' && currentInput.trim() && handleNext()}
+                            placeholder={currentStep.placeholder}
+                            className="w-full bg-white/[0.05] border border-white/10 rounded-2xl sm:rounded-[30px] py-4 sm:py-6 pl-14 sm:pl-16 pr-6 sm:pr-24 text-white font-medium text-base sm:text-lg placeholder:text-white/20 outline-none focus:border-white/30 focus:bg-white/[0.08] transition-all"
+                          />
                         </div>
-                        <input 
-                          autoFocus
-                          type="text"
-                          value={currentInput}
-                          onChange={(e) => setCurrentInput(e.target.value)}
-                          onKeyDown={(e) => e.key === 'Enter' && currentInput.trim() && handleNext()}
-                          placeholder={currentStep.placeholder}
-                          className="w-full bg-white/[0.05] border border-white/10 rounded-[30px] py-6 pl-16 pr-24 text-white font-medium text-lg placeholder:text-white/20 outline-none focus:border-white/30 focus:bg-white/[0.08] transition-all"
-                        />
                         {currentInput.trim().length > 0 && (
                           <motion.button
-                            initial={{ opacity: 0, scale: 0.8 }}
+                            initial={{ opacity: 0, scale: 0.95 }}
                             animate={{ opacity: 1, scale: 1 }}
                             onClick={handleNext}
-                            className={`absolute right-3 top-1/2 -translate-y-1/2 px-6 h-12 bg-gradient-to-r ${currentStep.color} text-white font-bold rounded-2xl shadow-xl shadow-black/20 flex items-center gap-2`}
+                            className={`w-full sm:w-auto sm:absolute sm:right-3 sm:top-1/2 sm:-translate-y-1/2 px-8 h-14 sm:h-12 bg-gradient-to-r ${currentStep.color} text-white font-bold rounded-2xl shadow-xl shadow-black/20 flex items-center justify-center gap-2`}
                             whileHover={{ scale: 1.05 }}
                             whileTap={{ scale: 0.95 }}
                           >
@@ -310,12 +312,12 @@ export default function OnboardingRoko({ onComplete, isSubmitting = false }: Onb
         {/* Footer Info - Subtle & Clean */}
         {!isSubmitting && (
           <motion.div 
-            className="mt-12 text-center"
+            className="mt-8 sm:mt-12 text-center"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ delay: 1 }}
           >
-            <p className="text-white/20 text-xs font-bold uppercase tracking-[0.2em]">
+            <p className="text-white/20 text-[10px] sm:text-xs font-bold uppercase tracking-[0.2em]">
               Paso {step + 1} de {steps.length} • Perfil Privado & Seguro
             </p>
           </motion.div>
