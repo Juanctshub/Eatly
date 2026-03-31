@@ -104,15 +104,20 @@ export async function GET() {
       include: { preferences: true }
     });
     
+    // If user doesn't exist, we definitely need onboarding
+    if (!user) {
+      return NextResponse.json({ onboarding: false, user: null });
+    }
+
     return NextResponse.json({ 
-      onboarding: user?.preferences?.onboarding || false,
-      user: user ? {
+      onboarding: user.preferences?.onboarding ?? false,
+      user: {
         name: user.name,
         email: user.email,
         goal: user.goal,
         activityLevel: user.activityLevel,
         recentLogs: user.recentLogs
-      } : null
+      }
     });
   } catch (error: any) {
     console.error('[Onboarding GET Error]:', error.message);

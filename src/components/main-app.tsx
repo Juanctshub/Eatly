@@ -333,6 +333,7 @@ export default function EatlyApp() {
       setLoading(true);
       setIsSyncing(true); // Bloquear UI para sincronización total
       
+      console.log('[Eatly] Iniciando guardado de onboarding:', data.name);
       const res = await fetch('/api/user/onboarding', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -341,27 +342,28 @@ export default function EatlyApp() {
       
       const result = await res.json();
       if (result.success) {
-        console.log('[Eatly] Onboarding exitoso, sincronizando perfil maestro...');
+        console.log('[Eatly] Onboarding exitoso. Sincronizando perfil...');
         
-        // Pequeña pausa para asegurar commit en BD antes de re-fetch
-        await new Promise(resolve => setTimeout(resolve, 800));
+        // Pausa táctica para asegurar que SQLite complete la escritura
+        await new Promise(resolve => setTimeout(resolve, 1000));
         
+        // Recargar datos omniscientes
         await refreshAllData();
         
+        // Solo cerramos si el refresh funcionó o al menos lo intentó
         setShowOnboarding(false);
         playSound('success');
         vibrate([50, 100, 50]);
       } else {
-        console.warn('Onboarding API success was false, closing anyway');
-        setShowOnboarding(false);
+        console.error('[Eatly] Error en API Onboarding:', result.error);
+        setErrorToast('Roko tuvo un problema al guardar tu meta. Reintenta.');
       }
-    } catch (error) {
-      console.error('Onboarding failed:', error);
-      setShowOnboarding(false);
+    } catch (error: any) {
+      console.error('[Eatly] Fallo crítico de red en Onboarding:', error.message);
+      setErrorToast('Error de conexión. Tus datos no se guardaron.');
     } finally {
       setLoading(false);
-      // Mantener isSyncing un segundo extra para suavidad visual
-      setTimeout(() => setIsSyncing(false), 500);
+      setIsSyncing(false);
     }
   };
 
