@@ -27,6 +27,7 @@ export default function OnboardingRoko({ onComplete }: OnboardingProps) {
   });
   const [currentInput, setCurrentInput] = useState('');
   const [isTyping, setIsTyping] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const steps = [
     {
@@ -34,24 +35,28 @@ export default function OnboardingRoko({ onComplete }: OnboardingProps) {
       question: '¡Hola! Soy Roko, tu nuevo nutriólogo residente. Para empezar, ¿cómo te llamas?',
       placeholder: 'Escribe tu nombre...',
       icon: <User className="w-6 h-6 text-violet-500" />,
+      color: 'violet',
     },
     {
       id: 'goal',
       question: (name: string) => `Mucho gusto, ${name}. Cuéntame, ¿cuál es tu meta principal de salud hoy?`,
       placeholder: 'Ej: Bajar de peso, ganar músculo...',
       icon: <Target className="w-6 h-6 text-blue-500" />,
+      color: 'blue',
     },
     {
       id: 'restrictions',
       question: 'Entendido. Ahora, ¿tienes alguna alergia o restricción alimentaria importante?',
       placeholder: 'Ej: Soya, Gluten, Maní...',
       icon: <AlertTriangle className="w-6 h-6 text-amber-500" />,
+      color: 'amber',
     },
     {
       id: 'activity',
       question: 'Y por último, ¿cómo describirías tu nivel de actividad física diaria?',
       options: ['Sedentario', 'Moderado', 'Activo', 'Muy Activo'],
-      icon: <Activity className="w-6 h-6 text-emerald-500" />,
+      icon: <Activity className="w-6 h-6 text-green-500" />,
+      color: 'green',
     }
   ];
 
@@ -61,20 +66,22 @@ export default function OnboardingRoko({ onComplete }: OnboardingProps) {
       if (currentStepId === 'name') setFormData({ ...formData, name: currentInput });
       if (currentStepId === 'goal') setFormData({ ...formData, goal: currentInput });
       if (currentStepId === 'restrictions') {
-        const items = currentInput.split(',').map(i => ({ foodItem: i.trim(), reason: 'alergia', severity: 'severa' }));
+        const items = currentInput.split(',').filter(i => i.trim()).map(i => ({ foodItem: i.trim(), reason: 'alergia', severity: 'severa' }));
         setFormData({ ...formData, restrictions: items });
       }
       
       setCurrentInput('');
       setStep(step + 1);
     } else {
-      // Finalize
+      setIsSubmitting(true);
       onComplete(formData);
     }
   };
 
   const handleOptionClick = (option: string) => {
     setFormData({ ...formData, activityLevel: option });
+    setIsSubmitting(true);
+    // Envio inmediato tras la selección
     onComplete({ ...formData, activityLevel: option });
   };
 
@@ -84,22 +91,41 @@ export default function OnboardingRoko({ onComplete }: OnboardingProps) {
     return () => clearTimeout(timer);
   }, [step]);
 
+  const currentColor = steps[step]?.color || 'violet';
+
   return (
     <div className="fixed inset-0 bg-white z-[100] flex flex-col items-center justify-center p-6">
       {/* Background decoration */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute top-[-10%] left-[-10%] w-80 h-80 bg-violet-100 rounded-full blur-3xl opacity-50" />
-        <div className="absolute bottom-[-10%] right-[-10%] w-80 h-80 bg-blue-100 rounded-full blur-3xl opacity-50" />
+        <motion.div 
+          className={`absolute top-[-10%] left-[-10%] w-80 h-80 rounded-full blur-3xl opacity-50 transition-colors duration-1000 ${
+            currentColor === 'violet' ? 'bg-violet-100' :
+            currentColor === 'green' ? 'bg-green-100' :
+            currentColor === 'blue' ? 'bg-blue-100' : 'bg-amber-100'
+          }`}
+        />
+        <motion.div 
+          className={`absolute bottom-[-10%] right-[-10%] w-80 h-80 rounded-full blur-3xl opacity-50 transition-colors duration-1000 ${
+            currentColor === 'violet' ? 'bg-blue-100' :
+            currentColor === 'green' ? 'bg-emerald-100' :
+            currentColor === 'blue' ? 'bg-violet-100' : 'bg-orange-100'
+          }`}
+        />
       </div>
 
       <div className="w-full max-w-md relative z-10">
         {/* Progress Bar */}
         <div className="flex gap-2 mb-12">
-          {steps.map((_, i) => (
+          {steps.map((s, i) => (
             <div 
               key={i} 
               className={`h-1.5 flex-1 rounded-full transition-all duration-500 ${
-                i <= step ? 'bg-violet-500' : 'bg-gray-100'
+                i < step ? 'bg-gray-300' : 
+                i === step ? (
+                  currentColor === 'violet' ? 'bg-violet-500' :
+                  currentColor === 'green' ? 'bg-green-500' :
+                  currentColor === 'blue' ? 'bg-blue-500' : 'bg-amber-500'
+                ) : 'bg-gray-100'
               }`} 
             />
           ))}
@@ -111,25 +137,50 @@ export default function OnboardingRoko({ onComplete }: OnboardingProps) {
           initial={{ y: 20, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
         >
-          <div className="w-20 h-20 bg-gradient-to-tr from-violet-500 to-blue-500 rounded-3xl flex items-center justify-center shadow-xl shadow-violet-500/20 mb-4 overflow-hidden relative">
+          <div className={`w-20 h-20 rounded-3xl flex items-center justify-center shadow-xl mb-4 overflow-hidden relative transition-all duration-500 ${
+            currentColor === 'violet' ? 'bg-gradient-to-tr from-violet-500 to-indigo-500 shadow-violet-500/20' :
+            currentColor === 'green' ? 'bg-gradient-to-tr from-green-500 to-emerald-500 shadow-green-500/20' :
+            currentColor === 'blue' ? 'bg-gradient-to-tr from-blue-500 to-cyan-500 shadow-blue-500/20' :
+            'bg-gradient-to-tr from-amber-500 to-orange-500 shadow-amber-500/20'
+          }`}>
             <div className="absolute inset-0 bg-white/10 animate-pulse" />
-            <span className="text-4xl relative z-10">🤖</span>
+            <span className="text-4xl relative z-10">{isSubmitting ? '✨' : '🤖'}</span>
           </div>
-          <div className="bg-violet-100 px-4 py-1.5 rounded-full">
-            <span className="text-xs font-bold text-violet-600 tracking-wider uppercase">Nutriólogo Residente</span>
+          <div className={`px-4 py-1.5 rounded-full transition-colors duration-500 ${
+            currentColor === 'violet' ? 'bg-violet-100' :
+            currentColor === 'green' ? 'bg-green-100' :
+            currentColor === 'blue' ? 'bg-blue-100' : 'bg-amber-100'
+          }`}>
+            <span className={`text-xs font-bold tracking-wider uppercase transition-colors duration-500 ${
+              currentColor === 'violet' ? 'text-violet-600' :
+              currentColor === 'green' ? 'text-green-600' :
+              currentColor === 'blue' ? 'text-blue-600' : 'text-amber-600'
+            }`}>
+              Nutriólogo Residente
+            </span>
           </div>
         </motion.div>
 
         {/* Question Area */}
-        <div className="min-h-[120px] mb-8 text-center px-4">
+        <div className="min-h-[120px] mb-8 text-center px-4 flex items-center justify-center">
           <AnimatePresence mode="wait">
-            {!isTyping ? (
+            {isSubmitting ? (
+              <motion.div
+                key="submitting"
+                initial={{ opacity: 0, scale: 0.9 }}
+                animate={{ opacity: 1, scale: 1 }}
+                className="text-center"
+              >
+                <h2 className="text-2xl font-bold text-gray-900 mb-2">¡Todo listo!</h2>
+                <p className="text-gray-500">Optimizando tu perfil de salud...</p>
+              </motion.div>
+            ) : !isTyping ? (
               <motion.h2 
                 key={step}
                 className="text-2xl font-bold text-gray-900 leading-tight"
-                initial={{ opacity: 0, scale: 0.95 }}
-                animate={{ opacity: 1, scale: 1 }}
-                exit={{ opacity: 0, scale: 1.05 }}
+                initial={{ opacity: 0, x: 20 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: -20 }}
               >
                 {typeof steps[step].question === 'function' 
                   ? (steps[step].question as any)(formData.name) 
@@ -138,73 +189,96 @@ export default function OnboardingRoko({ onComplete }: OnboardingProps) {
             ) : (
               <motion.div 
                 key="typing"
-                className="flex items-center justify-center gap-1.5 h-full"
+                className="flex items-center justify-center gap-1.5"
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 exit={{ opacity: 0 }}
               >
-                <div className="w-2 h-2 bg-violet-400 rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
-                <div className="w-2 h-2 bg-violet-400 rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
-                <div className="w-2 h-2 bg-violet-400 rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
+                <div className={`w-2 h-2 rounded-full animate-bounce ${
+                  currentColor === 'violet' ? 'bg-violet-400' :
+                  currentColor === 'green' ? 'bg-green-400' :
+                  currentColor === 'blue' ? 'bg-blue-400' : 'bg-amber-400'
+                }`} style={{ animationDelay: '0ms' }} />
+                <div className={`w-2 h-2 rounded-full animate-bounce ${
+                  currentColor === 'violet' ? 'bg-violet-400' :
+                  currentColor === 'green' ? 'bg-green-400' :
+                  currentColor === 'blue' ? 'bg-blue-400' : 'bg-amber-400'
+                }`} style={{ animationDelay: '150ms' }} />
+                <div className={`w-2 h-2 rounded-full animate-bounce ${
+                  currentColor === 'violet' ? 'bg-violet-400' :
+                  currentColor === 'green' ? 'bg-green-400' :
+                  currentColor === 'blue' ? 'bg-blue-400' : 'bg-amber-400'
+                }`} style={{ animationDelay: '300ms' }} />
               </motion.div>
             )}
           </AnimatePresence>
         </div>
 
         {/* Input Area */}
-        <motion.div 
-          className="space-y-4"
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.5 }}
-        >
-          {steps[step].options ? (
-            <div className="grid grid-cols-2 gap-3">
-              {steps[step].options!.map((option) => (
-                <motion.button
-                  key={option}
-                  onClick={() => handleOptionClick(option)}
-                  className="p-4 bg-white border-2 border-gray-100 rounded-3xl text-sm font-bold text-gray-700 hover:border-violet-500 hover:bg-violet-50 transition-all flex items-center justify-between"
-                  whileHover={{ scale: 1.02 }}
-                  whileTap={{ scale: 0.98 }}
-                >
-                  {option}
-                  <ChevronRight className="w-4 h-4 opacity-0 group-hover:opacity-100" />
-                </motion.button>
-              ))}
-            </div>
-          ) : (
-            <div className="relative group">
-              <div className="absolute left-5 top-1/2 -translate-y-1/2 opacity-50">
-                {steps[step].icon}
-              </div>
-              <input 
-                autoFocus
-                type="text"
-                value={currentInput}
-                onChange={(e) => setCurrentInput(e.target.value)}
-                onKeyDown={(e) => e.key === 'Enter' && currentInput.trim() && handleNext()}
-                placeholder={steps[step].placeholder}
-                className="w-full bg-gray-50 border-2 border-gray-100 rounded-3xl py-5 pl-14 pr-20 text-gray-900 font-medium outline-none focus:border-violet-500 focus:bg-white transition-all shadow-sm"
-              />
-              {currentInput.trim().length > 0 && (
-                <motion.button
-                  initial={{ scale: 0, opacity: 0 }}
-                  animate={{ scale: 1, opacity: 1 }}
-                  onClick={handleNext}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 w-12 h-12 bg-gradient-to-r from-violet-500 to-blue-600 text-white rounded-2xl flex items-center justify-center shadow-lg shadow-violet-500/20"
-                >
-                  <ArrowRight className="w-5 h-5" />
-                </motion.button>
+        <AnimatePresence>
+          {!isSubmitting && (
+            <motion.div 
+              className="space-y-4"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.9 }}
+              transition={{ delay: 0.5 }}
+            >
+              {steps[step].options ? (
+                <div className="grid grid-cols-2 gap-3">
+                  {steps[step].options!.map((option) => (
+                    <motion.button
+                      key={option}
+                      onClick={() => handleOptionClick(option)}
+                      className="p-5 bg-white border-2 border-gray-100 rounded-3xl text-sm font-bold text-gray-700 hover:border-green-500 hover:bg-green-50 transition-all flex items-center justify-between group"
+                      whileHover={{ scale: 1.02 }}
+                      whileTap={{ scale: 0.98 }}
+                    >
+                      {option}
+                      <ChevronRight className="w-4 h-4 text-green-500 opacity-0 group-hover:opacity-100 transform translate-x-[-10px] group-hover:translate-x-0 transition-all" />
+                    </motion.button>
+                  ))}
+                </div>
+              ) : (
+                <div className="relative group">
+                  <div className="absolute left-5 top-1/2 -translate-y-1/2 opacity-70">
+                    {steps[step].icon}
+                  </div>
+                  <input 
+                    autoFocus
+                    type="text"
+                    value={currentInput}
+                    onChange={(e) => setCurrentInput(e.target.value)}
+                    onKeyDown={(e) => e.key === 'Enter' && currentInput.trim() && handleNext()}
+                    placeholder={steps[step].placeholder}
+                    className="w-full bg-gray-50 border-2 border-gray-100 rounded-3xl py-5 pl-14 pr-20 text-gray-900 font-medium outline-none focus:border-violet-500 focus:bg-white transition-all shadow-sm"
+                  />
+                  {currentInput.trim().length > 0 && (
+                    <motion.button
+                      initial={{ scale: 0, opacity: 0 }}
+                      animate={{ scale: 1, opacity: 1 }}
+                      onClick={handleNext}
+                      className={`absolute right-3 top-1/2 -translate-y-1/2 w-12 h-12 text-white rounded-2xl flex items-center justify-center shadow-lg transition-all ${
+                        currentColor === 'violet' ? 'bg-violet-500 shadow-violet-500/20' :
+                        currentColor === 'green' ? 'bg-green-500 shadow-green-500/20' :
+                        currentColor === 'blue' ? 'bg-blue-500 shadow-blue-500/20' : 'bg-amber-500 shadow-amber-500/20'
+                      }`}
+                    >
+                      <ArrowRight className="w-5 h-5" />
+                    </motion.button>
+                  )}
+                </div>
               )}
-            </div>
+            </motion.div>
           )}
-        </motion.div>
+        </AnimatePresence>
 
         {/* Footer info */}
-        <p className="mt-8 text-center text-xs text-gray-400 font-medium uppercase tracking-widest">
-          {step === 0 ? 'Toda la información es privada' : `Paso ${step + 1} de ${steps.length}`}
-        </p>
+        {!isSubmitting && (
+          <p className="mt-8 text-center text-xs text-gray-400 font-medium uppercase tracking-widest">
+            {step === 0 ? 'Toda la información es privada' : `Paso ${step + 1} de ${steps.length}`}
+          </p>
+        )}
       </div>
     </div>
   );
