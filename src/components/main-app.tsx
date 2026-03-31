@@ -271,8 +271,31 @@ export default function EatlyApp() {
       
       setNewRestriction({ foodItem: '', reason: 'alergia', severity: 'moderada', notes: '' });
       setShowAddModal(false);
+      playSound('success');
+      vibrate([50, 100]);
     } catch (error) {
       console.error('Error adding restriction:', error);
+    }
+  };
+
+  const addQuickRestriction = (cr: any) => {
+    try {
+      const newEntry = {
+        id: crypto.randomUUID(),
+        foodItem: cr.foodItem,
+        reason: cr.reason,
+        severity: cr.severity,
+        notes: 'Agregado rápido',
+        createdAt: new Date().toISOString()
+      };
+      
+      const updated = [newEntry, ...restrictions];
+      setRestrictions(updated);
+      localStorage.setItem('eatly_restrictions', JSON.stringify(updated));
+      playSound('success');
+      vibrate(50);
+    } catch (error) {
+      console.error('Error in quick add:', error);
     }
   };
 
@@ -290,9 +313,31 @@ export default function EatlyApp() {
     if (!newFood.name.trim()) return;
 
     try {
+      setLoading(true);
+      let category = newFood.category;
+
+      // AI Categorization if empty
+      if (!category) {
+        console.log('[AI] Categorizando alimento:', newFood.name);
+        try {
+          const res = await fetch('/api/ai/categorize', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ foodName: newFood.name }),
+          });
+          const data = await res.json();
+          if (data.success) {
+            category = data.category;
+          }
+        } catch (err) {
+          console.warn('AI Categorization failed, using default');
+        }
+      }
+
       const newEntry = {
         id: crypto.randomUUID(),
         ...newFood,
+        category: category || 'General',
         mealType: selectedMealType,
         createdAt: new Date().toISOString()
       };
@@ -303,8 +348,12 @@ export default function EatlyApp() {
       
       setNewFood({ name: '', category: '', mealType: '' });
       setShowAddModal(false);
+      playSound('success');
+      vibrate([50, 100]);
     } catch (error) {
       console.error('Error adding food:', error);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -938,19 +987,7 @@ export default function EatlyApp() {
           {commonRestrictions.slice(0, 4).map((cr) => (
             <motion.button
               key={cr.foodItem}
-              onClick={async () => {
-                try {
-                  const res = await fetch('/api/restrictions', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(cr),
-                  });
-                  const data = await res.json();
-                  setRestrictions([data, ...restrictions]);
-                } catch (error) {
-                  console.error('Error adding restriction:', error);
-                }
-              }}
+              onClick={() => addQuickRestriction(cr)}
               className="px-3 py-1.5 bg-card rounded-full text-sm font-medium text-foreground shadow-sm hover:shadow-md transition-all border border-border"
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}

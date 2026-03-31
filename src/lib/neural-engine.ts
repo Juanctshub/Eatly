@@ -128,6 +128,25 @@ Responde ÚNICAMENTE con un objeto JSON válido con esta estructura:
     return JSON.parse(groqRes.content);
   }
 
+  /**
+   * Categorizes a food item using AI
+   */
+  static async categorizeFood(foodName: string): Promise<string> {
+    const systemPrompt = `Eres un experto en nutrición. Tu única tarea es categorizar el alimento que te proporcione el usuario.
+Responde ÚNICAMENTE con una (1) palabra de esta lista: 
+[Proteína, Carbohidrato, Vegetal, Fruta, Lácteo, Grasa, Dulce, Bebida, Condimento].
+Si no estás seguro, responde "Otro".`;
+
+    try {
+      const res = await this.callGroq(`Categoriza este alimento: ${foodName}`, {}, systemPrompt);
+      // Limpiar respuesta por si acaso (quitar puntos, espacios extra)
+      return res.content.trim().replace(/[.]/g, '');
+    } catch (err) {
+      console.error('[Roko] Error categorizando alimento:', err);
+      return 'Otro';
+    }
+  }
+
   private static async callGroq(message: string, config: EngineConfig, systemPrompt: string, isJson: boolean = false) {
     const keys = [
       process.env.GROQ_API_KEY_1,
