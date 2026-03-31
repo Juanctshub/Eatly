@@ -39,6 +39,8 @@ interface BarcodeScannerProps {
   onClose: () => void;
   onAddFood?: (name: string) => void;
   onAddRestriction?: (name: string) => void;
+  playSound?: (type: 'success' | 'error' | 'click') => void;
+  vibrate?: (pattern: number | number[]) => void;
 }
 
 export default function BarcodeScanner({
@@ -46,6 +48,8 @@ export default function BarcodeScanner({
   onClose,
   onAddFood,
   onAddRestriction,
+  playSound,
+  vibrate,
 }: BarcodeScannerProps) {
   const [isScanning, setIsScanning] = useState(false);
   const [product, setProduct] = useState<Product | null>(null);
@@ -62,6 +66,7 @@ export default function BarcodeScanner({
     risks: string[];
   } | null>(null);
   const [aiLoading, setAiLoading] = useState(false);
+  const [aiLoadingState, setAiLoadingState] = useState(0);
   const videoRef = useRef<HTMLVideoElement>(null);
   const streamRef = useRef<MediaStream | null>(null);
   const [model, setModel] = useState<mobilenet.MobileNet | null>(null);
@@ -182,6 +187,14 @@ export default function BarcodeScanner({
   // Deep AI Analysis
   const analyzeWithRoko = async (ingredients: string) => {
     setAiLoading(true);
+    setAiLoadingState(0);
+    
+    // Simulate granular steps for UX
+    const steps = ["Extrayendo trazas químicas...", "Analizando derivados de E-numbers...", "Cruzando con tu perfil de salud...", "Generando veredicto experto..."];
+    const interval = setInterval(() => {
+      setAiLoadingState(prev => (prev < steps.length - 1 ? prev + 1 : prev));
+    }, 1500);
+
     try {
       const res = await fetch('/api/ai/analyze-product', {
         method: 'POST',
@@ -193,6 +206,7 @@ export default function BarcodeScanner({
     } catch (err) {
       console.error('Roko Analysis Error:', err);
     } finally {
+      clearInterval(interval);
       setAiLoading(false);
     }
   };
@@ -224,10 +238,16 @@ export default function BarcodeScanner({
 
     if (hasDanger) {
       setSafetyStatus('danger');
+      playSound?.('error');
+      vibrate?.([100, 50, 100]);
     } else if (hasWarning) {
       setSafetyStatus('warning');
+      playSound?.('error');
+      vibrate?.(100);
     } else {
       setSafetyStatus('safe');
+      playSound?.('success');
+      vibrate?.(50);
     }
   };
 
@@ -285,6 +305,24 @@ export default function BarcodeScanner({
       default:
         return 'bg-gray-400';
     }
+  };
+
+  const highlightIngredients = (text: string) => {
+    if (!text) return null;
+    let highlighted = text;
+    const allRestrictedItems = restrictions.flatMap(r => r.foodItem.toLowerCase().split(',').map(i => i.trim()));
+    
+    // Simple word match and wrap with a class
+    // In a real app we'd use regex and return JSX, but for now we'll simulate with bold
+    const parts = text.split(/([,.\s]+)/);
+    return parts.map((part, i) => {
+      const lowerPart = part.toLowerCase();
+      const isRestricted = allRestrictedItems.some(item => lowerPart.includes(item));
+      if (isRestricted && part.length > 2) {
+        return <span key={i} className="text-red-600 font-bold underline decoration-2">{part}</span>;
+      }
+      return part;
+    });
   };
 
   return (
@@ -474,9 +512,20 @@ export default function BarcodeScanner({
                 </div>
                 
                 {aiLoading ? (
-                  <div className="flex items-center gap-2 mt-4">
-                    <Loader2 className="w-4 h-4 text-violet-500 animate-spin" />
-                    <p className="text-xs text-violet-400">Roko está detectando alérgenos ocultos...</p>
+                  <div className="flex flex-col gap-2 mt-4">
+                    <div className="flex items-center gap-2">
+                       <Loader2 className="w-4 h-4 text-violet-500 animate-spin" />
+                       <p className="text-sm font-semibold text-violet-600">
+                         {["Extrayendo trazas químicas...", "Analizando derivados...", "Cruzando con tu perfil...", "Generando veredicto experto..."][aiLoadingState]}
+                       </p>
+                    </div>
+                    <div className="w-full h-1.5 bg-violet-100 rounded-full overflow-hidden">
+                       <motion.div 
+                          className="h-full bg-violet-500" 
+                          initial={{ width: 0 }}
+                          animate={{ width: `${(aiLoadingState + 1) * 25}%` }}
+                       />
+                    </div>
                   </div>
                 ) : (
                   <>
@@ -537,8 +586,8 @@ export default function BarcodeScanner({
                   <h3 className="text-sm font-semibold text-gray-700 mb-2">
                     Ingredientes
                   </h3>
-                  <p className="text-sm text-gray-600 bg-gray-50 rounded-xl p-4">
-                    {product.ingredients_text}
+                  <p className="text-sm text-gray-600 bg-gray-50 rounded-xl p-4 leading-relaxed">
+                    {highlightIngredients(product.ingredients_text)}
                   </p>
                 </div>
               )}

@@ -2312,6 +2312,8 @@ export default function EatlyApp() {
               setNewFood({ name, category: '', mealType: '' });
               addFood();
             }}
+            playSound={playSound}
+            vibrate={vibrate}
           />
         )}
       </AnimatePresence>

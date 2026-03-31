@@ -172,7 +172,8 @@ Responde ESTRICTAMENTE en este formato JSON:
   "safety": "safe" | "warning" | "danger",
   "verdict": "Breve frase ruda/experta",
   "reason": "Explicación química detallada de por qué es seguro o no",
-  "risks": ["lista de ingredientes sospechosos detectados"]
+  "risks": ["lista de ingredientes sospechosos detectados"],
+  "confidence": number // 0-100 score of scientific certainty
 }`;
 
     try {
