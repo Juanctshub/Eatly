@@ -57,19 +57,29 @@ Momento: ${config.mealType || 'Ahora'}
     // 1. Try Z-AI Web Dev SDK
     if (process.env.Z_AI_ENABLED === 'true') {
       try {
-        console.log('--- Attempting Z-AI SDK Call ---');
-        // Dynamic import to avoid build errors if package is missing
-        const { generateAIResponse } = await import('z-ai-web-dev-sdk' as any);
-        const response = await generateAIResponse({
-          prompt: message,
-          system: systemPrompt,
-          history: config.conversationHistory,
-          temperature: 0.8
-        });
+        console.log('[Roko] Intentando conexión con Z-AI SDK...');
+        const zAI = await import('z-ai-web-dev-sdk' as any);
         
-        if (response) return { success: true, source: 'Z-AI SDK', content: response };
+        // Handle different possible export names for common AI SDKs
+        const generate = zAI.generateAIResponse || zAI.chat || zAI.generate;
+        
+        if (generate) {
+          const response = await generate({
+            prompt: message,
+            system: systemPrompt,
+            history: config.conversationHistory,
+            temperature: 0.8
+          });
+          
+          if (response) {
+            return { success: true, source: 'Z-AI SDK', content: response };
+          }
+        } else {
+          throw new Error('SDK cargado pero no se encontró función de generación compatible');
+        }
       } catch (err) {
-        console.warn('Z-AI SDK failed, falling back to Groq:', err);
+        console.warn('[Roko] Z-AI SDK no disponible o falló:', err instanceof Error ? err.message : 'Error desconocido');
+        console.log('[Roko] Iniciando Fallback automático a Groq Llama 3.3...');
       }
     }
 
@@ -94,15 +104,19 @@ Responde ÚNICAMENTE con un objeto JSON válido con esta estructura:
 
     if (process.env.Z_AI_ENABLED === 'true') {
       try {
-        const { generateAIResponse } = await import('z-ai-web-dev-sdk' as any);
-        const response = await generateAIResponse({
-          prompt: "Genera el JSON de sugerencias ahora.",
-          system: systemPrompt,
-          format: 'json'
-        });
-        if (response) return JSON.parse(response);
+        const zAI = await import('z-ai-web-dev-sdk' as any);
+        const generate = zAI.generateAIResponse || zAI.chat || zAI.generate;
+        
+        if (generate) {
+          const response = await generate({
+            prompt: "Genera el JSON de sugerencias ahora.",
+            system: systemPrompt,
+            format: 'json'
+          });
+          if (response) return JSON.parse(response);
+        }
       } catch (err) {
-        console.warn('Z-AI Suggestions failed, falling back to Groq.');
+        console.warn('[Roko] Fallo en sugerencias Z-AI, usando respaldo local...');
       }
     }
 
