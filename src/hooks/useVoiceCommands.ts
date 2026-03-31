@@ -17,28 +17,28 @@ interface VoiceCommandsResult {
   resetTranscript: () => void;
 }
 
-// Command patterns with priorities - SPECIFIC REGEX FIRST
+// Commands with synonyms and better regex
 const COMMAND_PATTERNS = [
   // Specific action commands with parameters - TOP PRIORITY
-  { patterns: [/^(?:agregar|añadir|crear|pon|nueva) restricción (?:\s+de\s+)?(.+)$/i, /^(?:tengo|soy) (?:alergia|alérgico|alergico) (?:\s+a\s+)?(.+)$/i, /^(?:soy) intolerant[eo] (?:\s+a\s+)?(.+)$/i, /^(?:no puedo) (?:comer|tomar) (.+)$/i], command: 'add_restriction', data: 'voice' },
-  { patterns: [/^(?:agregar|añadir|crear|pon|nuevo) alimento (?:\s+de\s+)?(.+)$/i, /^(?:tengo) (.+) disponible[s]?$/i, /^(?:agrega) (.+)$/i, /^(?:compré|compre) (.+)$/i], command: 'add_food', data: 'voice' },
+  { patterns: [/^(?:agregar|añadir|crear|pon|nueva) restricción (?:\s+de\s+)?(.+)$/i, /^(?:tengo|soy) (?:alergia|alérgico|alergico) (?:\s+a\s+)?(.+)$/i, /^(?:soy) intolerant[eo] (?:\s+a\s+)?(.+)$/i, /^(?:no puedo) (?:comer|tomar) (.+)$/i, /^(?:restricción) (.+)$/i], command: 'add_restriction', data: 'voice' },
+  { patterns: [/^(?:agregar|añadir|crear|pon|nuevo) alimento (?:\s+de\s+)?(.+)$/i, /^(?:tengo) (.+) disponible[s]?$/i, /^(?:agrega) (.+)$/i, /^(?:compré|compre) (.+)$/i, /^(?:nuevo alimento) (.+)$/i, /^(?:alimento) (.+)$/i], command: 'add_food', data: 'voice' },
   
   // Navigation commands - HIGH PRIORITY
-  { patterns: ['ir a inicio', 'ir al inicio', 've al inicio', 'regresar al inicio', 'ir a home', 'página principal', 'menú principal', 'pantalla de inicio', 'volver al inicio'], command: 'navigate', data: 'home' },
-  { patterns: ['ir a restricciones', 've a restricciones', 'ver mis restricciones', 'ver alergias', 'mis restricciones', 'lista de restricciones', 'mis alergias', 'ver mis alergias', 'qué no puedo comer', 'que no puedo comer'], command: 'navigate', data: 'restrictions' },
-  { patterns: ['ir a comidas', 've a comidas', 'ver mis comidas', 'ver alimentos', 'mis comidas', 'ir a alimentos', 'lista de comidas', 'qué alimentos hay', 'que alimentos hay', 'mis alimentos', 'qué puedo comer hoy', 'que puedo comer hoy'], command: 'navigate', data: 'foods' },
-  { patterns: ['ir a sugerencias', 've a sugerencias', 'ver sugerencias', 'qué sugerencias hay', 'que sugerencias hay', 'dame sugerencias', 'sugerencias de hoy', 'qué me recomiendas', 'que me recomiendas', 'qué cocinar', 'recetas', 'ver recetas'], command: 'navigate', data: 'suggestions' },
+  { patterns: ['ir a inicio', 'ir al inicio', 've al inicio', 'regresar al inicio', 'ir a home', 'página principal', 'menú principal', 'pantalla de inicio', 'volver al inicio', 'llévame al inicio', 'llevame al inicio', 'mostrar inicio', 'ver inicio'], command: 'navigate', data: 'home' },
+  { patterns: ['ir a restricciones', 've a restricciones', 'ver mis restricciones', 'ver alergias', 'mis restricciones', 'lista de restricciones', 'mis alergias', 'ver mis alergias', 'qué no puedo comer', 'que no puedo comer', 'mostrar restricciones', 'pantalla de restricciones'], command: 'navigate', data: 'restrictions' },
+  { patterns: ['ir a comidas', 've a comidas', 'ver mis comidas', 'ver alimentos', 'mis comidas', 'ir a alimentos', 'lista de comidas', 'qué alimentos hay', 'que alimentos hay', 'mis alimentos', 'mostrar alimentos', 'pantalla de alimentos'], command: 'navigate', data: 'foods' },
+  { patterns: ['ir a sugerencias', 've a sugerencias', 'ver sugerencias', 'qué sugerencias hay', 'que sugerencias hay', 'dame sugerencias', 'sugerencias de hoy', 'qué me recomiendas', 'que me recomiendas', 'qué cocinar', 'ver recetas', 'mostrar recetas', 'ir a recetas', 'ir a ideas'], command: 'navigate', data: 'suggestions' },
   
   // App Feature Toggle commands
-  { patterns: ['ver mapa', 'abrir mapa', 'ver restaurantes', 'ir a restaurantes', 'restaurantes cercanos', 'dónde comer', 'donde comer', 'buscar restaurantes', 'mapa de comida'], command: 'restaurants', data: 'show' },
+  { patterns: ['ver mapa', 'abrir mapa', 'ver restaurantes', 'ir a restaurantes', 'restaurantes cercanos', 'dónde comer', 'donde comer', 'buscar restaurantes', 'mapa de comida', 'mostrar mapa'], command: 'restaurants', data: 'show' },
   { patterns: ['escanear producto', 'escanear código', 'escanear codigo', 'abrir escáner', 'abrir escaner', 'hacer escaneo', 'activar cámara', 'usar escáner', 'ver producto', 'escanear el producto'], command: 'scan', data: 'barcode' },
-  { patterns: ['abrir configuración', 'ir a configuración', 'ver configuración', 'editar mi perfil', 'ajustes', 'configurar', 'mi cuenta', 'ver mi perfil'], command: 'settings', data: 'open' },
-  { patterns: ['chatear con roko', 'hablar con roko', 'abrir chat', 'ir al chat', 'abrir roko', 'preguntar a roko', 'ayuda de roko', 'roko chat', 'hablar con el bot'], command: 'chat', data: 'open' },
+  { patterns: ['abrir configuración', 'ir a configuración', 'ver configuración', 'editar mi perfil', 'ajustes', 'configurar', 'mi cuenta', 'ver mi perfil', 'abrir ajustes'], command: 'settings', data: 'open' },
+  { patterns: ['chatear con roko', 'hablar con roko', 'abrir chat', 'ir al chat', 'abrir roko', 'preguntar a roko', 'ayuda de roko', 'roko chat', 'hablar con el bot', 'hola roko', 'dime roko'], command: 'chat', data: 'open' },
   
   // Quick Actions without params
   { patterns: ['ayuda', 'qué comandos hay', 'comandos de voz', 'qué puedo decir', 'cómo funciona', 'instrucciones de voz'], command: 'help', data: 'show' },
-  { patterns: ['nueva restricción', 'crear restricción', 'anotar alergia'], command: 'add', data: 'restriction' },
-  { patterns: ['nuevo alimento', 'crear alimento', 'anotar comida'], command: 'add', data: 'food' },
+  { patterns: ['nueva restricción', 'crear restricción', 'anotar alergia', 'añadir restricción', 'añadir alergia'], command: 'add', data: 'restriction' },
+  { patterns: ['nuevo alimento', 'crear alimento', 'anotar comida', 'añadir alimento', 'añadir comida'], command: 'add', data: 'food' },
   
   // Contextual Selection
   { patterns: ['desayuno', 'para desayunar', 'hora del desayuno', 'poner desayuno'], command: 'mealType', data: 'desayuno' },
@@ -225,26 +225,37 @@ export function useVoiceCommands({
 function processCommand(transcript: string, onCommand: (command: string, data: string) => void) {
   const text = transcript.toLowerCase().trim();
   
-  // Check each command pattern in order of priority
+  // 1. Check specific command patterns first (Navigation, Actions, etc.)
   for (const { patterns, command, data } of COMMAND_PATTERNS) {
     for (const pattern of patterns) {
       if (pattern instanceof RegExp) {
         const match = text.match(pattern);
         if (match) {
-          // Extract captured group if exists
           const capturedData = match[1] || data;
           onCommand(command, capturedData);
           return;
         }
-      } else if (text.includes(pattern) || text === pattern) {
+      } else if (text.includes(pattern as string) || text === pattern) {
         onCommand(command, data);
         return;
       }
     }
   }
   
-  // If no specific command matched, send to AI chat
-  onCommand('ai_query', transcript);
+  // 2. If no pattern matched, check for conversational intent
+  const questionKeywords = ['qué', 'que', 'cómo', 'como', 'por qué', 'porque', 'cuál', 'cual', 'dónde', 'donde', 'ayuda', 'roko', 'cuéntame', 'puedo', 'debo', 'es seguro', 'recomienda', 'dime', 'explica'];
+  const isQuestion = questionKeywords.some(kw => text.includes(kw));
+  
+  // Only trigger AI query if it's a clear question or a very long conversational string
+  // and NOT simply a failed navigation attempt
+  const isConversational = isQuestion || text.split(' ').length > 6;
+
+  if (isConversational) {
+    onCommand('ai_query', transcript);
+  } else {
+    // Unrecognized but not a clear conversational query
+    onCommand('unrecognized', transcript);
+  }
 }
 
 // Add type declarations for Web Speech API

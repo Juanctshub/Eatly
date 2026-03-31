@@ -48,6 +48,7 @@ interface AIChatProps {
   foods: Food[];
   mealType?: string;
   userData: any;
+  initialMessage?: string;
 }
 
 const quickActions = [
@@ -57,7 +58,15 @@ const quickActions = [
   { label: 'Modo Vida', icon: Lightbulb, prompt: 'Consejos de salud para mis condiciones actuales.' },
 ];
 
-export default function AIChat({ isOpen, onClose, restrictions, foods, mealType = 'almuerzo', userData }: AIChatProps) {
+export default function AIChat({ 
+  isOpen, 
+  onClose, 
+  restrictions, 
+  foods, 
+  mealType = 'almuerzo', 
+  userData,
+  initialMessage 
+}: AIChatProps) {
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -78,31 +87,37 @@ export default function AIChat({ isOpen, onClose, restrictions, foods, mealType 
 
   useEffect(() => {
     if (isOpen && messages.length === 0) {
-      const restrictionNames = restrictions.map(r => r.foodItem).join(', ');
-      
-      let greeting = '';
-      if (userData?.name && userData.name !== 'Usuario') {
-        greeting = `¡Hola **${userData.name}**! 🥗 Soy Roko, tu nutriólogo residente. \n\nHe cargado tu meta: **"${userData.goal || 'Vivir mejor'}"**. `;
-        
-        if (restrictions.length > 0) {
-          greeting += `Recuerda que hoy vigilaremos juntos: **${restrictionNames}**. \n\n¿Tienes alguna duda sobre tu ${mealType} o necesitas que analice algún producto?`;
-        } else {
-          greeting += `¿Qué tienes planeado comer hoy para tu ${mealType}? Estoy listo para asesorarte.`;
-        }
+      if (initialMessage) {
+        // Voice command transcript
+        sendMessage(initialMessage);
       } else {
-        greeting = restrictions.length > 0 
-          ? `¡Hola! Soy Roko 🥗. Veo que tienes restricciones con: **${restrictionNames}**. \n\n¿Quieres que te sugiera algo seguro para tu ${mealType}?`
-          : "¡Hola! Soy Roko 🥗, tu asistente nutricional. \n\nCuéntame, ¿qué tienes pensado comer hoy o qué ingredientes tienes a mano?";
-      }
+        // Standard greeting
+        const restrictionNames = restrictions.map(r => r.foodItem).join(', ');
         
-      setMessages([{
-        id: 'greeting',
-        role: 'assistant',
-        content: greeting,
-        timestamp: new Date().toISOString()
-      }]);
+        let greeting = '';
+        if (userData?.name && userData.name !== 'Usuario') {
+          greeting = `¡Hola **${userData.name}**! 🥗 Soy Roko, tu nutriólogo residente. \n\nHe cargado tu meta: **"${userData.goal || 'Vivir mejor'}"**. `;
+          
+          if (restrictions.length > 0) {
+            greeting += `Recuerda que hoy vigilaremos juntos: **${restrictionNames}**. \n\n¿Tienes alguna duda sobre tu ${mealType} o necesitas que analice algún producto?`;
+          } else {
+            greeting += `¿Qué tienes planeado comer hoy para tu ${mealType}? Estoy listo para asesorarte.`;
+          }
+        } else {
+          greeting = restrictions.length > 0 
+            ? `¡Hola! Soy Roko 🥗. Veo que tienes restricciones con: **${restrictionNames}**. \n\n¿Quieres que te sugiera algo seguro para tu ${mealType}?`
+            : "¡Hola! Soy Roko 🥗, tu asistente nutricional. \n\nCuéntame, ¿qué tienes pensado comer hoy o qué ingredientes tienes a mano?";
+        }
+          
+        setMessages([{
+          id: 'greeting',
+          role: 'assistant',
+          content: greeting,
+          timestamp: new Date().toISOString()
+        }]);
+      }
     }
-  }, [isOpen]);
+  }, [isOpen, initialMessage]);
 
   const sendMessage = async (messageText: string = input) => {
     if (!messageText.trim() || isLoading) return;
@@ -158,17 +173,17 @@ export default function AIChat({ isOpen, onClose, restrictions, foods, mealType 
 
   return (
     <motion.div
-      className="fixed inset-0 bg-black/40 backdrop-blur-md z-[100] flex items-end justify-center"
+      className="fixed inset-0 bg-black/60 backdrop-blur-md z-[200] flex flex-col justify-end"
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
     >
       <motion.div
-        className="w-full max-w-lg bg-white dark:bg-black h-[92vh] rounded-t-[2.5rem] shadow-2xl flex flex-col overflow-hidden border-t border-white/10"
+        className="w-full max-w-lg mx-auto bg-white dark:bg-black h-[100dvh] md:h-[92vh] md:rounded-t-[2.5rem] shadow-2xl flex flex-col overflow-hidden border-t border-white/10"
         initial={{ y: '100%' }}
         animate={{ y: 0 }}
         exit={{ y: '100%' }}
-        transition={{ type: 'spring', damping: 25, stiffness: 200 }}
+        transition={{ type: 'spring', damping: 30, stiffness: 300 }}
       >
         {/* Apple Style Header */}
         <div className="pt-2 px-6 pb-4 bg-white/80 dark:bg-black/80 backdrop-blur-xl border-b border-gray-100 dark:border-white/5 relative z-10">

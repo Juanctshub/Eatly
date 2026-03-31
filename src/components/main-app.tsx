@@ -8,7 +8,6 @@ import { useTheme } from '@/contexts/ThemeContext';
 import RokoChat from '@/components/shared/RokoChat';
 import OnboardingRoko from '@/components/shared/OnboardingRoko';
 import RokoPage from '@/components/shared/RokoPage';
-import AIChatSection from '@/components/shared/AIChatSection';
 import RestaurantMap from '@/components/shared/RestaurantMap';
 import BarcodeScanner from '@/components/shared/BarcodeScanner';
 import { useVoiceCommands } from '@/hooks/useVoiceCommands';
@@ -175,7 +174,6 @@ export default function EatlyApp() {
   const [addType, setAddType] = useState<'restriction' | 'food'>('restriction');
   const [showSettings, setShowSettings] = useState(false);
   const [showAIChat, setShowAIChat] = useState(false);
-  const [showRokoSection, setShowRokoSection] = useState(false);
   const [showRestaurantMap, setShowRestaurantMap] = useState(false);
   const [showScanner, setShowScanner] = useState(false);
   const [isSyncing, setIsSyncing] = useState(false);
@@ -201,7 +199,7 @@ export default function EatlyApp() {
     recentLogs: 'He comido sano hoy',
   });
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
-  
+
   // Permission states
   const [permissions, setPermissions] = useState({
     camera: { granted: false, loading: false },
@@ -231,7 +229,7 @@ export default function EatlyApp() {
   useEffect(() => {
     const action = searchParams.get('action');
     if (action === 'chat') {
-      setShowRokoSection(true);
+      setShowAIChat(true);
     } else if (action === 'restaurants') {
       setShowRestaurantMap(true);
     } else if (action === 'scan') {
@@ -250,11 +248,11 @@ export default function EatlyApp() {
           fetch('/api/foods', { headers }),
           fetch('/api/user/onboarding', { headers })
         ]);
-        
+
         const dataRest = await resRest.json();
         const dataFood = await resFood.json();
         const dataOnboarding = await resOnboarding.json();
-        
+
         if (!dataOnboarding.onboarding) {
           setShowOnboarding(true);
         }
@@ -296,17 +294,17 @@ export default function EatlyApp() {
         fetch('/api/foods', { headers }),
         fetch('/api/user/onboarding', { headers })
       ]);
-      
+
       const dataRest = await resRest.json();
       const dataFood = await resFood.json();
       const dataOnboarding = await resOnboarding.json();
-      
+
       if (dataOnboarding.user) {
         setUserData(prev => ({ ...prev, ...dataOnboarding.user }));
       }
       if (Array.isArray(dataRest)) setRestrictions(dataRest);
       if (Array.isArray(dataFood)) setFoods(dataFood);
-      
+
       console.log('[Eatly] Sincronización completa con éxito.');
     } catch (err: any) {
       console.error('Error refreshing data:', err);
@@ -337,13 +335,13 @@ export default function EatlyApp() {
     try {
       setLoading(true);
       console.log('[Eatly] Onboarding completado:', data);
-      
+
       const user = JSON.parse(localStorage.getItem('dietadvisor_user') || '{}');
       const email = user.email;
 
       const response = await fetch('/api/user/onboarding', {
         method: 'POST',
-        headers: { 
+        headers: {
           'Content-Type': 'application/json',
           'x-user-email': email
         },
@@ -375,7 +373,7 @@ export default function EatlyApp() {
 
       const response = await fetch('/api/restrictions', {
         method: 'POST',
-        headers: { 
+        headers: {
           'Content-Type': 'application/json',
           'x-user-email': email
         },
@@ -407,7 +405,7 @@ export default function EatlyApp() {
         body: JSON.stringify(cr),
       });
       const data = await res.json();
-      
+
       if (data.id) {
         setRestrictions([data, ...restrictions]);
         playSound('success');
@@ -423,7 +421,7 @@ export default function EatlyApp() {
   const deleteRestriction = async (id: string) => {
     try {
       const user = JSON.parse(localStorage.getItem('dietadvisor_user') || '{}');
-      await fetch(`/api/restrictions/${id}`, { 
+      await fetch(`/api/restrictions/${id}`, {
         method: 'DELETE',
         headers: { 'x-user-email': user.email }
       });
@@ -464,7 +462,7 @@ export default function EatlyApp() {
       // Save to database
       const response = await fetch('/api/foods', {
         method: 'POST',
-        headers: { 
+        headers: {
           'Content-Type': 'application/json',
           'x-user-email': email
         },
@@ -496,7 +494,7 @@ export default function EatlyApp() {
   const deleteFood = async (id: string) => {
     try {
       const user = JSON.parse(localStorage.getItem('dietadvisor_user') || '{}');
-      await fetch(`/api/foods/${id}`, { 
+      await fetch(`/api/foods/${id}`, {
         method: 'DELETE',
         headers: { 'x-user-email': user.email }
       });
@@ -511,11 +509,11 @@ export default function EatlyApp() {
     setLoading(true);
     try {
       const foodsForMeal = foods.filter((f) => f.mealType === selectedMealType || !f.mealType);
-      
+
       const user = JSON.parse(localStorage.getItem('dietadvisor_user') || '{}');
       const res = await fetch('/api/suggestions', {
         method: 'POST',
-        headers: { 
+        headers: {
           'Content-Type': 'application/json',
           'x-user-email': user.email
         },
@@ -525,7 +523,7 @@ export default function EatlyApp() {
           restrictions,
         }),
       });
-      
+
       if (!res.ok) throw new Error('API Error');
       const data = await res.json();
       setSuggestions(data);
@@ -563,10 +561,10 @@ export default function EatlyApp() {
   // Real permission handlers
   const requestPermission = useCallback(async (type: 'camera' | 'notifications' | 'location' | 'microphone') => {
     setPermissions(prev => ({ ...prev, [type]: { ...prev[type], loading: true } }));
-    
+
     try {
       let granted = false;
-      
+
       switch (type) {
         case 'camera':
           try {
@@ -577,7 +575,7 @@ export default function EatlyApp() {
             granted = false;
           }
           break;
-          
+
         case 'microphone':
           try {
             const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
@@ -587,7 +585,7 @@ export default function EatlyApp() {
             granted = false;
           }
           break;
-          
+
         case 'location':
           try {
             const position = await new Promise<GeolocationPosition>((resolve, reject) => {
@@ -598,7 +596,7 @@ export default function EatlyApp() {
             granted = false;
           }
           break;
-          
+
         case 'notifications':
           if ('Notification' in window) {
             const result = await Notification.requestPermission();
@@ -610,7 +608,7 @@ export default function EatlyApp() {
           }
           break;
       }
-      
+
       setPermissions(prev => ({ ...prev, [type]: { granted, loading: false } }));
     } catch (error) {
       console.error(`Error requesting ${type} permission:`, error);
@@ -624,55 +622,55 @@ export default function EatlyApp() {
       // Check notification permission
       if ('Notification' in window) {
         const notificationPermission = Notification.permission === 'granted';
-        setPermissions(prev => ({ 
-          ...prev, 
-          notifications: { granted: notificationPermission, loading: false } 
+        setPermissions(prev => ({
+          ...prev,
+          notifications: { granted: notificationPermission, loading: false }
         }));
       }
-      
+
       // Check camera and microphone permissions
       if (navigator.permissions) {
         try {
           const cameraStatus = await navigator.permissions.query({ name: 'camera' as PermissionName });
-          setPermissions(prev => ({ 
-            ...prev, 
-            camera: { granted: cameraStatus.state === 'granted', loading: false } 
+          setPermissions(prev => ({
+            ...prev,
+            camera: { granted: cameraStatus.state === 'granted', loading: false }
           }));
-          
+
           const micStatus = await navigator.permissions.query({ name: 'microphone' as PermissionName });
-          setPermissions(prev => ({ 
-            ...prev, 
-            microphone: { granted: micStatus.state === 'granted', loading: false } 
+          setPermissions(prev => ({
+            ...prev,
+            microphone: { granted: micStatus.state === 'granted', loading: false }
           }));
-          
+
           const geoStatus = await navigator.permissions.query({ name: 'geolocation' as PermissionName });
-          setPermissions(prev => ({ 
-            ...prev, 
-            location: { granted: geoStatus.state === 'granted', loading: false } 
+          setPermissions(prev => ({
+            ...prev,
+            location: { granted: geoStatus.state === 'granted', loading: false }
           }));
         } catch {
           // Permissions API not fully supported
         }
       }
     };
-    
+
     checkPermissions();
   }, []);
 
   // Play sound feedback
   const playSound = useCallback((type: 'success' | 'error' | 'click' = 'click') => {
     if (!soundEnabled) return;
-    
+
     const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
     const oscillator = audioContext.createOscillator();
     const gainNode = audioContext.createGain();
-    
+
     oscillator.connect(gainNode);
     gainNode.connect(audioContext.destination);
-    
+
     oscillator.frequency.value = type === 'success' ? 800 : type === 'error' ? 300 : 600;
     gainNode.gain.value = 0.1;
-    
+
     oscillator.start();
     oscillator.stop(audioContext.currentTime + 0.1);
   }, [soundEnabled]);
@@ -704,7 +702,7 @@ export default function EatlyApp() {
     playSound('success');
     vibrate([30, 50, 30]);
     setVoiceError(null);
-    
+
     // Feedback mapping
     const feedbackMap: Record<string, string> = {
       'navigate': 'Navegando...',
@@ -728,9 +726,9 @@ export default function EatlyApp() {
       setShowAddModal(false);
       setShowRestaurantMap(false);
       setShowScanner(false);
-      setShowRokoSection(false);
+      setShowAIChat(false);
     };
-    
+
     switch (command) {
       case 'navigate':
         resetOverlays();
@@ -758,7 +756,7 @@ export default function EatlyApp() {
         break;
       case 'chat':
         resetOverlays();
-        setShowRokoSection(true);
+        setShowAIChat(true);
         break;
       case 'settings':
         resetOverlays();
@@ -778,17 +776,20 @@ export default function EatlyApp() {
       case 'help':
         resetOverlays();
         setVoiceInitialMessage('¿Qué comandos de voz puedo usar?');
-        setShowRokoSection(true);
+        setShowAIChat(true);
         break;
       case 'ai_query':
         resetOverlays();
         setVoiceInitialMessage(data);
-        setShowRokoSection(true);
+        setShowAIChat(true);
+        break;
+      case 'unrecognized':
+        // Silent feedback for unrecognized command
+        setVoiceCommandFeedback('No entendí eso. Intenta: "Ir a Inicio" o "Preguntar a Roko".');
         break;
       default:
-        resetOverlays();
-        setVoiceInitialMessage(data);
-        setShowRokoSection(true);
+        console.log('Comando no manejado:', command);
+        break;
     }
   }, [playSound, vibrate, activeTab]);
 
@@ -827,7 +828,7 @@ export default function EatlyApp() {
         {/* Decorative circles - subtler for dark mode */}
         <div className="absolute top-0 right-0 w-32 h-32 bg-green-500/10 rounded-full blur-3xl opacity-20 pointer-events-none" />
         <div className="absolute top-10 left-0 w-24 h-24 bg-emerald-500/10 rounded-full blur-2xl opacity-20 pointer-events-none" />
-        
+
         <motion.div
           className="flex items-center justify-between mb-6 relative z-10"
           initial={{ opacity: 0, y: -10 }}
@@ -858,11 +859,11 @@ export default function EatlyApp() {
           <div className="absolute inset-0 bg-gradient-to-br from-green-500 via-emerald-500 to-teal-600" />
           <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_20%,rgba(255,255,255,0.15),transparent_50%)]" />
           <div className="absolute inset-0 bg-[radial-gradient(circle_at_80%_80%,rgba(0,0,0,0.1),transparent_50%)]" />
-          
+
           {/* Animated decorative elements */}
           <div className="absolute -top-10 -right-10 w-40 h-40 bg-white/10 rounded-full" />
           <div className="absolute -bottom-8 -left-8 w-32 h-32 bg-white/5 rounded-full" />
-          
+
           {/* Content */}
           <div className="relative z-10 p-6">
             <div className="flex items-center gap-2 mb-4">
@@ -873,14 +874,14 @@ export default function EatlyApp() {
                 Hora de {mealTypes.find((m) => m.id === getCurrentMealType)?.label}
               </span>
             </div>
-            
+
             <h2 className="text-2xl font-bold text-white mb-2 leading-tight">
               {suggestions?.suggestions?.[0]?.name || 'Planifica tu comida'}
             </h2>
             <p className="text-sm text-white/80 mb-5 leading-relaxed">
               {suggestions?.suggestions?.[0]?.safetyReason || 'Genera opciones 100% compatibles con tus restricciones'}
             </p>
-            
+
             <motion.button
               onClick={() => {
                 setSelectedMealType(getCurrentMealType);
@@ -901,7 +902,7 @@ export default function EatlyApp() {
 
       {/* Quick Stats - Card Style */}
       <motion.div
-        className="grid grid-cols-2 gap-3"
+        className="grid grid-cols-2 gap-4 mt-6 px-4"
         variants={staggerContainer}
         initial="initial"
         animate="animate"
@@ -1088,8 +1089,8 @@ export default function EatlyApp() {
               </div>
               <h2 className="font-bold text-gray-900">Tus restricciones</h2>
             </div>
-            <motion.button 
-              onClick={() => setActiveTab('restrictions')} 
+            <motion.button
+              onClick={() => setActiveTab('restrictions')}
               className="text-sm text-green-600 font-semibold"
               whileHover={{ x: 2 }}
             >
@@ -1313,11 +1314,10 @@ export default function EatlyApp() {
       >
         <motion.button
           onClick={() => setSelectedMealType('')}
-          className={`px-5 py-2.5 rounded-2xl text-sm font-semibold whitespace-nowrap transition-all ${
-            selectedMealType === ''
-              ? 'bg-gradient-to-r from-green-500 to-emerald-500 text-white shadow-lg shadow-green-500/30'
-              : 'bg-card text-muted-foreground border border-border'
-          }`}
+          className={`px-5 py-2.5 rounded-2xl text-sm font-semibold whitespace-nowrap transition-all ${selectedMealType === ''
+            ? 'bg-gradient-to-r from-green-500 to-emerald-500 text-white shadow-lg shadow-green-500/30'
+            : 'bg-card text-muted-foreground border border-border'
+            }`}
           whileHover={{ scale: 1.02 }}
           whileTap={{ scale: 0.98 }}
         >
@@ -1327,11 +1327,10 @@ export default function EatlyApp() {
           <motion.button
             key={meal.id}
             onClick={() => setSelectedMealType(meal.id)}
-            className={`px-5 py-2.5 rounded-2xl text-sm font-semibold whitespace-nowrap transition-all ${
-              selectedMealType === meal.id
-                ? 'bg-gradient-to-r from-green-500 to-emerald-500 text-white shadow-lg shadow-green-500/30'
-                : 'bg-card text-muted-foreground border border-border'
-            }`}
+            className={`px-5 py-2.5 rounded-2xl text-sm font-semibold whitespace-nowrap transition-all ${selectedMealType === meal.id
+              ? 'bg-gradient-to-r from-green-500 to-emerald-500 text-white shadow-lg shadow-green-500/30'
+              : 'bg-card text-muted-foreground border border-border'
+              }`}
             whileHover={{ scale: 1.02 }}
             whileTap={{ scale: 0.98 }}
           >
@@ -1369,7 +1368,7 @@ export default function EatlyApp() {
         </motion.div>
       ) : (
         <motion.div
-          className="grid grid-cols-2 gap-3 mt-4"
+          className="grid grid-cols-2 gap-4 mt-6 px-4"
           variants={staggerContainer}
           initial="initial"
           animate="animate"
@@ -1443,11 +1442,10 @@ export default function EatlyApp() {
             <motion.button
               key={meal.id}
               onClick={() => setSelectedMealType(meal.id)}
-              className={`flex-1 py-4 px-3 rounded-2xl text-sm font-medium transition-all ${
-                selectedMealType === meal.id
-                  ? 'bg-gradient-to-br from-green-500 to-emerald-500 text-white shadow-lg shadow-green-500/40'
-                  : 'bg-gray-50 text-gray-600 hover:bg-gray-100'
-              }`}
+              className={`flex-1 py-4 px-3 rounded-2xl text-sm font-medium transition-all ${selectedMealType === meal.id
+                ? 'bg-gradient-to-br from-green-500 to-emerald-500 text-white shadow-lg shadow-green-500/40'
+                : 'bg-gray-50 text-gray-600 hover:bg-gray-100'
+                }`}
               whileHover={{ scale: 1.02 }}
               whileTap={{ scale: 0.98 }}
             >
@@ -1507,10 +1505,10 @@ export default function EatlyApp() {
       {/* Empty State / Call to Action */}
       {!suggestions && (
         <motion.div
-           className="bg-white dark:bg-gray-800 rounded-3xl p-6 shadow-sm border border-gray-100 dark:border-gray-700 text-center mt-6"
-           initial={{ opacity: 0, scale: 0.95 }}
-           animate={{ opacity: 1, scale: 1 }}
-           transition={{ delay: 0.3 }}
+          className="bg-white dark:bg-gray-800 rounded-3xl p-6 shadow-sm border border-gray-100 dark:border-gray-700 text-center mt-6"
+          initial={{ opacity: 0, scale: 0.95 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ delay: 0.3 }}
         >
           <div className="w-16 h-16 bg-green-100 dark:bg-green-900/30 rounded-full flex items-center justify-center mx-auto mb-4">
             <Sparkles className="w-8 h-8 text-green-500" />
@@ -1663,11 +1661,10 @@ export default function EatlyApp() {
           animate={{ opacity: 1, x: 0 }}
         >
           <div
-            className={`w-14 h-14 rounded-2xl flex items-center justify-center shadow-lg ${
-              addType === 'restriction'
-                ? 'bg-gradient-to-br from-red-400 to-rose-500 shadow-red-500/20'
-                : 'bg-gradient-to-br from-green-400 to-emerald-500 shadow-green-500/20'
-            }`}
+            className={`w-14 h-14 rounded-2xl flex items-center justify-center shadow-lg ${addType === 'restriction'
+              ? 'bg-gradient-to-br from-red-400 to-rose-500 shadow-red-500/20'
+              : 'bg-gradient-to-br from-green-400 to-emerald-500 shadow-green-500/20'
+              }`}
           >
             {addType === 'restriction' ? (
               <AlertTriangle className="w-7 h-7 text-white" />
@@ -1712,11 +1709,10 @@ export default function EatlyApp() {
                     <motion.button
                       key={option.id}
                       onClick={() => setNewRestriction({ ...newRestriction, reason: option.id })}
-                      className={`p-4 rounded-2xl text-left transition-all border-2 ${
-                        newRestriction.reason === option.id
-                          ? 'bg-green-500/10 border-green-500'
-                          : 'bg-muted border-transparent hover:bg-muted/80'
-                      }`}
+                      className={`p-4 rounded-2xl text-left transition-all border-2 ${newRestriction.reason === option.id
+                        ? 'bg-green-500/10 border-green-500'
+                        : 'bg-muted border-transparent hover:bg-muted/80'
+                        }`}
                       whileHover={{ scale: 1.02 }}
                       whileTap={{ scale: 0.98 }}
                     >
@@ -1734,11 +1730,10 @@ export default function EatlyApp() {
                     <motion.button
                       key={option.id}
                       onClick={() => setNewRestriction({ ...newRestriction, severity: option.id })}
-                      className={`flex-1 py-4 rounded-2xl text-sm font-semibold transition-all ${
-                        newRestriction.severity === option.id
-                          ? `bg-gradient-to-r ${option.color} text-white shadow-lg`
-                          : 'bg-muted text-muted-foreground'
-                      }`}
+                      className={`flex-1 py-4 rounded-2xl text-sm font-semibold transition-all ${newRestriction.severity === option.id
+                        ? `bg-gradient-to-r ${option.color} text-white shadow-lg`
+                        : 'bg-muted text-muted-foreground'
+                        }`}
                       whileHover={{ scale: 1.02 }}
                       whileTap={{ scale: 0.98 }}
                     >
@@ -1808,11 +1803,10 @@ export default function EatlyApp() {
                     <motion.button
                       key={meal.id}
                       onClick={() => setNewFood({ ...newFood, mealType: meal.id })}
-                      className={`flex-1 py-4 rounded-2xl text-sm font-medium transition-all ${
-                        newFood.mealType === meal.id
-                          ? 'bg-gradient-to-br from-green-500 to-emerald-500 text-white shadow-lg shadow-green-500/30'
-                          : 'bg-muted text-muted-foreground'
-                      }`}
+                      className={`flex-1 py-4 rounded-2xl text-sm font-medium transition-all ${newFood.mealType === meal.id
+                        ? 'bg-gradient-to-br from-green-500 to-emerald-500 text-white shadow-lg shadow-green-500/30'
+                        : 'bg-muted text-muted-foreground'
+                        }`}
                       whileHover={{ scale: 1.02 }}
                       whileTap={{ scale: 0.98 }}
                     >
@@ -1843,15 +1837,15 @@ export default function EatlyApp() {
     <div className="min-h-screen bg-gray-50 dark:bg-gray-950 text-gray-900 dark:text-gray-100 flex flex-col font-sans overflow-hidden">
       <AnimatePresence>
         {showOnboarding && (
-          <OnboardingRoko 
-            onComplete={handleOnboardingComplete} 
+          <OnboardingRoko
+            onComplete={handleOnboardingComplete}
             isSubmitting={loading}
           />
         )}
       </AnimatePresence>
-      
+
       {/* Main Content */}
-      <div className="max-w-lg mx-auto px-4">
+      <div className="max-w-lg mx-auto px-4 pb-36">
         <AnimatePresence mode="wait">
           {activeTab === 'home' && <div key="home" className="bg-background">{renderHome()}</div>}
           {activeTab === 'restrictions' && <div key="restrictions" className="bg-background">{renderRestrictions()}</div>}
@@ -1859,10 +1853,10 @@ export default function EatlyApp() {
           {activeTab === 'suggestions' && <div key="suggestions" className="bg-background">{renderSuggestions()}</div>}
           {activeTab === 'roko' && (
             <div key="roko" className="bg-background h-full">
-              <RokoPage 
-                restrictions={restrictions} 
-                foods={foods} 
-                mealType={selectedMealType} 
+              <RokoPage
+                restrictions={restrictions}
+                foods={foods}
+                mealType={selectedMealType}
                 userData={userData}
               />
             </div>
@@ -1916,23 +1910,20 @@ export default function EatlyApp() {
                   whileTap={{ scale: 0.95 }}
                 >
                   {/* Icon Container - Circle with border */}
-                  <div className={`w-11 h-11 rounded-full flex items-center justify-center border transition-all duration-200 ${
-                    isActive 
-                      ? 'border-green-500 bg-green-500/10' 
-                      : 'border-border bg-card'
-                  }`}>
+                  <div className={`w-11 h-11 rounded-full flex items-center justify-center border transition-all duration-200 ${isActive
+                    ? 'border-green-500 bg-green-500/10'
+                    : 'border-border bg-card'
+                    }`}>
                     <Icon
-                      className={`w-5 h-5 transition-all duration-200 ${
-                        isActive ? 'text-green-500' : 'text-gray-500'
-                      }`}
+                      className={`w-5 h-5 transition-all duration-200 ${isActive ? 'text-green-500' : 'text-gray-500'
+                        }`}
                       strokeWidth={isActive ? 2.5 : 2}
                     />
                   </div>
                   {/* Label */}
                   <span
-                    className={`text-[11px] font-medium transition-all duration-200 ${
-                      isActive ? 'text-green-600' : 'text-gray-500'
-                    }`}
+                    className={`text-[11px] font-medium transition-all duration-200 ${isActive ? 'text-green-600' : 'text-gray-500'
+                      }`}
                   >
                     {tab.label}
                   </span>
@@ -1981,9 +1972,9 @@ export default function EatlyApp() {
                   </motion.button>
                   <h2 className="text-lg font-bold text-foreground">
                     {settingsSection === 'profile' ? 'Perfil' :
-                     settingsSection === 'notifications' ? 'Notificaciones' :
-                     settingsSection === 'personalization' ? 'Personalización' :
-                     settingsSection === 'permissions' ? 'Permisos' : 'Configuración'}
+                      settingsSection === 'notifications' ? 'Notificaciones' :
+                        settingsSection === 'personalization' ? 'Personalización' :
+                          settingsSection === 'permissions' ? 'Permisos' : 'Configuración'}
                   </h2>
                   <div className="w-10" />
                 </div>
@@ -2151,9 +2142,8 @@ export default function EatlyApp() {
                           <p className="text-sm text-muted-foreground">{item.desc}</p>
                         </div>
                         <motion.button
-                          className={`w-12 h-7 rounded-full p-1 transition-colors ${
-                            notifications[item.key as keyof typeof notifications] ? 'bg-green-500' : 'bg-gray-300'
-                          }`}
+                          className={`w-12 h-7 rounded-full p-1 transition-colors ${notifications[item.key as keyof typeof notifications] ? 'bg-green-500' : 'bg-gray-300'
+                            }`}
                           onClick={() => setNotifications({ ...notifications, [item.key]: !notifications[item.key as keyof typeof notifications] })}
                           whileTap={{ scale: 0.95 }}
                         >
@@ -2178,9 +2168,8 @@ export default function EatlyApp() {
                       <p className="font-semibold text-foreground mb-3">Tema de la App</p>
                       <div className="grid grid-cols-2 gap-3">
                         <motion.button
-                          className={`p-4 rounded-xl border-2 flex flex-col items-center gap-2 transition-all ${
-                            theme === 'light' ? 'border-green-500 bg-green-50 dark:bg-green-900/30' : 'border-gray-200 dark:border-gray-600'
-                          }`}
+                          className={`p-4 rounded-xl border-2 flex flex-col items-center gap-2 transition-all ${theme === 'light' ? 'border-green-500 bg-green-50 dark:bg-green-900/30' : 'border-gray-200 dark:border-gray-600'
+                            }`}
                           onClick={() => {
                             setTheme('light');
                             playSound('click');
@@ -2193,9 +2182,8 @@ export default function EatlyApp() {
                           <span className="font-medium text-foreground">Claro</span>
                         </motion.button>
                         <motion.button
-                          className={`p-4 rounded-xl border-2 flex flex-col items-center gap-2 transition-all ${
-                            theme === 'dark' ? 'border-green-500 bg-green-50 dark:bg-green-900/30' : 'border-gray-200 dark:border-gray-600'
-                          }`}
+                          className={`p-4 rounded-xl border-2 flex flex-col items-center gap-2 transition-all ${theme === 'dark' ? 'border-green-500 bg-green-50 dark:bg-green-900/30' : 'border-gray-200 dark:border-gray-600'
+                            }`}
                           onClick={() => {
                             setTheme('dark');
                             playSound('click');
@@ -2220,9 +2208,8 @@ export default function EatlyApp() {
                             <span className="text-foreground">Sonidos</span>
                           </div>
                           <motion.button
-                            className={`w-12 h-7 rounded-full p-1 transition-colors ${
-                              soundEnabled ? 'bg-green-500' : 'bg-gray-300 dark:bg-gray-600'
-                            }`}
+                            className={`w-12 h-7 rounded-full p-1 transition-colors ${soundEnabled ? 'bg-green-500' : 'bg-gray-300 dark:bg-gray-600'
+                              }`}
                             onClick={() => {
                               setSoundEnabled(!soundEnabled);
                               if (!soundEnabled) playSound('success');
@@ -2242,9 +2229,8 @@ export default function EatlyApp() {
                             <span className="text-foreground">Vibración</span>
                           </div>
                           <motion.button
-                            className={`w-12 h-7 rounded-full p-1 transition-colors ${
-                              vibrationEnabled ? 'bg-green-500' : 'bg-gray-300 dark:bg-gray-600'
-                            }`}
+                            className={`w-12 h-7 rounded-full p-1 transition-colors ${vibrationEnabled ? 'bg-green-500' : 'bg-gray-300 dark:bg-gray-600'
+                              }`}
                             onClick={() => {
                               setVibrationEnabled(!vibrationEnabled);
                               if (!vibrationEnabled) vibrate([30, 50, 30]);
@@ -2275,22 +2261,20 @@ export default function EatlyApp() {
                       { key: 'microphone', icon: Eye, label: 'Micrófono', desc: 'Para comandos de voz' },
                     ].map((item) => (
                       <div key={item.key} className="bg-card rounded-2xl p-4 border border-border shadow-sm flex items-center gap-4">
-                        <div className={`w-10 h-10 rounded-xl flex items-center justify-center transition-colors ${
-                          permissions[item.key as keyof typeof permissions].granted 
-                            ? 'bg-green-100 dark:bg-green-900/30' 
-                            : 'bg-gray-100 dark:bg-gray-700'
-                        }`}>
-                          <item.icon className={`w-5 h-5 transition-colors ${
-                            permissions[item.key as keyof typeof permissions].granted 
-                              ? 'text-green-500' 
-                              : 'text-gray-400 dark:text-gray-500'
-                          }`} />
+                        <div className={`w-10 h-10 rounded-xl flex items-center justify-center transition-colors ${permissions[item.key as keyof typeof permissions].granted
+                          ? 'bg-green-100 dark:bg-green-900/30'
+                          : 'bg-gray-100 dark:bg-gray-700'
+                          }`}>
+                          <item.icon className={`w-5 h-5 transition-colors ${permissions[item.key as keyof typeof permissions].granted
+                            ? 'text-green-500'
+                            : 'text-gray-400 dark:text-gray-500'
+                            }`} />
                         </div>
                         <div className="flex-1">
                           <p className="font-semibold text-foreground">{item.label}</p>
                           <p className="text-sm text-muted-foreground">{item.desc}</p>
                         </div>
-                        
+
                         {permissions[item.key as keyof typeof permissions].loading ? (
                           <motion.div
                             className="w-6 h-6 border-2 border-green-500 border-t-transparent rounded-full"
@@ -2314,7 +2298,7 @@ export default function EatlyApp() {
                         )}
                       </div>
                     ))}
-                    
+
                     {/* Info about permissions */}
                     <div className="bg-blue-50 dark:bg-blue-900/20 rounded-2xl p-4 border border-blue-100 dark:border-blue-800">
                       <div className="flex items-start gap-3">
@@ -2381,11 +2365,15 @@ export default function EatlyApp() {
       {/* AI Chat Modal */}
       <RokoChat
         isOpen={showAIChat}
-        onClose={() => setShowAIChat(false)}
+        onClose={() => {
+          setShowAIChat(false);
+          setVoiceInitialMessage(undefined);
+        }}
         restrictions={restrictions}
         foods={foods}
         mealType={selectedMealType}
         userData={userData}
+        initialMessage={voiceInitialMessage}
       />
 
       {/* Restaurant Map Modal */}
@@ -2410,7 +2398,7 @@ export default function EatlyApp() {
               <AlertCircle className="w-5 h-5 flex-shrink-0" />
               <p className="text-sm font-medium">{errorToast}</p>
             </div>
-            <button 
+            <button
               onClick={() => setErrorToast(null)}
               className="p-1 hover:bg-white/20 rounded-full transition-colors"
             >
@@ -2424,7 +2412,7 @@ export default function EatlyApp() {
       <AnimatePresence>
         {voiceCommandFeedback && (
           <motion.div
-            className="fixed top-24 left-1/2 -translate-x-1/2 bg-blue-600 text-white px-6 py-3 rounded-full shadow-2xl z-[220] flex items-center gap-3 border border-white/20"
+            className="fixed top-24 left-1/2 -translate-x-1/2 bg-emerald-600 text-white px-6 py-3 rounded-full shadow-2xl z-[220] flex items-center gap-3 border border-white/20"
             initial={{ y: -50, x: '-50%', opacity: 0 }}
             animate={{ y: 0, x: '-50%', opacity: 1 }}
             exit={{ y: -50, x: '-50%', opacity: 0 }}
@@ -2455,12 +2443,12 @@ export default function EatlyApp() {
                 <RefreshCw className="w-10 h-10 text-white" />
               </motion.div>
             </div>
-            
+
             <h2 className="text-2xl font-black text-gray-900 mb-2">Optimizando tu perfil...</h2>
             <p className="text-gray-500 max-w-[250px]">
               Roko está procesando tus restricciones y metas de salud científicamente.
             </p>
-            
+
             <div className="mt-12 flex gap-1.5">
               {[0, 1, 2].map(i => (
                 <motion.div
@@ -2493,23 +2481,21 @@ export default function EatlyApp() {
 
       {/* Roko AI Chat Section */}
       <AnimatePresence>
-        {showRokoSection && (
-          <AIChatSection
+        {showAIChat && (
+          <RokoChat
+            isOpen={showAIChat}
+            onClose={() => setShowAIChat(false)}
             restrictions={restrictions}
             foods={foods}
             mealType={selectedMealType}
             userData={userData}
-            onClose={() => {
-              setShowRokoSection(false);
-              setVoiceInitialMessage(undefined);
-            }}
             initialMessage={voiceInitialMessage}
           />
         )}
       </AnimatePresence>
 
       {/* Floating Voice Button */}
-      {voiceSupported && (
+      {voiceSupported && !showAIChat && (
         <motion.div className="fixed right-4 bottom-32 z-50">
           {/* Voice Error Toast */}
           <AnimatePresence>
@@ -2548,11 +2534,10 @@ export default function EatlyApp() {
                 startListening();
               }
             }}
-            className={`w-14 h-14 rounded-full flex items-center justify-center shadow-lg transition-all ${
-              isListening
-                ? 'bg-red-500 shadow-red-500/30'
-                : 'bg-gradient-to-br from-blue-500 to-indigo-600 shadow-blue-500/30'
-            }`}
+            className={`w-14 h-14 rounded-full flex items-center justify-center shadow-lg transition-all ${isListening
+              ? 'bg-red-500 shadow-red-500/30'
+              : 'bg-gradient-to-br from-blue-500 to-indigo-600 shadow-blue-500/30'
+              }`}
             whileHover={{ scale: 1.1 }}
             whileTap={{ scale: 0.9 }}
             animate={isListening ? { scale: [1, 1.1, 1] } : {}}
@@ -2560,7 +2545,7 @@ export default function EatlyApp() {
           >
             <Mic className="w-6 h-6 text-white" />
           </motion.button>
-          
+
           {/* Listening Indicator */}
           {isListening && (
             <motion.div
@@ -2614,3 +2599,4 @@ export default function EatlyApp() {
     </div>
   );
 }
+
