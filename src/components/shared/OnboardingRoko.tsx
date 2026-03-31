@@ -292,12 +292,11 @@ export default function OnboardingRoko({ onComplete, isSubmitting = false }: Onb
                             initial={{ opacity: 0, scale: 0.95 }}
                             animate={{ opacity: 1, scale: 1 }}
                             onClick={handleNext}
-                            className={`w-full sm:w-auto sm:absolute sm:right-3 sm:top-1/2 sm:-translate-y-1/2 px-8 h-14 sm:h-12 bg-gradient-to-r ${currentStep.color} text-white font-bold rounded-2xl shadow-xl shadow-black/20 flex items-center justify-center gap-2`}
+                            className={`w-full sm:w-14 sm:absolute sm:right-3 sm:top-1/2 sm:-translate-y-1/2 h-14 sm:h-12 bg-gradient-to-r ${currentStep.color} text-white rounded-2xl shadow-xl shadow-black/20 flex items-center justify-center`}
                             whileHover={{ scale: 1.05 }}
                             whileTap={{ scale: 0.95 }}
                           >
-                            <span>Continuar</span>
-                            <ArrowRight className="w-5 h-5" />
+                            <ArrowRight className="w-6 h-6" />
                           </motion.button>
                         )}
                       </div>
