@@ -126,42 +126,67 @@ Responde ÚNICAMENTE con un objeto JSON válido con esta estructura:
   }
 
   private static async callGroq(message: string, config: EngineConfig, systemPrompt: string, isJson: boolean = false) {
-    const GROQ_API_KEY = process.env.GROQ_API_KEY;
-    if (!GROQ_API_KEY) throw new Error('GROQ_API_KEY is missing in environment.');
+    const keys = [
+      process.env.GROQ_API_KEY_1,
+      process.env.GROQ_API_KEY_2,
+      process.env.GROQ_API_KEY // Backward compatibility
+    ].filter(Boolean) as string[];
 
-    const messages = [
-      { role: 'system', content: systemPrompt },
-      ...(config.conversationHistory || []).map((m: any) => ({
-        role: m.role === 'ai' ? 'assistant' : m.role,
-        content: m.content
-      })),
-      { role: 'user', content: message }
-    ];
-
-    const response = await fetch(this.GROQ_ENDPOINT, {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${GROQ_API_KEY}`,
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({
-        model: this.GROQ_MODEL,
-        messages,
-        temperature: 0.7,
-        response_format: isJson ? { type: "json_object" } : undefined
-      })
-    });
-
-    if (!response.ok) {
-      const errorText = await response.text();
-      throw new Error(`Groq API Error: ${response.status} - ${errorText}`);
+    if (keys.length === 0) {
+      throw new Error('No se encontraron llaves GROQ_API_KEY en el entorno.');
     }
 
-    const data = await response.json();
-    return { 
-      success: true, 
-      source: 'Groq Llama 3.3', 
-      content: data.choices[0].message.content 
-    };
+    let lastError: Error | null = null;
+
+    for (let i = 0; i < keys.length; i++) {
+      const currentKey = keys[i];
+      try {
+        console.log(`[Roko] Probando Groq con llave #${i + 1}...`);
+        
+        const messages = [
+          { role: 'system', content: systemPrompt },
+          ...(config.conversationHistory || []).map((m: any) => ({
+            role: m.role === 'ai' ? 'assistant' : m.role,
+            content: m.content
+          })),
+          { role: 'user', content: message }
+        ];
+
+        const response = await fetch(this.GROQ_ENDPOINT, {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${currentKey}`,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            model: this.GROQ_MODEL,
+            messages,
+            temperature: 0.7,
+            response_format: isJson ? { type: "json_object" } : undefined
+          })
+        });
+
+        if (response.ok) {
+          const data = await response.json();
+          return { 
+            success: true, 
+            source: `Groq Llama 3.3 (Key #${i + 1})`, 
+            content: data.choices[0].message.content 
+          };
+        } else {
+          const errorText = await response.text();
+          console.warn(`[Roko] Error en llave #${i + 1}: ${response.status} - ${errorText}`);
+          lastError = new Error(`Groq API Error (${response.status}): ${errorText}`);
+          
+          // If it's not a quota or auth error, maybe don't try other keys?
+          // For now, try all keys for any non-OK response.
+        }
+      } catch (err: any) {
+        console.error(`[Roko] Fallo de red en llave #${i + 1}:`, err.message);
+        lastError = err;
+      }
+    }
+
+    throw lastError || new Error('Todas las llaves de Groq fallaron.');
   }
 }
