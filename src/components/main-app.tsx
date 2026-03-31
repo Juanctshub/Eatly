@@ -2300,6 +2300,8 @@ export default function EatlyApp() {
         isOpen={showRestaurantMap}
         onClose={() => setShowRestaurantMap(false)}
         restrictions={restrictions}
+        playSound={playSound}
+        vibrate={vibrate}
       />
 
       {/* Barcode Scanner Modal */}

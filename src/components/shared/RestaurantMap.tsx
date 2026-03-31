@@ -58,6 +58,8 @@ interface RestaurantMapProps {
   isOpen: boolean;
   onClose: () => void;
   restrictions: { foodItem: string; reason: string }[];
+  playSound?: (type: 'success' | 'click' | 'error') => void;
+  vibrate?: (pattern: number | number[]) => void;
 }
 
 // Type filter options
@@ -108,11 +110,12 @@ function createCustomIcon(type: string) {
   };
 }
 
-export default function RestaurantMap({ isOpen, onClose, restrictions }: RestaurantMapProps) {
+export default function RestaurantMap({ isOpen, onClose, restrictions, playSound, vibrate }: RestaurantMapProps) {
   const [restaurants, setRestaurants] = useState<Restaurant[]>([]);
   const [filteredRestaurants, setFilteredRestaurants] = useState<Restaurant[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [showSafeOnly, setShowSafeOnly] = useState(false);
   const [userLocation, setUserLocation] = useState<{ lat: number; lon: number } | null>(null);
   const [selectedRestaurant, setSelectedRestaurant] = useState<Restaurant | null>(null);
   const [activeFilter, setActiveFilter] = useState('all');
@@ -152,12 +155,15 @@ export default function RestaurantMap({ isOpen, onClose, restrictions }: Restaur
 
   // Filter restaurants
   useEffect(() => {
-    if (activeFilter === 'all') {
-      setFilteredRestaurants(restaurants);
-    } else {
-      setFilteredRestaurants(restaurants.filter(r => r.type === activeFilter));
+    let filtered = restaurants;
+    if (activeFilter !== 'all') {
+      filtered = filtered.filter(r => r.type === activeFilter);
     }
-  }, [activeFilter, restaurants]);
+    if (showSafeOnly) {
+      filtered = filtered.filter(r => checkRestrictions(r).length === 0);
+    }
+    setFilteredRestaurants(filtered);
+  }, [activeFilter, restaurants, showSafeOnly]);
 
   // Load on open
   useEffect(() => {
@@ -265,6 +271,32 @@ export default function RestaurantMap({ isOpen, onClose, restrictions }: Restaur
             ))}
           </div>
         </div>
+
+        {/* Safety Toggle */}
+        <div className="px-4 pb-4 flex items-center justify-between border-t border-gray-100 dark:border-gray-700/50 pt-3">
+           <div className="flex items-center gap-3">
+              <div className="p-2 bg-red-100 dark:bg-red-900/30 rounded-xl">
+                 <Filter className="w-4 h-4 text-red-500" />
+              </div>
+              <div>
+                 <p className="text-sm font-bold text-gray-900 dark:text-white">Sólo lugares seguros</p>
+                 <p className="text-[10px] text-gray-500">Filtrar riesgos de alérgenos</p>
+              </div>
+           </div>
+           <motion.button
+              onClick={() => {
+                setShowSafeOnly(!showSafeOnly);
+                vibrate?.(40);
+              }}
+              className={`w-12 h-6 rounded-full p-1 transition-colors ${showSafeOnly ? 'bg-red-500' : 'bg-gray-300 dark:bg-gray-600'}`}
+              whileTap={{ scale: 0.9 }}
+           >
+              <motion.div 
+                 className="w-4 h-4 bg-white rounded-full shadow-sm"
+                 animate={{ x: showSafeOnly ? 24 : 0 }}
+              />
+           </motion.button>
+        </div>
       </div>
 
       {/* Map Container */}
@@ -349,25 +381,35 @@ export default function RestaurantMap({ isOpen, onClose, restrictions }: Restaur
                   className: 'restaurant-marker',
                   html: `
                     <div style="
-                      width: 36px;
-                      height: 36px;
-                      background: linear-gradient(135deg, #22c55e, #16a34a);
+                      width: 40px;
+                      height: 40px;
+                      background: linear-gradient(135deg, ${checkRestrictions(restaurant).length > 0 ? '#ef4444, #b91c1c' : '#22c55e, #16a34a'});
+                      border: 3px solid white;
                       border-radius: 50% 50% 50% 0;
                       transform: rotate(-45deg);
                       display: flex;
                       align-items: center;
                       justify-content: center;
-                      box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+                      box-shadow: 0 4px 12px rgba(0,0,0,0.2);
                     ">
-                      <span style="transform: rotate(45deg); font-size: 16px;">${getTypeIcon(restaurant.type)}</span>
+                      <span style="transform: rotate(45deg); font-size: 16px;">${checkRestrictions(restaurant).length > 0 ? '⚠️' : getTypeIcon(restaurant.type)}</span>
                     </div>
                   `,
-                  iconSize: [36, 36],
-                  iconAnchor: [18, 36],
-                  popupAnchor: [0, -36],
+                  iconSize: [40, 40],
+                  iconAnchor: [20, 40],
+                  popupAnchor: [0, -40],
                 })}
                 eventHandlers={{
-                  click: () => setSelectedRestaurant(restaurant),
+                  click: () => {
+                    const warnings = checkRestrictions(restaurant);
+                    if (warnings.length > 0) {
+                       playSound?.('error');
+                       vibrate?.([100, 50, 100]);
+                    } else {
+                       vibrate?.(50);
+                    }
+                    setSelectedRestaurant(restaurant);
+                  },
                 }}
               >
                 <Popup>
