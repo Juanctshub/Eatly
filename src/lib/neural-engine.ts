@@ -158,15 +158,21 @@ Si no estás seguro, responde "Otro".`;
   }> {
     const userContext = restrictions.map(r => `${r.foodItem} (${r.reason})`).join(', ');
     const systemPrompt = `Eres Roko, el experto en seguridad alimentaria de Antigravity. 
-Tu misión es analizar la lista de ingredientes proporcionada y compararla con las restricciones del usuario: [${userContext}].
-Detecta alérgenos ocultos, derivados químicos, trazas peligrosas y aditivos (ej: E322 lecitina de soja si hay alergia a soja).
+Tu misión es realizar un análisis QUÍMICO y MOLECULAR de los ingredientes: [${ingredients}].
+Compáralos contra las restricciones del usuario: [${userContext}].
 
-Responde ESTRICTAMENTE en formato JSON plano:
+[DIRECTIVAS CRÍTICAS]
+1. Identifica derivadas: Si el usuario es alérgico a la "Leche", detecta Caseína, Suero, Lactosa. Si es a la "Soya", detecta Lecitina de Soya, E322.
+2. E-Numbers: Analiza aditivos químicos (ej: E102, E621) y tradúcelos a su nombre real para ver si chocan con la salud del usuario.
+3. Alérgenos Ocultos: No te fíes de la lista simple, busca ingredientes que "normalmente contienen" el alérgeno.
+4. Si tienes la más mínima duda razonable, marca como "warning".
+
+Responde ESTRICTAMENTE en este formato JSON:
 {
   "safety": "safe" | "warning" | "danger",
-  "verdict": "Breve frase motivadora o de advertencia",
-  "reason": "Explicación detallada de por qué es seguro o no",
-  "risks": ["lista de ingredientes detectados que activaron la alerta"]
+  "verdict": "Breve frase ruda/experta",
+  "reason": "Explicación química detallada de por qué es seguro o no",
+  "risks": ["lista de ingredientes sospechosos detectados"]
 }`;
 
     try {

@@ -47,6 +47,7 @@ interface AIChatProps {
   restrictions: Restriction[];
   foods: Food[];
   mealType?: string;
+  userData: any;
 }
 
 const quickActions = [
@@ -56,7 +57,7 @@ const quickActions = [
   { label: 'Modo Vida', icon: Lightbulb, prompt: 'Consejos de salud para mis condiciones actuales.' },
 ];
 
-export default function AIChat({ isOpen, onClose, restrictions, foods, mealType = 'almuerzo' }: AIChatProps) {
+export default function AIChat({ isOpen, onClose, restrictions, foods, mealType = 'almuerzo', userData }: AIChatProps) {
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -115,6 +116,7 @@ export default function AIChat({ isOpen, onClose, restrictions, foods, mealType 
           restrictions: restrictions.map(r => ({ foodItem: r.foodItem, reason: r.reason, severity: r.severity })),
           foods,
           mealType,
+          userData,
           conversationHistory: messages.slice(-4).map(m => ({ role: m.role, content: m.content }))
         })
       });

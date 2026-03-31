@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
+import { NeuralEngine } from '@/lib/neural-engine';
 
 export async function POST(req: NextRequest) {
   try {
@@ -44,17 +45,20 @@ export async function POST(req: NextRequest) {
       });
     }
 
-    // Save initial restrictions
+    // Save initial restrictions with AI categorization
     if (restrictions && Array.isArray(restrictions) && restrictions.length > 0) {
-      // Use individual creates if createMany has issues with SQLite in this environment
       for (const r of restrictions) {
+        // AI Categorization for restrictions
+        const category = await NeuralEngine.categorizeFood(r.foodItem);
+        
         await db.dietaryRestriction.create({
           data: {
             userId: user.id,
             foodItem: r.foodItem,
             reason: r.reason || 'alergia',
             severity: r.severity || 'moderada',
-            notes: 'Onboarding'
+            category: category, // SAVE IN NEW FIELD
+            notes: 'Configurado en onboarding'
           }
         });
       }
@@ -67,12 +71,25 @@ export async function POST(req: NextRequest) {
   }
 }
 
-// GET onboarding status
+// GET onboarding status and profile data
 export async function GET() {
   try {
-    const preferences = await db.userPreferences.findFirst();
-    return NextResponse.json({ onboarding: preferences?.onboarding || false });
+    const user = await db.user.findFirst({
+      include: { preferences: true }
+    });
+    
+    return NextResponse.json({ 
+      onboarding: user?.preferences?.onboarding || false,
+      user: user ? {
+        name: user.name,
+        email: user.email,
+        goal: user.goal,
+        activityLevel: user.activityLevel,
+        recentLogs: user.recentLogs
+      } : null
+    });
   } catch (error: any) {
-    return NextResponse.json({ onboarding: false });
+    return NextResponse.json({ onboarding: false, user: null });
   }
 }
+

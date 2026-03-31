@@ -67,6 +67,7 @@ interface Restriction {
   foodItem: string;
   reason: string;
   severity: string;
+  category?: string; // NEW: AI-generated category
   notes?: string;
   createdAt: string;
 }
@@ -251,6 +252,13 @@ export default function EatlyApp() {
         
         if (!dataOnboarding.onboarding) {
           setShowOnboarding(true);
+        }
+
+        if (dataOnboarding.user) {
+          setUserData({
+            ...userData,
+            ...dataOnboarding.user
+          });
         }
 
         if (Array.isArray(dataRest)) {
@@ -1149,6 +1157,11 @@ export default function EatlyApp() {
                         >
                           {severityInfo.label}
                         </span>
+                        {restriction.category && (
+                          <span className="px-3 py-1.5 bg-violet-500/10 text-violet-600 dark:text-violet-400 rounded-xl text-xs font-bold border border-violet-500/20">
+                            ✨ {restriction.category}
+                          </span>
+                        )}
                       </div>
                       {restriction.notes && (
                         <p className="text-sm text-muted-foreground mt-3 bg-muted rounded-xl p-3">
@@ -2279,6 +2292,7 @@ export default function EatlyApp() {
         restrictions={restrictions}
         foods={foods}
         mealType={selectedMealType}
+        userData={userData}
       />
 
       {/* Restaurant Map Modal */}

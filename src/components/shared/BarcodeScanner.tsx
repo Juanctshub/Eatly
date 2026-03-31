@@ -50,6 +50,7 @@ export default function BarcodeScanner({
   const [isScanning, setIsScanning] = useState(false);
   const [product, setProduct] = useState<Product | null>(null);
   const [loading, setLoading] = useState(false);
+  const [successFlash, setSuccessFlash] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [manualCode, setManualCode] = useState('');
   const [cameraActive, setCameraActive] = useState(false);
@@ -158,6 +159,8 @@ export default function BarcodeScanner({
       }
 
       if (fetchedProduct) {
+        setSuccessFlash(true);
+        setTimeout(() => setSuccessFlash(false), 500);
         setProduct(fetchedProduct);
         analyzeProductSafety(fetchedProduct);
         
@@ -376,14 +379,31 @@ export default function BarcodeScanner({
 
         {/* Loading overlay */}
         {loading && (
-          <div className="absolute inset-0 bg-black/60 flex items-center justify-center">
+          <div className="absolute inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-30">
             <div className="text-center">
-              <Loader2 className="w-12 h-12 text-white animate-spin mx-auto mb-4" />
-              <p className="text-white font-medium">Analizando imagen con IA...</p>
-              <p className="text-white/70 text-sm mt-2">Identificando ingredientes y alérgenos</p>
+              <motion.div 
+                animate={{ rotate: 360 }}
+                transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
+                className="w-16 h-16 border-4 border-white/20 border-t-white rounded-full mx-auto mb-6"
+              />
+              <p className="text-white font-bold text-lg">Consultando Base de Datos</p>
+              <p className="text-white/60 text-sm mt-1">Identificando ingredientes y alérgenos...</p>
             </div>
           </div>
         )}
+
+        {/* Success Flash */}
+        <AnimatePresence>
+          {successFlash && (
+            <motion.div 
+              className="absolute inset-0 bg-white z-40"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 0.8 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.2 }}
+            />
+          )}
+        </AnimatePresence>
       </div>
 
       {/* Product Result */}

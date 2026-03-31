@@ -82,6 +82,7 @@ model DietaryRestriction {
   foodItem    String
   reason      String
   severity    String
+  category    String?  // NEW: AI-generated category
   notes       String?
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
