@@ -87,6 +87,9 @@ Prisma.NullTypes = {
  * Enums
  */
 exports.Prisma.TransactionIsolationLevel = makeStrictEnum({
+  ReadUncommitted: 'ReadUncommitted',
+  ReadCommitted: 'ReadCommitted',
+  RepeatableRead: 'RepeatableRead',
   Serializable: 'Serializable'
 });
 
@@ -191,6 +194,11 @@ exports.Prisma.SortOrder = {
   desc: 'desc'
 };
 
+exports.Prisma.QueryMode = {
+  default: 'default',
+  insensitive: 'insensitive'
+};
+
 exports.Prisma.NullsOrder = {
   first: 'first',
   last: 'last'
@@ -250,7 +258,7 @@ const config = {
   "datasourceNames": [
     "db"
   ],
-  "activeProvider": "sqlite",
+  "activeProvider": "postgresql",
   "postinstall": false,
   "inlineDatasources": {
     "db": {
@@ -260,8 +268,8 @@ const config = {
       }
     }
   },
-  "inlineSchema": "// This is your Prisma schema file,\n// learn more about it in the docs: https://pris.ly/d/prisma-schema\n\ngenerator client {\n  provider      = \"prisma-client-js\"\n  output        = \"../src/generated/client\"\n  binaryTargets = [\"native\", \"rhel-openssl-3.0.x\"]\n}\n\ndatasource db {\n  provider = \"sqlite\"\n  url      = env(\"DATABASE_URL\")\n}\n\n// NextAuth Models\nmodel Account {\n  id                String  @id @default(cuid())\n  userId            String\n  type              String\n  provider          String\n  providerAccountId String\n  refresh_token     String?\n  access_token      String?\n  expires_at        Int?\n  token_type        String?\n  scope             String?\n  id_token          String?\n  session_state     String?\n\n  user User @relation(fields: [userId], references: [id], onDelete: Cascade)\n\n  @@unique([provider, providerAccountId])\n}\n\nmodel Session {\n  id           String   @id @default(cuid())\n  sessionToken String   @unique\n  userId       String\n  expires      DateTime\n  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)\n}\n\nmodel VerificationToken {\n  identifier String\n  token      String   @unique\n  expires    DateTime\n\n  @@unique([identifier, token])\n}\n\nmodel User {\n  id            String               @id @default(cuid())\n  name          String?\n  email         String?              @unique\n  emailVerified DateTime?\n  image         String?\n  password      String? // Hashed password for credentials auth\n  goal          String? // Added for onboarding\n  activityLevel String? // Added for onboarding\n  recentLogs    String? // Added for onboarding\n  accounts      Account[]\n  sessions      Session[]\n  restrictions  DietaryRestriction[]\n  foods         AvailableFood[]\n  preferences   UserPreferences?\n}\n\nmodel UserPreferences {\n  id            String   @id @default(cuid())\n  userId        String   @unique\n  onboarding    Boolean  @default(false)\n  theme         String   @default(\"light\")\n  notifications Boolean  @default(true)\n  avatar        String?\n  createdAt     DateTime @default(now())\n  updatedAt     DateTime @updatedAt\n  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)\n}\n\n// App Models\nmodel DietaryRestriction {\n  id        String   @id @default(cuid())\n  userId    String?\n  foodItem  String\n  reason    String\n  severity  String\n  category  String? // NEW: AI-generated category\n  notes     String?\n  createdAt DateTime @default(now())\n  updatedAt DateTime @updatedAt\n  user      User?    @relation(fields: [userId], references: [id], onDelete: Cascade)\n}\n\nmodel AvailableFood {\n  id        String   @id @default(cuid())\n  userId    String?\n  name      String\n  category  String?\n  mealType  String?\n  createdAt DateTime @default(now())\n  updatedAt DateTime @updatedAt\n  user      User?    @relation(fields: [userId], references: [id], onDelete: Cascade)\n}\n\nmodel MealSuggestion {\n  id              String   @id @default(cuid())\n  userId          String?\n  mealType        String\n  suggestion      String\n  explanation     String?\n  compatibleFoods String?\n  createdAt       DateTime @default(now())\n}\n\n// Preloaded food suggestions for common restrictions\nmodel PreloadedSuggestion {\n  id          String   @id @default(cuid())\n  name        String\n  description String\n  ingredients String // JSON array\n  mealType    String\n  tags        String? // JSON array: vegetarian, gluten-free, etc.\n  calories    Int?\n  prepTime    Int? // minutes\n  imageUrl    String?\n  createdAt   DateTime @default(now())\n}\n",
-  "inlineSchemaHash": "69edd12d170466724d0e1426027214574335731ed9900ddc8e6e922d852b0dbb",
+  "inlineSchema": "// This is your Prisma schema file,\n// learn more about it in the docs: https://pris.ly/d/prisma-schema\n\ngenerator client {\n  provider      = \"prisma-client-js\"\n  output        = \"../src/generated/client\"\n  binaryTargets = [\"native\", \"rhel-openssl-3.0.x\"]\n}\n\ndatasource db {\n  provider = \"postgresql\"\n  url      = env(\"DATABASE_URL\")\n}\n\n// NextAuth Models\nmodel Account {\n  id                String  @id @default(cuid())\n  userId            String\n  type              String\n  provider          String\n  providerAccountId String\n  refresh_token     String?\n  access_token      String?\n  expires_at        Int?\n  token_type        String?\n  scope             String?\n  id_token          String?\n  session_state     String?\n\n  user User @relation(fields: [userId], references: [id], onDelete: Cascade)\n\n  @@unique([provider, providerAccountId])\n}\n\nmodel Session {\n  id           String   @id @default(cuid())\n  sessionToken String   @unique\n  userId       String\n  expires      DateTime\n  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)\n}\n\nmodel VerificationToken {\n  identifier String\n  token      String   @unique\n  expires    DateTime\n\n  @@unique([identifier, token])\n}\n\nmodel User {\n  id            String               @id @default(cuid())\n  name          String?\n  email         String?              @unique\n  emailVerified DateTime?\n  image         String?\n  password      String? // Hashed password for credentials auth\n  goal          String? // Added for onboarding\n  activityLevel String? // Added for onboarding\n  recentLogs    String? // Added for onboarding\n  accounts      Account[]\n  sessions      Session[]\n  restrictions  DietaryRestriction[]\n  foods         AvailableFood[]\n  preferences   UserPreferences?\n}\n\nmodel UserPreferences {\n  id            String   @id @default(cuid())\n  userId        String   @unique\n  onboarding    Boolean  @default(false)\n  theme         String   @default(\"light\")\n  notifications Boolean  @default(true)\n  avatar        String?\n  createdAt     DateTime @default(now())\n  updatedAt     DateTime @updatedAt\n  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)\n}\n\n// App Models\nmodel DietaryRestriction {\n  id        String   @id @default(cuid())\n  userId    String?\n  foodItem  String\n  reason    String\n  severity  String\n  category  String? // NEW: AI-generated category\n  notes     String?\n  createdAt DateTime @default(now())\n  updatedAt DateTime @updatedAt\n  user      User?    @relation(fields: [userId], references: [id], onDelete: Cascade)\n}\n\nmodel AvailableFood {\n  id        String   @id @default(cuid())\n  userId    String?\n  name      String\n  category  String?\n  mealType  String?\n  createdAt DateTime @default(now())\n  updatedAt DateTime @updatedAt\n  user      User?    @relation(fields: [userId], references: [id], onDelete: Cascade)\n}\n\nmodel MealSuggestion {\n  id              String   @id @default(cuid())\n  userId          String?\n  mealType        String\n  suggestion      String\n  explanation     String?\n  compatibleFoods String?\n  createdAt       DateTime @default(now())\n}\n\n// Preloaded food suggestions for common restrictions\nmodel PreloadedSuggestion {\n  id          String   @id @default(cuid())\n  name        String\n  description String\n  ingredients String // JSON array\n  mealType    String\n  tags        String? // JSON array: vegetarian, gluten-free, etc.\n  calories    Int?\n  prepTime    Int? // minutes\n  imageUrl    String?\n  createdAt   DateTime @default(now())\n}\n",
+  "inlineSchemaHash": "7a539d17719623c51490e9ac132d6ded446a87ae43dadc33d75eeda5f884953e",
   "copyEngine": true
 }
 config.dirname = '/'
