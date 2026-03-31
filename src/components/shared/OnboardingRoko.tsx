@@ -62,32 +62,40 @@ export default function OnboardingRoko({ onComplete }: OnboardingProps) {
 
   const handleNext = () => {
     const currentStepId = steps[step].id;
-    let nextFormData = { ...formData };
-    
-    if (currentStepId === 'name') nextFormData = { ...formData, name: currentInput };
-    if (currentStepId === 'goal') nextFormData = { ...formData, goal: currentInput };
-    if (currentStepId === 'restrictions') {
-      const items = currentInput.split(',').filter(i => i.trim()).map(i => ({ foodItem: i.trim(), reason: 'alergia', severity: 'severa' }));
-      nextFormData = { ...formData, restrictions: items };
-    }
-    
-    setFormData(nextFormData);
-    
-    if (step < steps.length - 1) {
-      setCurrentInput('');
-      setStep(step + 1);
-    } else {
-      setIsSubmitting(true);
-      onComplete(nextFormData);
-    }
+    const value = currentInput.trim();
+    if (!value && currentStepId !== 'restrictions') return;
+
+    // Actualización funcional para evitar desfases de renderizado
+    setFormData(prev => {
+      const next = { ...prev };
+      if (currentStepId === 'name') next.name = value;
+      if (currentStepId === 'goal') next.goal = value;
+      if (currentStepId === 'restrictions') {
+        next.restrictions = value.split(',').filter(i => i.trim()).map(i => ({ 
+          foodItem: i.trim(), 
+          reason: 'alergia', 
+          severity: 'severa' 
+        }));
+      }
+
+      if (step < steps.length - 1) {
+        setCurrentInput('');
+        setStep(step + 1);
+      } else {
+        setIsSubmitting(true);
+        onComplete(next);
+      }
+      return next;
+    });
   };
 
   const handleOptionClick = (option: string) => {
-    const finalData = { ...formData, activityLevel: option };
-    setFormData(finalData);
     setIsSubmitting(true);
-    // Envio inmediato con los datos finales garantizados
-    onComplete(finalData);
+    setFormData(prev => {
+      const finalData = { ...prev, activityLevel: option };
+      onComplete(finalData);
+      return finalData;
+    });
   };
 
   useEffect(() => {

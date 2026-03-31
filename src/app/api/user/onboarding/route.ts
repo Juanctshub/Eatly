@@ -6,10 +6,21 @@ export const dynamic = 'force-dynamic';
 
 export async function POST(req: NextRequest) {
   try {
-    const { name, goal, activityLevel, restrictions } = await req.json();
+    const body = await req.json();
+    const { name, goal, activityLevel, restrictions } = body;
+
+    console.log('[Onboarding API] Payload recibido:', {
+      name: name ? 'SI' : 'NO',
+      goal: goal ? 'SI' : 'NO',
+      activityNum: restrictions?.length || 0
+    });
 
     if (!name || !goal) {
-      return NextResponse.json({ error: 'Faltan campos obligatorios' }, { status: 400 });
+      console.warn('[Onboarding API] Validación fallida: faltan campos obligatorios.', { name, goal });
+      return NextResponse.json({ 
+        error: `Faltan campos obligatorios: ${!name ? 'Nombre ' : ''}${!goal ? 'Meta' : ''}`, 
+        success: false 
+      }, { status: 400 });
     }
 
     // Hardened Identity: Always use the same master user for this demo

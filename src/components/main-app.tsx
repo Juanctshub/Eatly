@@ -356,7 +356,7 @@ export default function EatlyApp() {
         vibrate([50, 100, 50]);
       } else {
         console.error('[Eatly] Error en API Onboarding:', result.error);
-        setErrorToast('Roko tuvo un problema al guardar tu meta. Reintenta.');
+        setErrorToast(`Error: ${result.error || 'Roko no pudo guardar tu perfil. Reintenta.'}`);
       }
     } catch (error: any) {
       console.error('[Eatly] Fallo crítico de red en Onboarding:', error.message);
