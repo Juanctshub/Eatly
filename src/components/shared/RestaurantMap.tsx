@@ -32,6 +32,9 @@ import {
   Restaurant,
 } from '@/lib/restaurantService';
 
+// Leaflet styles
+import 'leaflet/dist/leaflet.css';
+
 // Dynamic import for Leaflet map (SSR safe)
 const MapContainer = dynamic(
   () => import('react-leaflet').then((mod) => mod.MapContainer),
