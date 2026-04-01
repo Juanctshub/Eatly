@@ -106,21 +106,31 @@ export default function BarcodeScanner({
 
   // Start camera
   const startCamera = useCallback(async () => {
+    setError(null);
     try {
       const stream = await navigator.mediaDevices.getUserMedia({
         video: { facingMode: 'environment' },
       });
       streamRef.current = stream;
-      if (videoRef.current) {
-        videoRef.current.srcObject = stream;
-        videoRef.current.play();
-      }
       setCameraActive(true);
+      
+      // The stream will be attached to the video element via useEffect once it's rendered
     } catch (err) {
       console.error('Error accessing camera:', err);
       setError('No se pudo acceder a la cámara. Verifica los permisos.');
     }
   }, []);
+
+  // Connect stream to video element when ready
+  useEffect(() => {
+    if (cameraActive && streamRef.current && videoRef.current) {
+      videoRef.current.srcObject = streamRef.current;
+      videoRef.current.play().catch(err => {
+        console.error('Error playing video:', err);
+        setError('Error al iniciar la reproducción de video.');
+      });
+    }
+  }, [cameraActive]);
 
   // Stop camera
   const stopCamera = useCallback(() => {
