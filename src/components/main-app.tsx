@@ -1850,7 +1850,7 @@ export default function EatlyApp() {
           {activeTab === 'restrictions' && <motion.div key="restrictions" className="bg-background min-h-[60vh]" initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 10 }}>{renderRestrictions()}</motion.div>}
           {activeTab === 'foods' && <motion.div key="foods" className="bg-background min-h-[60vh]" initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 10 }}>{renderFoods()}</motion.div>}
           {activeTab === 'suggestions' && <motion.div key="suggestions" className="bg-background min-h-[60vh]" initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 10 }}>{renderSuggestions()}</motion.div>}
-          {activeTab === 'roko' && <motion.div key="roko" className="bg-background min-h-[60vh]" initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 10 }}><RokoPage email={userData.email} /></motion.div>}
+          {activeTab === 'roko' && <motion.div key="roko" className="bg-background min-h-[60vh]" initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 10 }}><RokoPage restrictions={restrictions} foods={foods} mealType={selectedMealType} userData={userData} /></motion.div>}
         </AnimatePresence>
       </motion.div>
 
