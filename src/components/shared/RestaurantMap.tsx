@@ -49,10 +49,6 @@ const Popup = dynamic(
   () => import('react-leaflet').then((mod) => mod.Popup),
   { ssr: false }
 );
-const useMap = dynamic(
-  () => import('react-leaflet').then((mod) => mod.useMap),
-  { ssr: false }
-);
 
 interface RestaurantMapProps {
   isOpen: boolean;
@@ -186,16 +182,27 @@ export default function RestaurantMap({ isOpen, onClose, restrictions, playSound
 
   // Check if any restriction might be violated
   const checkRestrictions = (restaurant: Restaurant): string[] => {
-    const warnings: string[] = [];
-    const restrictedItems = restrictions.map(r => r.foodItem.toLowerCase());
+    if (!restrictions || restrictions.length === 0) return [];
     
-    if (restaurant.cuisine) {
-      restrictedItems.forEach(item => {
-        if (restaurant.cuisine?.toLowerCase().includes(item)) {
-          warnings.push(item);
-        }
-      });
-    }
+    const warnings: string[] = [];
+    const restrictedItems = restrictions.map(r => r.foodItem.toLowerCase().trim());
+    
+    // Check name, cuisine, types and address
+    const searchableText = [
+      restaurant.name,
+      restaurant.cuisine || '',
+      restaurant.address || '',
+      restaurant.type || '',
+      ...(restaurant.tags || [])
+    ].join(' ').toLowerCase();
+
+    restrictedItems.forEach(item => {
+      // Use regex to find the item as a whole word or substring
+      const regex = new RegExp(`\\b${item}\\b|${item}`, 'i');
+      if (regex.test(searchableText)) {
+        warnings.push(item);
+      }
+    });
     
     return warnings;
   };

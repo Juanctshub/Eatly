@@ -282,7 +282,7 @@ export default function AIChat({
         </div>
 
         {/* Interaction Area */}
-        <div className="p-6 bg-white dark:bg-black border-t border-gray-100 dark:border-white/5">
+        <div className="p-6 pb-10 md:pb-8 bg-white dark:bg-black border-t border-gray-100 dark:border-white/5 shadow-[0_-10px_40px_rgba(0,0,0,0.05)]">
           {messages.length < 3 && !isLoading && (
             <div className="mb-5 flex flex-wrap gap-2">
               {quickActions.map((action) => (
@@ -325,9 +325,6 @@ export default function AIChat({
               </div>
             </div>
           </div>
-          <p className="mt-4 text-[10px] text-center text-gray-400 font-medium leading-relaxed">
-            Roko usa IA para asesorarte. Siempre valida con un médico profesional.
-          </p>
         </div>
       </motion.div>
     </motion.div>

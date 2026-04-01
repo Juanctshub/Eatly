@@ -13,6 +13,7 @@ export interface Restaurant {
   website?: string;
   openingHours?: string;
   rating?: number;
+  tags?: string[];
 }
 
 // Get user's current location
@@ -133,6 +134,7 @@ export async function searchNearbyRestaurants(
           phone: el.tags.phone || el.tags['contact:phone'],
           website: el.tags.website || el.tags['contact:website'],
           openingHours: el.tags.opening_hours,
+          tags: Object.keys(el.tags).map(key => `${key}:${el.tags[key]}`),
         };
       })
       .sort((a: Restaurant, b: Restaurant) => a.distance - b.distance);

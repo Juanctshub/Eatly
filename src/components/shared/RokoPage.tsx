@@ -297,9 +297,9 @@ export default function RokoPage({
       </div>
 
       {/* Premium Input Area (Fixed over the Nav) */}
-      <div className="fixed bottom-28 left-0 right-0 px-6 z-30">
-        <div className="max-w-md mx-auto relative">
-          <div className="absolute inset-0 bg-white/20 dark:bg-black/20 backdrop-blur-xl rounded-[28px] -z-10 shadow-2xl" />
+      <div className="fixed bottom-36 left-0 right-0 px-6 z-30">
+        <div className="max-w-md mx-auto relative group">
+          <div className="absolute inset-0 bg-white/40 dark:bg-black/40 backdrop-blur-2xl rounded-[32px] -z-10 shadow-2xl border border-white/20 dark:border-white/5" />
           <div className="flex items-center gap-3 p-2 border border-white/30 dark:border-white/10 rounded-[28px]">
             <input
               type="text"

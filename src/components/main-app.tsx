@@ -1326,7 +1326,12 @@ export default function EatlyApp() {
         {mealTypes.map((meal) => (
           <motion.button
             key={meal.id}
-            onClick={() => setSelectedMealType(meal.id)}
+            onClick={() => {
+              setSelectedMealType(meal.id);
+              // Small delay to ensure state is updated if needed, though setState is async, 
+              // the generateSuggestions uses the closure or latest state.
+              setTimeout(() => generateSuggestions(), 50);
+            }}
             className={`px-5 py-2.5 rounded-2xl text-sm font-semibold whitespace-nowrap transition-all ${selectedMealType === meal.id
               ? 'bg-gradient-to-r from-green-500 to-emerald-500 text-white shadow-lg shadow-green-500/30'
               : 'bg-card text-muted-foreground border border-border'
@@ -1368,7 +1373,7 @@ export default function EatlyApp() {
         </motion.div>
       ) : (
         <motion.div
-          className="grid grid-cols-2 gap-4 mt-6 px-4"
+          className="grid grid-cols-2 xs:grid-cols-2 gap-4 mt-4 pb-20"
           variants={staggerContainer}
           initial="initial"
           animate="animate"
@@ -1441,10 +1446,14 @@ export default function EatlyApp() {
           {mealTypes.map((meal) => (
             <motion.button
               key={meal.id}
-              onClick={() => setSelectedMealType(meal.id)}
+              onClick={() => {
+                setSelectedMealType(meal.id);
+                // Trigger generation immediately for the selected meal type
+                setTimeout(() => generateSuggestions(), 50);
+              }}
               className={`flex-1 py-4 px-3 rounded-2xl text-sm font-medium transition-all ${selectedMealType === meal.id
                 ? 'bg-gradient-to-br from-green-500 to-emerald-500 text-white shadow-lg shadow-green-500/40'
-                : 'bg-gray-50 text-gray-600 hover:bg-gray-100'
+                : 'bg-gray-50 text-gray-600 hover:bg-gray-100 dark:bg-white/5 dark:text-gray-300'
                 }`}
               whileHover={{ scale: 1.02 }}
               whileTap={{ scale: 0.98 }}
@@ -1487,20 +1496,6 @@ export default function EatlyApp() {
         )}
       </motion.button>
 
-      {/* AI Chat Button */}
-      <motion.button
-        onClick={() => setShowAIChat(true)}
-        className="w-full bg-gradient-to-r from-violet-500 to-purple-600 text-white py-5 rounded-3xl font-semibold shadow-xl shadow-violet-500/30 flex items-center justify-center gap-3"
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.3 }}
-        whileHover={{ scale: 1.02 }}
-        whileTap={{ scale: 0.98 }}
-      >
-        <MessageCircle className="w-6 h-6" />
-        Chatea con Roko tu Nutriólogo
-        <span className="bg-white/20 text-xs px-2 py-1 rounded-full">IA</span>
-      </motion.button>
 
       {/* Empty State / Call to Action */}
       {!suggestions && (
@@ -1844,25 +1839,20 @@ export default function EatlyApp() {
         )}
       </AnimatePresence>
 
-      {/* Main Content */}
-      <div className="max-w-lg mx-auto px-4 pb-36">
+      {/* Main Content Area - Stabilized Height */}
+      <motion.div 
+        className="max-w-lg mx-auto px-4 pb-48 md:pb-40 pt-4 w-full flex-1 relative"
+        initial={false}
+        transition={{ type: 'spring', damping: 30, stiffness: 200 }}
+      >
         <AnimatePresence mode="wait">
-          {activeTab === 'home' && <div key="home" className="bg-background">{renderHome()}</div>}
-          {activeTab === 'restrictions' && <div key="restrictions" className="bg-background">{renderRestrictions()}</div>}
-          {activeTab === 'foods' && <div key="foods" className="bg-background">{renderFoods()}</div>}
-          {activeTab === 'suggestions' && <div key="suggestions" className="bg-background">{renderSuggestions()}</div>}
-          {activeTab === 'roko' && (
-            <div key="roko" className="bg-background h-full">
-              <RokoPage
-                restrictions={restrictions}
-                foods={foods}
-                mealType={selectedMealType}
-                userData={userData}
-              />
-            </div>
-          )}
+          {activeTab === 'home' && <motion.div key="home" className="bg-background min-h-[60vh]" initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 10 }}>{renderHome()}</motion.div>}
+          {activeTab === 'restrictions' && <motion.div key="restrictions" className="bg-background min-h-[60vh]" initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 10 }}>{renderRestrictions()}</motion.div>}
+          {activeTab === 'foods' && <motion.div key="foods" className="bg-background min-h-[60vh]" initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 10 }}>{renderFoods()}</motion.div>}
+          {activeTab === 'suggestions' && <motion.div key="suggestions" className="bg-background min-h-[60vh]" initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 10 }}>{renderSuggestions()}</motion.div>}
+          {activeTab === 'roko' && <motion.div key="roko" className="bg-background min-h-[60vh]" initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 10 }}><RokoPage email={userData.email} /></motion.div>}
         </AnimatePresence>
-      </div>
+      </motion.div>
 
       {/* Bottom Navigation - Exact Reference Style */}
       <motion.nav
@@ -2494,68 +2484,82 @@ export default function EatlyApp() {
         )}
       </AnimatePresence>
 
-      {/* Floating Voice Button */}
-      {voiceSupported && !showAIChat && (
-        <motion.div className="fixed right-4 bottom-32 z-50">
-          {/* Voice Error Toast */}
-          <AnimatePresence>
-            {voiceError && (
-              <motion.div
-                className="absolute bottom-full mb-3 right-0 bg-red-50 dark:bg-red-900/90 border border-red-200 dark:border-red-700 rounded-2xl p-3 shadow-lg max-w-[250px]"
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: 10 }}
-              >
-                <p className="text-xs text-red-600 dark:text-red-300">{voiceError}</p>
-              </motion.div>
-            )}
-          </AnimatePresence>
-
-          {/* Transcript Display */}
-          <AnimatePresence>
-            {isListening && transcript && (
-              <motion.div
-                className="absolute bottom-full mb-3 right-0 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-2xl p-3 shadow-lg max-w-[200px]"
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: 10 }}
-              >
-                <p className="text-sm text-gray-700 dark:text-gray-300">&quot;{transcript}&quot;</p>
-              </motion.div>
-            )}
-          </AnimatePresence>
-
-          {/* Voice Button */}
-          <motion.button
-            onClick={() => {
-              if (isListening) {
-                stopListening();
-              } else {
-                startListening();
-              }
-            }}
-            className={`w-14 h-14 rounded-full flex items-center justify-center shadow-lg transition-all ${isListening
-              ? 'bg-red-500 shadow-red-500/30'
-              : 'bg-gradient-to-br from-blue-500 to-indigo-600 shadow-blue-500/30'
-              }`}
-            whileHover={{ scale: 1.1 }}
-            whileTap={{ scale: 0.9 }}
-            animate={isListening ? { scale: [1, 1.1, 1] } : {}}
-            transition={isListening ? { duration: 0.5, repeat: Infinity } : {}}
+      {/* Floating Voice Button - Conditional Visibility with Transitions */}
+      <AnimatePresence>
+        {voiceSupported && 
+         !showAIChat && 
+         !showRestaurantMap && 
+         !showScanner && 
+         !showAddModal && 
+         activeTab !== 'suggestions' && 
+         activeTab !== 'roko' && (
+          <motion.div 
+            className="fixed right-4 bottom-32 z-50"
+            initial={{ opacity: 0, scale: 0, scaleY: 0 }}
+            animate={{ opacity: 1, scale: 1, scaleY: 1 }}
+            exit={{ opacity: 0, scale: 0, scaleY: 0 }}
+            transition={{ type: 'spring', damping: 20, stiffness: 300 }}
           >
-            <Mic className="w-6 h-6 text-white" />
-          </motion.button>
-
-          {/* Listening Indicator */}
-          {isListening && (
-            <motion.div
-              className="absolute inset-0 rounded-full border-4 border-red-300"
-              animate={{ scale: [1, 1.3, 1], opacity: [1, 0, 1] }}
-              transition={{ duration: 1.5, repeat: Infinity }}
-            />
-          )}
-        </motion.div>
-      )}
+            {/* Voice Error Toast */}
+            <AnimatePresence>
+              {voiceError && (
+                <motion.div
+                  className="absolute bottom-full mb-3 right-0 bg-red-50 dark:bg-red-900/90 border border-red-200 dark:border-red-700 rounded-2xl p-3 shadow-lg max-w-[250px]"
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: 10 }}
+                >
+                  <p className="text-xs text-red-600 dark:text-red-300">{voiceError}</p>
+                </motion.div>
+              )}
+            </AnimatePresence>
+  
+            {/* Transcript Display */}
+            <AnimatePresence>
+              {isListening && transcript && (
+                <motion.div
+                  className="absolute bottom-full mb-3 right-0 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-2xl p-3 shadow-lg max-w-[200px]"
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: 10 }}
+                >
+                  <p className="text-sm text-gray-700 dark:text-gray-300">&quot;{transcript}&quot;</p>
+                </motion.div>
+              )}
+            </AnimatePresence>
+  
+            {/* Voice Button */}
+            <motion.button
+              onClick={() => {
+                if (isListening) {
+                  stopListening();
+                } else {
+                  startListening();
+                }
+              }}
+              className={`w-14 h-14 rounded-full flex items-center justify-center shadow-lg transition-all ${isListening
+                ? 'bg-red-500 shadow-red-500/30'
+                : 'bg-gradient-to-br from-blue-500 to-indigo-600 shadow-blue-500/30'
+                }`}
+              whileHover={{ scale: 1.1 }}
+              whileTap={{ scale: 0.9 }}
+              animate={isListening ? { scale: [1, 1.1, 1] } : {}}
+              transition={isListening ? { duration: 0.5, repeat: Infinity } : {}}
+            >
+              <Mic className="w-6 h-6 text-white" />
+            </motion.button>
+  
+            {/* Listening Indicator */}
+            {isListening && (
+              <motion.div
+                className="absolute inset-0 rounded-full border-4 border-red-300"
+                animate={{ scale: [1, 1.3, 1], opacity: [1, 0, 1] }}
+                transition={{ duration: 1.5, repeat: Infinity }}
+              />
+            )}
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* Voice Not Supported Message */}
       {!voiceSupported && (
