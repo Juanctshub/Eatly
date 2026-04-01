@@ -168,6 +168,98 @@ Si no estás seguro, responde "Otro".`;
   }
 
   /**
+   * Universal Vision Analysis (Nivel Élite)
+   * Analyzes an image using Gemini 1.5 Flash to identify food, brand, and nutrition.
+   */
+  static async visionAnalyze(base64ImageData: string, restrictions: any[]): Promise<{
+    name: string;
+    brand?: string;
+    calories: number;
+    proteins: number;
+    fats: number;
+    carbs: number;
+    ingredients: string;
+    verdict: string;
+    safety: 'safe' | 'warning' | 'danger';
+    reason: string;
+  }> {
+    const apiKey = process.env.GOOGLE_AI_API_KEY;
+    const userContext = restrictions.map(r => `${r.foodItem} (${r.reason})`).join(', ');
+    
+    if (!apiKey) {
+      throw new Error('GOOGLE_AI_API_KEY no configurada en el servidor');
+    }
+
+    const systemPrompt = `Eres Roko, el experto en nutrición de Antigravity. Tu misión es analizar esta imagen de comida/producto.
+Identifica: Nombre exacto, Marca (si hay), ingredientes visibles y estimación nutricional por 100g.
+Compara contra las restricciones del usuario: [${userContext}]
+
+[DIRECTIVAS ROKO]
+1. Sé rudo y honesto. Si ves veneno procesado, dilo.
+2. Si el producto choca con una restricción del usuario, la seguridad DEBE ser "danger".
+3. NO uses disclaimers de IA. Sé humano y experto.
+
+Responde ESTRICTAMENTE en este formato JSON:
+{
+  "name": "Nombre del alimento",
+  "brand": "Marca detectada o 'Genérico'",
+  "calories": number, // kcal por 100g
+  "proteins": number, // gramos por 100g
+  "fats": number, // gramos por 100g
+  "carbs": number, // gramos por 100g
+  "ingredients": "Lista de ingredientes detectados o inferidos",
+  "verdict": "Veredicto agresivo de Roko sobre el producto",
+  "safety": "safe" | "warning" | "danger",
+  "reason": "Explicación breve de por qué es seguro o peligroso"
+}`;
+
+    // Remove base64 header if present
+    const cleanBase64 = base64ImageData.split(',')[1] || base64ImageData;
+
+    try {
+      const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          contents: [{
+            parts: [
+              { text: systemPrompt },
+              { inline_data: { mime_type: 'image/jpeg', data: cleanBase64 } }
+            ]
+          }],
+          generationConfig: {
+            response_mime_type: "application/json",
+          }
+        })
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(`Gemini API Error: ${errorData.error?.message || response.statusText}`);
+      }
+
+      const result = await response.json();
+      const contentText = result.candidates[0].content.parts[0].text;
+      return JSON.parse(contentText);
+      
+    } catch (err: any) {
+      console.error('[Roko Vision] Error:', err.message);
+      return {
+        name: 'Error de Visión',
+        brand: 'N/A',
+        calories: 0,
+        proteins: 0,
+        fats: 0,
+        carbs: 0,
+        ingredients: 'No pude analizar la imagen',
+        verdict: 'Hubo un glitch. Limpia el lente e intenta de nuevo.',
+        safety: 'warning',
+        reason: 'Error en la conexión con los ojos de Roko.'
+      };
+    }
+  }
+
+  /**
    * Estimates nutritional info and safety for a generic food name
    */
   static async getFoodInfo(foodName: string, restrictions: any[]): Promise<{
