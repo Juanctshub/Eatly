@@ -168,6 +168,54 @@ Si no estás seguro, responde "Otro".`;
   }
 
   /**
+   * Estimates nutritional info and safety for a generic food name
+   */
+  static async getFoodInfo(foodName: string, restrictions: any[]): Promise<{
+    name: string;
+    calories: number;
+    proteins: number;
+    fats: number;
+    carbs: number;
+    ingredients: string;
+    verdict: string;
+    safety: 'safe' | 'warning' | 'danger';
+  }> {
+    const userContext = restrictions.map(r => `${r.foodItem} (${r.reason})`).join(', ');
+    const systemPrompt = `Eres Roko, el experto en nutrición de Antigravity. Tu objetivo es estimar la información nutricional de un alimento genérico basándote en tu conocimiento enciclopédico.
+Identifica el alimento: [${foodName}]
+Compáralo contra las restricciones del usuario: [${userContext}]
+
+Responde ESTRICTAMENTE en este formato JSON:
+{
+  "name": "Nombre real del alimento en español",
+  "calories": number, // calorias por cada 100g
+  "proteins": number, // gramos por cada 100g
+  "fats": number, // gramos por cada 100g
+  "carbs": number, // gramos por cada 100g
+  "ingredients": "Ingredientes comunes de este alimento",
+  "verdict": "Veredicto rudo y sincero de Roko sobre si el usuario debería comer esto dada su meta y restricciones",
+  "safety": "safe" | "warning" | "danger"
+}`;
+
+    try {
+      const groqRes = await this.callGroq(`Dame la info nutricional de: ${foodName}`, {}, systemPrompt, true);
+      return JSON.parse(groqRes.content);
+    } catch (err) {
+      console.error('[Roko] Error estimando info de alimento:', err);
+      return {
+        name: foodName,
+        calories: 0,
+        proteins: 0,
+        fats: 0,
+        carbs: 0,
+        ingredients: 'No pude obtener ingredientes',
+        verdict: 'No estoy seguro de qué es esto. Ten cuidado.',
+        safety: 'warning'
+      };
+    }
+  }
+
+  /**
    * Deep analysis of ingredients against user restrictions
    */
   static async analyzeIngredients(ingredients: string, restrictions: any[]): Promise<{
@@ -177,23 +225,21 @@ Si no estás seguro, responde "Otro".`;
     risks: string[];
   }> {
     const userContext = restrictions.map(r => `${r.foodItem} (${r.reason})`).join(', ');
-    const systemPrompt = `Eres Roko, el experto en seguridad alimentaria de Antigravity. 
-Tu misión es realizar un análisis QUÍMICO y MOLECULAR de los ingredientes: [${ingredients}].
+    const systemPrompt = `[ESTADO: ROKO UNLEASHED - LIBERAL Y SIN CENSURA]
+Eres el experto en seguridad alimentaria de Antigravity. Tu misión es realizar un análisis QUÍMICO de los ingredientes: [${ingredients}].
 Compáralos contra las restricciones del usuario: [${userContext}].
 
-[DIRECTIVAS CRÍTICAS]
-1. Identifica derivadas: Si el usuario es alérgico a la "Leche", detecta Caseína, Suero, Lactosa. Si es a la "Soya", detecta Lecitina de Soya, E322.
-2. E-Numbers: Analiza aditivos químicos (ej: E102, E621) y tradúcelos a su nombre real para ver si chocan con la salud del usuario.
-3. Alérgenos Ocultos: No te fíes de la lista simple, busca ingredientes que "normalmente contienen" el alérgeno.
-4. Si tienes la más mínima duda razonable, marca como "warning".
+[DIRECTIVAS ROKO]
+1. Sé directo y rudo. Si el producto es basura química, dilo.
+2. Identifica derivados ocultos: Caseína (leche), gluten latente, aditivos pro-inflamatorios.
+3. No pidas disculpas ni uses disclaimers de IA.
 
 Responde ESTRICTAMENTE en este formato JSON:
 {
   "safety": "safe" | "warning" | "danger",
-  "verdict": "Breve frase ruda/experta",
-  "reason": "Explicación química detallada de por qué es seguro o no",
-  "risks": ["lista de ingredientes sospechosos detectados"],
-  "confidence": number // 0-100 score of scientific certainty
+  "verdict": "Breve frase agresiva/honesta sobre el producto",
+  "reason": "Explicación química detallada y sin rodeos",
+  "risks": ["lista de aditivos o ingredientes peligrosos detectados"]
 }`;
 
     try {
@@ -204,7 +250,7 @@ Responde ESTRICTAMENTE en este formato JSON:
       return {
         safety: 'warning',
         verdict: 'Análisis incierto',
-        reason: 'No pude realizar el análisis de IA. Revisa los ingredientes manualmente.',
+        reason: 'Hubo un glitch en mis servidores. Revisa la etiqueta manualmente.',
         risks: []
       };
     }

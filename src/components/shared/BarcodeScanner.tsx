@@ -138,29 +138,26 @@ export default function BarcodeScanner({
     };
   }, [stopCamera]);
 
-  // Fetch product from OpenFoodFacts by name or barcode
+  // Fetch product from OpenFoodFacts or AI Fallback
   const fetchProduct = async (query: string) => {
     setLoading(true);
     setError(null);
     setProduct(null);
     setSafetyStatus(null);
+    setAiAnalysis(null);
 
     try {
-      // Si es solo números, probablemente sea un código de barras. Si no, búsqueda por texto.
       const isBarcode = /^\d+$/.test(query);
-      const url = isBarcode
-        ? `https://world.openfoodfacts.org/api/v0/product/${query}.json`
-        : `https://world.openfoodfacts.org/cgi/search.pl?search_terms=${encodeURIComponent(query)}&search_simple=1&action=process&json=1`;
-
-      const response = await fetch(url);
-      const data = await response.json();
-
       let fetchedProduct: Product | null = null;
 
-      if (isBarcode && data.status === 1) {
-        fetchedProduct = data.product;
-      } else if (!isBarcode && data.products && data.products.length > 0) {
-        fetchedProduct = data.products[0];
+      if (isBarcode) {
+        // Barcode search
+        const url = `https://world.openfoodfacts.org/api/v0/product/${query}.json`;
+        const response = await fetch(url);
+        const data = await response.json();
+        if (data.status === 1) {
+          fetchedProduct = data.product;
+        }
       }
 
       if (fetchedProduct) {
@@ -169,18 +166,67 @@ export default function BarcodeScanner({
         setProduct(fetchedProduct);
         analyzeProductSafety(fetchedProduct);
         
-        // Start AI Deep Analysis
         if (fetchedProduct.ingredients_text) {
           analyzeWithRoko(fetchedProduct.ingredients_text);
         }
       } else {
-        setError('No se pudo identificar el alimento. Intenta escribirlo de otra forma.');
+        // Fallback to Roko for generic food or missing product
+        await fetchFromRoko(query);
       }
     } catch (err) {
       console.error('Error fetching product:', err);
-      setError('Error al analizar la imagen. Verifica tu conexión.');
+      setError('Error al analizar el alimento. Reintentando con IA...');
+      await fetchFromRoko(query);
     } finally {
       setLoading(false);
+    }
+  };
+
+  // AI Fallback for generic foods (Pizza, Apple, etc)
+  const fetchFromRoko = async (foodName: string) => {
+    setAiLoading(true);
+    setAiLoadingState(0);
+    
+    try {
+      const res = await fetch('/api/ai/get-food-info', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ foodName, restrictions }),
+      });
+      
+      if (!res.ok) throw new Error('Error en la IA');
+      
+      const data = await res.json();
+      
+      // Transform Roko data to Product format
+      const mockProduct: Product = {
+        code: 'ai_generated',
+        product_name: data.name,
+        ingredients_text: data.ingredients,
+        nutriments: {
+          energy_100g: data.calories * 4.184, // convert kcal to kJ
+          fat_100g: data.fats,
+          carbohydrates_100g: data.carbs,
+          proteins_100g: data.proteins,
+        },
+      };
+      
+      setProduct(mockProduct);
+      setAiAnalysis({
+        safety: data.safety,
+        verdict: data.verdict,
+        reason: data.verdict, // Use verdict as reason for fallback
+        risks: [],
+      });
+      setSafetyStatus(data.safety);
+      setSuccessFlash(true);
+      setTimeout(() => setSuccessFlash(false), 500);
+      
+    } catch (err) {
+      console.error('Roko Fallback Error:', err);
+      setError('No pude identificar este alimento. Intenta enfocarlo mejor.');
+    } finally {
+      setAiLoading(false);
     }
   };
 
