@@ -168,6 +168,14 @@ export default function BarcodeScanner({
         if (data.status === 1) {
           fetchedProduct = data.product;
         }
+      } else {
+        // Text Search in OpenFoodFacts (Improved)
+        const url = `https://world.openfoodfacts.org/cgi/search.pl?search_terms=${encodeURIComponent(query)}&search_simple=1&action=process&json=1`;
+        const response = await fetch(url);
+        const data = await response.json();
+        if (data.products && data.products.length > 0) {
+          fetchedProduct = data.products[0];
+        }
       }
 
       if (fetchedProduct) {
