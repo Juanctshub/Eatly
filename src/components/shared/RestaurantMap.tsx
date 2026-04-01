@@ -225,8 +225,8 @@ export default function RestaurantMap({ isOpen, onClose, restrictions, playSound
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
     >
-      {/* Header */}
-      <div className="absolute top-0 left-0 right-0 z-20 bg-white dark:bg-gray-800 shadow-lg">
+      {/* Header - Forced to front */}
+      <div className="absolute top-0 left-0 right-0 z-[100] bg-white dark:bg-gray-800 shadow-xl border-b border-border">
         <div className="flex items-center justify-between p-4">
           <motion.button
             onClick={onClose}
@@ -309,8 +309,8 @@ export default function RestaurantMap({ isOpen, onClose, restrictions, playSound
         </div>
       </div>
 
-      {/* Map Container */}
-      <div className="absolute inset-0 pt-28">
+      {/* Map Container - Pushed to background */}
+      <div className="absolute inset-0 pt-48 z-0">
         {loading && (
           <div className="flex items-center justify-center h-full">
             <div className="text-center">
@@ -449,7 +449,7 @@ export default function RestaurantMap({ isOpen, onClose, restrictions, playSound
       <AnimatePresence>
         {showList && !loading && !error && filteredRestaurants.length > 0 && (
           <motion.div
-            className="absolute bottom-0 left-0 right-0 bg-white dark:bg-gray-800 rounded-t-3xl shadow-2xl max-h-[45vh] overflow-hidden z-10"
+            className="absolute bottom-0 left-0 right-0 bg-white dark:bg-gray-800 rounded-t-[40px] shadow-[0_-10px_40px_rgba(0,0,0,0.1)] max-h-[50vh] overflow-hidden z-[110]"
             initial={{ y: '100%' }}
             animate={{ y: 0 }}
             exit={{ y: '100%' }}
@@ -556,7 +556,7 @@ export default function RestaurantMap({ isOpen, onClose, restrictions, playSound
       <AnimatePresence>
         {selectedRestaurant && (
           <motion.div
-            className="absolute inset-x-4 bottom-4 bg-white dark:bg-gray-800 rounded-3xl shadow-2xl overflow-hidden z-20"
+            className="absolute inset-x-4 bottom-4 bg-white dark:bg-gray-800 rounded-[32px] shadow-[0_20px_50px_rgba(0,0,0,0.3)] overflow-hidden z-[120] border border-white/10"
             initial={{ y: '100%', opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
             exit={{ y: '100%', opacity: 0 }}
