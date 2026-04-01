@@ -320,27 +320,30 @@ export default function BarcodeScanner({
     
     setLoading(true);
     setError(null);
+    setProduct(null);
+    setAiAnalysis(null);
     
     try {
-      const predictions = await model.classify(videoRef.current, 3);
+      // Tomar captura y clasificar
+      const predictions = await model.classify(videoRef.current, 5);
       
       if (predictions && predictions.length > 0) {
-        // Get the top prediction
+        // Detenemos cámara para ahorrar recursos
+        stopCamera();
+        
+        // Intentar identificar con la mejor predicción
         const bestMatch = predictions[0].className.split(',')[0].trim();
+        console.log('[Scanner] Predicción principal:', bestMatch);
         
-        if (cameraActive) {
-          stopCamera();
-        }
-        
-        // Search the recognized object in OpenFoodFacts
-        fetchProduct(bestMatch);
+        // Ejecutar búsqueda híbrida (API -> Roko)
+        await fetchProduct(bestMatch);
       } else {
-        setError('No se reconoció el alimento en la imagen.');
+        setError('No pude reconocer ningún alimento. Intenta de nuevo.');
         setLoading(false);
       }
     } catch (err) {
       console.error('Error classifying image:', err);
-      setError('Ocurrió un error analizando la cámara.');
+      setError('Error técnico analizando la imagen.');
       setLoading(false);
     }
   };
@@ -422,10 +425,9 @@ export default function BarcodeScanner({
           </div>
         )}
 
-        {/* Scanning Frame */}
+        {/* Scanning Frame - Hide if product found or loading */}
         <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-        {/* Professional Minimalist Visor */}
-        {!isModelLoading && !error && (
+        {!isModelLoading && !error && !product && !loading && (
           <div className="absolute inset-0 z-10 flex flex-col items-center justify-center">
             {/* Ambient Overlay */}
             <div className="absolute inset-0 bg-black/20 pointer-events-none" />
@@ -462,7 +464,7 @@ export default function BarcodeScanner({
               >
                 <div className="flex items-center gap-2 mb-1">
                   <div className="w-2 h-2 bg-green-500 rounded-full animate-ping" />
-                  <span className="text-[10px] uppercase tracking-widest font-bold text-white/60">Análisis en curso</span>
+                  <span className="text-[10px] uppercase tracking-widest font-bold text-white/60">Análisis activo</span>
                 </div>
                 <p className="text-white text-sm font-semibold">Enfoca el alimento claramente</p>
               </motion.div>
