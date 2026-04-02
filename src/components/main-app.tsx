@@ -1858,7 +1858,8 @@ export default function EatlyApp() {
   );
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-950 text-gray-900 dark:text-gray-100 flex flex-col font-sans overflow-hidden">
+    <EatlyAppContainer>
+      <div className="flex flex-col font-sans overflow-hidden">
       <AnimatePresence>
         {showOnboarding && (
           <OnboardingRoko
@@ -2634,12 +2635,17 @@ export default function EatlyApp() {
         isOpen={showInstallGuide} 
         onClose={() => setShowInstallGuide(false)} 
       />
+      </div>
     </EatlyAppContainer>
   );
 }
 
 // Wrapper to provide ThemeContext if needed (though it seems already provided globally)
 function EatlyAppContainer({ children }: { children: React.ReactNode }) {
-  return <div className="min-h-screen bg-background text-foreground pb-24">{children}</div>;
+  return (
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-950 text-gray-900 dark:text-gray-100 pb-safe">
+      {children}
+    </div>
+  );
 }
 
