@@ -240,7 +240,14 @@ Responde ESTRICTAMENTE en este formato JSON:
 
       const result = await response.json();
       const contentText = result.candidates[0].content.parts[0].text;
-      return JSON.parse(contentText);
+      
+      // SANITIZE: Remove any markdown code block indicators
+      const cleanJson = contentText
+        .replace(/```json/g, '')
+        .replace(/```/g, '')
+        .trim();
+        
+      return JSON.parse(cleanJson);
       
     } catch (err: any) {
       console.error('[Roko Vision] Error:', err.message);

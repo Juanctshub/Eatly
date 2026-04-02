@@ -106,16 +106,34 @@ export default function BarcodeScanner({
     setAiAnalysis(null);
 
     try {
-      // Capture frame to canvas
+      // Resize and send to Vision API
       const canvas = canvasRef.current;
       const video = videoRef.current;
-      canvas.width = video.videoWidth;
-      canvas.height = video.videoHeight;
+      
+      // Use a fixed max dimension for reliable API transfer (reducing payload size)
+      const maxDim = 800;
+      let width = video.videoWidth;
+      let height = video.videoHeight;
+      
+      if (width > height) {
+        if (width > maxDim) {
+          height *= maxDim / width;
+          width = maxDim;
+        }
+      } else {
+        if (height > maxDim) {
+          width *= maxDim / height;
+          height = maxDim;
+        }
+      }
+
+      canvas.width = width;
+      canvas.height = height;
       const ctx = canvas.getContext('2d');
       if (!ctx) throw new Error('No se pudo inicializar el canvas');
       
-      ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-      const base64Image = canvas.toDataURL('image/jpeg', 0.8);
+      ctx.drawImage(video, 0, 0, width, height);
+      const base64Image = canvas.toDataURL('image/jpeg', 0.7); // 70% quality is plenty for AI
 
       if (vibrate) vibrate();
       if (playSound) playSound('click');

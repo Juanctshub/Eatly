@@ -220,17 +220,17 @@ export default function RestaurantMap({ isOpen, onClose, restrictions, playSound
 
   return (
     <motion.div
-      className="fixed inset-0 bg-gray-100 dark:bg-gray-900 z-50"
+      className="fixed inset-0 bg-gray-100 dark:bg-gray-900 z-[1000]"
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
     >
-      {/* Header - Forced to front */}
-      <div className="absolute top-0 left-0 right-0 z-[100] bg-white dark:bg-gray-800 shadow-xl border-b border-border">
+      {/* Header - Forced to front with extreme Z-index */}
+      <div className="absolute top-0 left-0 right-0 z-[9999] bg-white/80 dark:bg-gray-800/80 backdrop-blur-md shadow-xl border-b border-border">
         <div className="flex items-center justify-between p-4">
           <motion.button
             onClick={onClose}
-            className="w-10 h-10 bg-gray-100 dark:bg-gray-700 rounded-full flex items-center justify-center"
+            className="w-10 h-10 bg-gray-100 dark:bg-gray-700 rounded-full flex items-center justify-center shadow-lg"
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
           >
@@ -238,10 +238,13 @@ export default function RestaurantMap({ isOpen, onClose, restrictions, playSound
           </motion.button>
           
           <div className="text-center">
-            <h2 className="font-bold text-gray-900 dark:text-white">Restaurantes Cercanos</h2>
-            <p className="text-sm text-gray-500 dark:text-gray-400">
-              {filteredRestaurants.length} lugares encontrados
-            </p>
+            <h2 className="font-bold text-gray-900 dark:text-white">Explorar Restaurantes</h2>
+            <div className="flex items-center justify-center gap-1">
+              <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />
+              <p className="text-[10px] uppercase tracking-widest font-bold text-gray-500 dark:text-gray-400">
+                {filteredRestaurants.length} LUGARES ENCONTRADOS
+              </p>
+            </div>
           </div>
           
           <motion.button
