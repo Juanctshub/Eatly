@@ -240,15 +240,37 @@ Responde ESTRICTAMENTE en este formato JSON:
       }
 
       const result = await response.json();
-      const contentText = result.candidates[0].content.parts[0].text;
       
-      // SANITIZE: Remove any markdown code block indicators
-      const cleanJson = contentText
-        .replace(/```json/g, '')
-        .replace(/```/g, '')
-        .trim();
+      // Check if we have candidates
+      if (!result.candidates || result.candidates.length === 0) {
+        // Check for safety filter blocks
+        if (result.promptFeedback?.blockReason) {
+          throw new Error(`Google bloqueó la imagen por: ${result.promptFeedback.blockReason}`);
+        }
+        throw new Error('La IA no pudo generar una respuesta. Intenta con otra foto.');
+      }
+
+      const contentText = result.candidates[0].content.parts[0].text;
+      console.log('[Roko Vision] Respuesta raw de la IA:', contentText);
+      
+      // SUPER SANITIZE: Try to find a JSON block even if it's mixed with text
+      let cleanJson = contentText;
+      const jsonMatch = contentText.match(/\{[\s\S]*\}/);
+      if (jsonMatch) {
+        cleanJson = jsonMatch[0];
+      } else {
+        cleanJson = contentText
+          .replace(/```json/g, '')
+          .replace(/```/g, '')
+          .trim();
+      }
         
-      return JSON.parse(cleanJson);
+      try {
+        return JSON.parse(cleanJson);
+      } catch (parseErr) {
+        console.error('[Roko Vision] Error de parseo JSON. Content:', cleanJson);
+        throw new Error('Error al interpretar la respuesta de la IA.');
+      }
       
     } catch (err: any) {
       console.error('[Roko Vision] Error:', err.message);
