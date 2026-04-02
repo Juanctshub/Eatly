@@ -216,7 +216,7 @@ Responde ESTRICTAMENTE en este formato JSON:
     const cleanBase64 = base64ImageData.split(',')[1] || base64ImageData;
 
     try {
-      const response = await fetch(`https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent?key=${apiKey}`, {
+      const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -228,12 +228,12 @@ Responde ESTRICTAMENTE en este formato JSON:
               { inline_data: { mime_type: 'image/jpeg', data: cleanBase64 } }
             ]
           }],
-          generationConfig: {
+          generation_config: {
             response_mime_type: "application/json",
             temperature: 1.0,
-            topP: 0.95,
+            top_p: 0.95,
           },
-          safetySettings: [
+          safety_settings: [
             { category: "HARM_CATEGORY_HARASSMENT", threshold: "BLOCK_NONE" },
             { category: "HARM_CATEGORY_HATE_SPEECH", threshold: "BLOCK_NONE" },
             { category: "HARM_CATEGORY_SEXUALLY_EXPLICIT", threshold: "BLOCK_NONE" },

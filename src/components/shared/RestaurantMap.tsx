@@ -200,9 +200,8 @@ export default function RestaurantMap({ isOpen, onClose, restrictions, playSound
     ].join(' ').toLowerCase();
 
     restrictedItems.forEach(item => {
-      // Use regex to find the item as a whole word or substring
-      const regex = new RegExp(`\\b${item}\\b|${item}`, 'i');
-      if (regex.test(searchableText)) {
+      // Use case-insensitive search for the ingredient in name or cuisine attributes
+      if (searchableText.includes(item)) {
         warnings.push(item);
       }
     });
