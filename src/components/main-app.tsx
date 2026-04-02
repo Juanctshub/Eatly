@@ -59,7 +59,9 @@ import {
   Mic,
   MapPin,
   AlertCircle,
+  ArrowRight,
 } from 'lucide-react';
+import { iOSInstallGuide as IosInstallGuide } from './ios-install-guide';
 
 // Types
 interface Restriction {
@@ -199,6 +201,7 @@ export default function EatlyApp() {
     recentLogs: 'He comido sano hoy',
   });
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [showInstallGuide, setShowInstallGuide] = useState(false);
 
   // Permission states
   const [permissions, setPermissions] = useState({
@@ -1120,6 +1123,32 @@ export default function EatlyApp() {
           </div>
         </motion.div>
       )}
+
+      {/* iPhone Download Block */}
+      <motion.div
+        className="mt-8 mb-4 px-1"
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.6 }}
+      >
+        <button
+          onClick={() => setShowInstallGuide(true)}
+          className="w-full bg-gradient-to-br from-gray-900 via-gray-800 to-black p-6 rounded-[2rem] shadow-xl shadow-gray-400/20 flex items-center justify-between group active:scale-[0.98] transition-all"
+        >
+          <div className="flex items-center gap-4 text-left">
+            <div className="w-12 h-12 bg-white/10 rounded-2xl flex items-center justify-center backdrop-blur-md group-hover:bg-white/20 transition-colors">
+              <Apple className="w-6 h-6 text-white" />
+            </div>
+            <div>
+              <h3 className="text-white font-bold text-lg">Download for iPhone</h3>
+              <p className="text-gray-400 text-sm">Activa el acceso directo premium</p>
+            </div>
+          </div>
+          <div className="w-10 h-10 bg-white/10 rounded-full flex items-center justify-center group-hover:translate-x-1 transition-transform">
+            <ArrowRight className="w-5 h-5 text-white" />
+          </div>
+        </button>
+      </motion.div>
     </motion.div>
   );
 
@@ -2600,7 +2629,17 @@ export default function EatlyApp() {
           overflow: hidden;
         }
       `}</style>
-    </div>
+      {/* iOS Install Guide Modal */}
+      <IosInstallGuide 
+        isOpen={showInstallGuide} 
+        onClose={() => setShowInstallGuide(false)} 
+      />
+    </EatlyAppContainer>
   );
+}
+
+// Wrapper to provide ThemeContext if needed (though it seems already provided globally)
+function EatlyAppContainer({ children }: { children: React.ReactNode }) {
+  return <div className="min-h-screen bg-background text-foreground pb-24">{children}</div>;
 }
 
