@@ -187,7 +187,8 @@ Si no estás seguro, responde "Otro".`;
     const userContext = restrictions.map(r => `${r.foodItem} (${r.reason})`).join(', ');
     
     if (!apiKey) {
-      throw new Error('GOOGLE_AI_API_KEY no configurada en el servidor');
+      console.error('[Roko Vision] ERROR: GOOGLE_AI_API_KEY no detectada. Verificala en Vercel.');
+      throw new Error('Configuración incompleta: El servidor no tiene tu API Key de Google.');
     }
 
     const systemPrompt = `Eres Roko, el experto en nutrición de Antigravity. Tu misión es analizar esta imagen de comida/producto.

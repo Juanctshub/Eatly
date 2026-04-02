@@ -175,7 +175,9 @@ export default function BarcodeScanner({
 
     } catch (err: any) {
       console.error('Vision Scan Error:', err);
-      setError('No pude analizar la imagen. Intenta enfocar mejor al alimento.');
+      // More detailed error for the user
+      const errorMsg = err.message || 'Intenta enfocar mejor al alimento o revisa tu conexión.';
+      setError(`Roko Vision: ${errorMsg}`);
       if (playSound) playSound('error');
     } finally {
       setLoading(false);
