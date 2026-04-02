@@ -217,8 +217,8 @@ Responde ESTRICTAMENTE en este formato JSON:
     const cleanBase64 = base64ImageData.split(',')[1] || base64ImageData;
 
     try {
-      // Using v1beta for advanced system_instruction and safety control
-      const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`, {
+      // Using v1 stable for reliability
+      const response = await fetch(`https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent?key=${apiKey}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
