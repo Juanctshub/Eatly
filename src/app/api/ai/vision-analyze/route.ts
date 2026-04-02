@@ -24,7 +24,8 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json(analysis);
   } catch (error: any) {
-    console.error('[Vision Analyze API] Error Crítico:', error.message);
+    console.error('[Vision Analyze API] Error Crítico de Roko:', error.message);
+    // Be very explicit with the error for the frontend
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 }

@@ -145,9 +145,11 @@ export default function BarcodeScanner({
         body: JSON.stringify({ image: base64Image, restrictions }),
       });
 
-      if (!response.ok) throw new Error('Error en el análisis de visión');
-
       const data = await response.json();
+      
+      if (!response.ok) {
+        throw new Error(data.error || 'Fallo en la comunicación con Roko Vision.');
+      }
 
       // Transform to product UI format
       setProduct({
