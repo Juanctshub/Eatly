@@ -223,16 +223,16 @@ Responde ESTRICTAMENTE en este formato JSON:
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          system_instruction: {
+          systemInstruction: {
             parts: [{ text: systemPrompt }]
           },
           contents: [{
             parts: [
-              { inline_data: { mime_type: 'image/jpeg', data: cleanBase64 } }
+              { inline_data: { mimeType: 'image/jpeg', data: cleanBase64 } }
             ]
           }],
           generationConfig: {
-            response_mime_type: "application/json",
+            responseMimeType: "application/json",
             temperature: 0.8,
             topP: 0.95,
           },
@@ -247,7 +247,8 @@ Responde ESTRICTAMENTE en este formato JSON:
 
       if (!response.ok) {
         const errorData = await response.json();
-        throw new Error(`Gemini API Error: ${errorData.error?.message || response.statusText}`);
+        const msg = Array.isArray(errorData) ? JSON.stringify(errorData) : (errorData.error?.message || response.statusText);
+        throw new Error(`Gemini API Error: ${msg}`);
       }
 
       const result = await response.json();
