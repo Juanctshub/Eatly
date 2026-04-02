@@ -216,24 +216,23 @@ Responde ESTRICTAMENTE en este formato JSON:
     const cleanBase64 = base64ImageData.split(',')[1] || base64ImageData;
 
     try {
-      const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`, {
+      const response = await fetch(`https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent?key=${apiKey}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          system_instruction: {
-            parts: [{ text: systemPrompt }]
-          },
           contents: [{
             parts: [
-              { inline_data: { mime_type: 'image/jpeg', data: cleanBase64 } }
+              { text: `[INSTRUCCIÓN DE SISTEMA - ROKO UNLEASHED]\n${systemPrompt}` },
+              { inline_data: { mime_type: 'image/jpeg', data: cleanBase64 } },
+              { text: "Analiza esta imagen y responde estrictamente con el JSON solicitado." }
             ]
           }],
-          generation_config: {
-            response_mime_type: "application/json",
+          generationConfig: {
+            responseMimeType: "application/json",
             temperature: 1.0,
-            top_p: 0.95,
+            topP: 0.95,
           },
-          safety_settings: [
+          safetySettings: [
             { category: "HARM_CATEGORY_HARASSMENT", threshold: "BLOCK_NONE" },
             { category: "HARM_CATEGORY_HATE_SPEECH", threshold: "BLOCK_NONE" },
             { category: "HARM_CATEGORY_SEXUALLY_EXPLICIT", threshold: "BLOCK_NONE" },
