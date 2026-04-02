@@ -275,16 +275,16 @@ Responde ESTRICTAMENTE en este formato JSON:
     } catch (err: any) {
       console.error('[Roko Vision] Error:', err.message);
       return {
-        name: 'Error de Visión',
-        brand: 'N/A',
+        name: 'Error de Análisis',
+        brand: 'Roko Vision',
         calories: 0,
         proteins: 0,
         fats: 0,
         carbs: 0,
-        ingredients: 'No pude analizar la imagen',
-        verdict: 'Hubo un glitch. Limpia el lente e intenta de nuevo.',
+        ingredients: '',
+        verdict: `Error de Visión: ${err.message}`,
         safety: 'warning',
-        reason: 'Error en la conexión con los ojos de Roko.'
+        reason: 'Hubo un problema al conectar con mis sensores de IA.'
       };
     }
   }
