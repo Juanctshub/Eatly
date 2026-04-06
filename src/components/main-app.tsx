@@ -7,6 +7,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useTheme } from '@/contexts/ThemeContext';
 import RokoChat from '@/components/shared/RokoChat';
 import OnboardingRoko from '@/components/shared/OnboardingRoko';
+import InstallPwaPrompt from '@/components/shared/InstallPwaPrompt';
 import RokoPage from '@/components/shared/RokoPage';
 import RestaurantMap from '@/components/shared/RestaurantMap';
 import BarcodeScanner from '@/components/shared/BarcodeScanner';
@@ -2697,6 +2698,9 @@ function EatlyAppContainer({ children }: { children: React.ReactNode }) {
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-950 text-gray-900 dark:text-gray-100 pb-safe">
       {children}
+      <div className="fixed inset-x-0 bottom-0 pointer-events-none z-[150]">
+        <InstallPwaPrompt />
+      </div>
     </div>
   );
 }
