@@ -253,7 +253,6 @@ Responde ESTRICTAMENTE en este formato JSON:
             ]
           }],
           generationConfig: {
-            responseMimeType: "application/json",
             temperature: 1.0,
             topP: 0.95,
           },
