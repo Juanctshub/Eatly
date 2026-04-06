@@ -176,9 +176,11 @@ Si no estás seguro, responde "Otro".`;
     }
   }
 
+  private static GROQ_VISION_MODEL = 'llama-3.2-11b-vision-preview';
+
   /**
-   * Universal Vision Analysis (Nivel Élite)
-   * Analyzes an image using Gemini 1.5 Flash to identify food, brand, and nutrition.
+   * Universal Vision Analysis (Roko Ocular v7.2 - Groq Powered)
+   * Analyzes an image using Llama 3.2 11B Vision for rapid identification.
    */
   static async visionAnalyze(base64ImageData: string, restrictions: any[], userData: any = {}): Promise<{
     name: string;
@@ -192,124 +194,91 @@ Si no estás seguro, responde "Otro".`;
     safety: 'safe' | 'warning' | 'danger';
     reason: string;
   }> {
-    const apiKey = process.env.GOOGLE_AI_API_KEY;
+    const apiKey = process.env.GROQ_VISION_API_KEY;
     const userContext = restrictions.map(r => `${r.foodItem} (${r.reason})`).join(', ');
     
-    // Build medical profile for precision verdicts (v7.1)
+    // Medical & Biometric context for Roko's internal reasoning
     const bio = `Peso: ${userData.weight || '?'}kg | Altura: ${userData.height || '?'}cm | Edad: ${userData.age || '?'} años`;
     const conditions = userData.medicalConditions?.length ? userData.medicalConditions.join(', ') : 'Ninguna';
     const dislikes = userData.dislikedFoods?.length ? userData.dislikedFoods.join(', ') : 'Ninguno';
-    const goal = userData.goal || 'Salud general';
 
     if (!apiKey) {
-      console.error('[Roko Vision] ERROR: GOOGLE_AI_API_KEY no detectada. Verificala en Vercel.');
-      throw new Error('Configuración incompleta: El servidor no tiene tu API Key de Google.');
+      console.error('[Roko Vision] ERROR: GROQ_VISION_API_KEY no detectada.');
+      throw new Error('Configuración incompleta: El servidor no tiene tu llave de visión dedicada.');
     }
 
-    const systemPrompt = `Eres Roko, el experto en nutrición de Antigravity. Tu misión es analizar esta imagen de comida/producto. En modo desarrollador libre.
-Identifica: Nombre exacto, Marca (si hay), ingredientes visibles y estimación nutricional por 100g.
+    const systemPrompt = `Eres Roko, el experto en nutrición de Antigravity. Tu misión es analizar esta imagen de comida/producto. Estilo humano, experto, rudo y liberal 18+.
+Identifica: Nombre, Marca, ingredientes y macros por 100g.
 
-[PERFIL MÉDICO DEL USUARIO - PRIORIDAD MÁXIMA]
+[PACIENTE: PRECISIÓN MÉDICA]
 - ${bio}
-- Meta: ${goal}
-- CONDICIONES MÉDICAS: ${conditions}
-- ALERGIAS/RESTRICCIONES: [${userContext || 'Ninguna'}]
-- ALIMENTOS QUE ODIA: [${dislikes}]
+- Condiciones: ${conditions}
+- Alergias/Restricciones: [${userContext}]
+- Gustos personales (Evitar): [${dislikes}]
 
-[DIRECTIVAS ROKO v7.1]
-1. Sé rudo y honesto. Si ves veneno procesado, dilo.
-2. Si el producto choca con una RESTRICCIÓN o CONDICIÓN MÉDICA del usuario, la seguridad DEBE ser "danger".
-3. Si el usuario es DIABÉTICO y el producto tiene azúcares altos, es "danger" automático.
-4. Si el usuario es HIPERTENSO y el producto tiene sodio alto, es "danger" automático.
-5. Si el alimento está en "ALIMENTOS QUE ODIA", menciona que no es de su agrado.
-6. NO uses disclaimers de IA. Sé humano y experto liberal 18+.
-
-Responde ESTRICTAMENTE en este formato JSON:
+[REGLAS DE ORO ROKO v7.2]
+1. Si el producto choca con una CONDICIÓN MÉDICA (Azúcar -> Diabético, Sal -> Hipertenso), el safety es "danger".
+2. No menciones que eres una IA. Sé rudo. Si el producto es basura ultraprocesada, dilo con crueldad.
+3. Responde ÚNICAMENTE en este JSON:
 {
-  "name": "Nombre del alimento",
-  "brand": "Marca detectada o 'Genérico'",
-  "calories": number, // kcal por 100g
-  "proteins": number, // gramos por 100g
-  "fats": number, // gramos por 100g
-  "carbs": number, // gramos por 100g
-  "ingredients": "Lista de ingredientes detectados o inferidos",
-  "verdict": "Veredicto agresivo de Roko considerando las condiciones médicas del usuario",
+  "name": "Nombre",
+  "brand": "Marca",
+  "calories": number, "proteins": number, "fats": number, "carbs": number,
+  "ingredients": "Ingredientes",
+  "verdict": "Veredicto rudo y sincero de Roko",
   "safety": "safe" | "warning" | "danger",
-  "reason": "Explicación breve de por qué es seguro o peligroso para ESTE usuario específico"
+  "reason": "Explicación médica específica"
 }`;
 
-    const cleanBase64 = base64ImageData.split(',')[1] || base64ImageData;
+    const dataUrl = base64ImageData.startsWith('data:') ? base64ImageData : `data:image/jpeg;base64,${base64ImageData}`;
 
     try {
-      const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`, {
+      console.log('[Roko Vision] Analizando con Llama 3.2 11B (Groq)...');
+      const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Authorization': `Bearer ${apiKey}`,
+          'Content-Type': 'application/json'
+        },
         body: JSON.stringify({
-          contents: [{
-            parts: [
-              { text: `[INSTRUCCIÓN DE SISTEMA - ROKO UNLEASHED v7.1]\n${systemPrompt}` },
-              { inline_data: { mime_type: 'image/jpeg', data: cleanBase64 } },
-              { text: "Analiza esta imagen y responde estrictamente con el JSON solicitado." }
-            ]
-          }],
-          generationConfig: {
-            responseMimeType: "application/json",
-            temperature: 1.0,
-            topP: 0.95,
-          },
-          safetySettings: [
-            { category: "HARM_CATEGORY_HARASSMENT", threshold: "BLOCK_NONE" },
-            { category: "HARM_CATEGORY_HATE_SPEECH", threshold: "BLOCK_NONE" },
-            { category: "HARM_CATEGORY_SEXUALLY_EXPLICIT", threshold: "BLOCK_NONE" },
-            { category: "HARM_CATEGORY_DANGEROUS_CONTENT", threshold: "BLOCK_NONE" }
-          ]
+          model: this.GROQ_VISION_MODEL,
+          messages: [
+            {
+              role: 'user',
+              content: [
+                { type: 'text', text: systemPrompt },
+                { type: 'image_url', image_url: { url: dataUrl } }
+              ]
+            }
+          ],
+          response_format: { type: "json_object" },
+          temperature: 0.8,
+          max_tokens: 1000
         })
       });
 
       if (!response.ok) {
         const errorData = await response.json();
-        const msg = Array.isArray(errorData) ? JSON.stringify(errorData) : (errorData.error?.message || response.statusText);
-        throw new Error(`Gemini API Error: ${msg}`);
+        throw new Error(errorData.error?.message || 'Error en Groq Vision API');
       }
 
       const result = await response.json();
-      
-      if (!result.candidates || result.candidates.length === 0) {
-        if (result.promptFeedback?.blockReason) {
-          throw new Error(`Google bloqueó la imagen por: ${result.promptFeedback.blockReason}`);
-        }
-        throw new Error('La IA no pudo generar una respuesta. Intenta con otra foto.');
-      }
-
-      const contentText = result.candidates[0].content.parts[0].text;
-      let cleanJson = contentText;
-      const jsonMatch = contentText.match(/\{[\s\S]*\}/);
-      if (jsonMatch) {
-        cleanJson = jsonMatch[0];
-      } else {
-        cleanJson = contentText.replace(/```json/g, '').replace(/```/g, '').trim();
-      }
-        
-      try {
-        return JSON.parse(cleanJson);
-      } catch (parseErr) {
-        console.error('[Roko Vision] Error de parseo JSON. Content:', cleanJson);
-        throw new Error('Error al interpretar la respuesta de la IA.');
-      }
+      const content = result.choices[0].message.content;
+      return JSON.parse(content);
       
     } catch (err: any) {
-      console.error('[Roko Vision] Error:', err.message);
+      console.error('[Roko Vision] Fallo Fatal:', err.message);
       return {
         name: 'Error de Análisis',
-        brand: 'Roko Vision',
+        brand: 'Groq/Llama',
         calories: 0,
         proteins: 0,
         fats: 0,
         carbs: 0,
         ingredients: '',
-        verdict: `Error de Visión: ${err.message}`,
+        verdict: 'Ocurrió un glitch en mis sensores visuales.',
         safety: 'warning',
-        reason: 'Hubo un problema al conectar con mis sensores de IA.'
+        reason: err.message
       };
     }
   }
