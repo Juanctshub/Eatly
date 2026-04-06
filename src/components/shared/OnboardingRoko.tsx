@@ -10,7 +10,10 @@ import {
   Target, 
   AlertTriangle, 
   Activity,
-  CheckCircle2
+  CheckCircle2,
+  Shield,
+  Heart,
+  Zap
 } from 'lucide-react';
 
 interface OnboardingProps {
@@ -356,12 +359,12 @@ export default function OnboardingRoko({ onComplete, isSubmitting = false }: Onb
                             type="text"
                             value={currentInput}
                             onChange={(e) => setCurrentInput(e.target.value)}
-                            onKeyDown={(e) => e.key === 'Enter' && (currentInput.trim() || ['restrictions', 'medical', 'dislikes'].includes(currentStepId)) && handleNext()}
+                            onKeyDown={(e) => e.key === 'Enter' && (currentInput.trim() || ['restrictions', 'medical', 'dislikes'].includes(currentStep.id)) && handleNext()}
                             placeholder={currentStep.placeholder}
                             className="w-full bg-white/[0.05] border border-white/10 rounded-2xl sm:rounded-[30px] py-4 sm:py-6 pl-14 sm:pl-16 pr-6 sm:pr-24 text-white font-medium text-base sm:text-lg placeholder:text-white/20 outline-none focus:border-white/30 focus:bg-white/[0.08] transition-all"
                           />
                         </div>
-                        {(currentInput.trim().length > 0 || ['restrictions', 'medical', 'dislikes'].includes(currentStepId)) && (
+                        {(currentInput.trim().length > 0 || ['restrictions', 'medical', 'dislikes'].includes(currentStep.id)) && (
                           <motion.button
                             initial={{ opacity: 0, scale: 0.95 }}
                             animate={{ opacity: 1, scale: 1 }}

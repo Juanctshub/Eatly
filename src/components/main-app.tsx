@@ -2157,8 +2157,8 @@ export default function EatlyApp() {
                       { icon: Target, label: 'Meta', value: userData.goal, key: 'goal' },
                       { icon: Zap, label: 'Actividad', value: userData.activityLevel, key: 'activityLevel' },
                       // New Precision Data v7.1
-                      { icon: Activity, label: 'Peso (kg)', value: userData.weight?.toString() || '', key: 'weight' },
-                      { icon: Activity, label: 'Altura (cm)', value: userData.height?.toString() || '', key: 'height' },
+                      { icon: TrendingUp, label: 'Peso (kg)', value: userData.weight?.toString() || '', key: 'weight' },
+                      { icon: TrendingUp, label: 'Altura (cm)', value: userData.height?.toString() || '', key: 'height' },
                       { icon: User, label: 'Edad', value: userData.age?.toString() || '', key: 'age' },
                       { icon: Shield, label: 'Condiciones Médicas', value: userData.medicalConditions?.join(', ') || 'Ninguna', key: 'medicalConditions' },
                       { icon: Edit3, label: 'Estado/Logs', value: userData.recentLogs, key: 'recentLogs' },
