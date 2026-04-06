@@ -176,7 +176,7 @@ Si no estás seguro, responde "Otro".`;
     }
   }
 
-  private static GROQ_VISION_MODEL = 'llama-3.2-11b-vision-preview';
+  private static GROQ_VISION_MODEL = 'meta-llama/llama-4-scout-17b-16e-instruct';
 
   /**
    * Universal Vision Analysis (Roko Ocular v7.2 - Groq Powered)
