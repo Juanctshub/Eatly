@@ -34,6 +34,7 @@ interface BarcodeScannerProps {
   onClose: () => void;
   onAddFood: (name: string) => void;
   restrictions: any[];
+  userData?: any;
   playSound?: (type: 'success' | 'click' | 'error') => void;
   vibrate?: () => void;
 }
@@ -42,6 +43,7 @@ export default function BarcodeScanner({
   onClose, 
   onAddFood, 
   restrictions,
+  userData,
   playSound,
   vibrate
 }: BarcodeScannerProps) {
@@ -142,7 +144,7 @@ export default function BarcodeScanner({
       const response = await fetch('/api/ai/vision-analyze', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ image: base64Image, restrictions }),
+        body: JSON.stringify({ image: base64Image, restrictions, userData }),
       });
 
       const data = await response.json();

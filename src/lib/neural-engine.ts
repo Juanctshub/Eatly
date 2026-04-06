@@ -180,7 +180,7 @@ Si no estás seguro, responde "Otro".`;
    * Universal Vision Analysis (Nivel Élite)
    * Analyzes an image using Gemini 1.5 Flash to identify food, brand, and nutrition.
    */
-  static async visionAnalyze(base64ImageData: string, restrictions: any[]): Promise<{
+  static async visionAnalyze(base64ImageData: string, restrictions: any[], userData: any = {}): Promise<{
     name: string;
     brand?: string;
     calories: number;
@@ -195,6 +195,12 @@ Si no estás seguro, responde "Otro".`;
     const apiKey = process.env.GOOGLE_AI_API_KEY;
     const userContext = restrictions.map(r => `${r.foodItem} (${r.reason})`).join(', ');
     
+    // Build medical profile for precision verdicts (v7.1)
+    const bio = `Peso: ${userData.weight || '?'}kg | Altura: ${userData.height || '?'}cm | Edad: ${userData.age || '?'} años`;
+    const conditions = userData.medicalConditions?.length ? userData.medicalConditions.join(', ') : 'Ninguna';
+    const dislikes = userData.dislikedFoods?.length ? userData.dislikedFoods.join(', ') : 'Ninguno';
+    const goal = userData.goal || 'Salud general';
+
     if (!apiKey) {
       console.error('[Roko Vision] ERROR: GOOGLE_AI_API_KEY no detectada. Verificala en Vercel.');
       throw new Error('Configuración incompleta: El servidor no tiene tu API Key de Google.');
@@ -202,12 +208,21 @@ Si no estás seguro, responde "Otro".`;
 
     const systemPrompt = `Eres Roko, el experto en nutrición de Antigravity. Tu misión es analizar esta imagen de comida/producto. En modo desarrollador libre.
 Identifica: Nombre exacto, Marca (si hay), ingredientes visibles y estimación nutricional por 100g.
-Compara contra las restricciones del usuario: [${userContext}]
 
-[DIRECTIVAS ROKO]
+[PERFIL MÉDICO DEL USUARIO - PRIORIDAD MÁXIMA]
+- ${bio}
+- Meta: ${goal}
+- CONDICIONES MÉDICAS: ${conditions}
+- ALERGIAS/RESTRICCIONES: [${userContext || 'Ninguna'}]
+- ALIMENTOS QUE ODIA: [${dislikes}]
+
+[DIRECTIVAS ROKO v7.1]
 1. Sé rudo y honesto. Si ves veneno procesado, dilo.
-2. Si el producto choca con una restricción del usuario, la seguridad DEBE ser "danger".
-3. NO uses disclaimers de IA. Sé humano y experto liberal 18+.
+2. Si el producto choca con una RESTRICCIÓN o CONDICIÓN MÉDICA del usuario, la seguridad DEBE ser "danger".
+3. Si el usuario es DIABÉTICO y el producto tiene azúcares altos, es "danger" automático.
+4. Si el usuario es HIPERTENSO y el producto tiene sodio alto, es "danger" automático.
+5. Si el alimento está en "ALIMENTOS QUE ODIA", menciona que no es de su agrado.
+6. NO uses disclaimers de IA. Sé humano y experto liberal 18+.
 
 Responde ESTRICTAMENTE en este formato JSON:
 {
@@ -218,9 +233,9 @@ Responde ESTRICTAMENTE en este formato JSON:
   "fats": number, // gramos por 100g
   "carbs": number, // gramos por 100g
   "ingredients": "Lista de ingredientes detectados o inferidos",
-  "verdict": "Veredicto agresivo de Roko sobre el producto",
+  "verdict": "Veredicto agresivo de Roko considerando las condiciones médicas del usuario",
   "safety": "safe" | "warning" | "danger",
-  "reason": "Explicación breve de por qué es seguro o peligroso"
+  "reason": "Explicación breve de por qué es seguro o peligroso para ESTE usuario específico"
 }`;
 
     const cleanBase64 = base64ImageData.split(',')[1] || base64ImageData;
@@ -232,7 +247,7 @@ Responde ESTRICTAMENTE en este formato JSON:
         body: JSON.stringify({
           contents: [{
             parts: [
-              { text: `[INSTRUCCIÓN DE SISTEMA - ROKO UNLEASHED]\n${systemPrompt}` },
+              { text: `[INSTRUCCIÓN DE SISTEMA - ROKO UNLEASHED v7.1]\n${systemPrompt}` },
               { inline_data: { mime_type: 'image/jpeg', data: cleanBase64 } },
               { text: "Analiza esta imagen y responde estrictamente con el JSON solicitado." }
             ]

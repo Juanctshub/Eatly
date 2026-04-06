@@ -2539,6 +2539,7 @@ export default function EatlyApp() {
         {showScanner && (
           <BarcodeScanner
             restrictions={restrictions}
+            userData={userData}
             onClose={() => setShowScanner(false)}
             onAddFood={(name) => {
               setNewFood({ name, category: '', mealType: '' });
