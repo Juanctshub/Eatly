@@ -360,11 +360,15 @@ export default function BarcodeScanner({
                         </div>
                         <div>
                           <h4 className="text-white font-bold leading-none mb-1">Veredicto de Roko</h4>
-                          <p className={`text-xs font-medium ${
+                          <p className={`text-xs font-bold uppercase tracking-wider ${
                             aiAnalysis.safety === 'safe' ? 'text-emerald-400' :
                             aiAnalysis.safety === 'warning' ? 'text-amber-400' :
                             'text-red-400'
-                          }`}>Análisis Nutro-Genético</p>
+                          }`}>
+                            {aiAnalysis.safety === 'safe' ? '✓ SEGURO PARA TI' : 
+                             aiAnalysis.safety === 'warning' ? '⚠️ PRECAUCIÓN MODERADA' : 
+                             '🚨 PELIGRO SEVERO'}
+                          </p>
                         </div>
                       </div>
                       <p className="text-white/90 text-sm font-medium italic leading-relaxed mb-4">"{aiAnalysis.verdict}"</p>
