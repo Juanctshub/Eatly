@@ -25,6 +25,12 @@ export default function OnboardingRoko({ onComplete, isSubmitting = false }: Onb
     goal: '',
     restrictions: [] as any[],
     activityLevel: 'Moderado',
+    // New fields v7.1
+    weight: '' as string | number,
+    height: '' as string | number,
+    age: '' as string | number,
+    medicalConditions: [] as string[],
+    dislikedFoods: [] as string[],
   });
   const [currentInput, setCurrentInput] = useState('');
   const [isTyping, setIsTyping] = useState(false);
@@ -34,37 +40,64 @@ export default function OnboardingRoko({ onComplete, isSubmitting = false }: Onb
       id: 'name',
       question: '¡Hola! Soy Roko, tu nuevo nutriólogo residente. Para empezar, ¿cómo te llamas?',
       placeholder: 'Escribe tu nombre...',
-      icon: <User className="w-6 h-6 text-emerald-500" />,
+      icon: <User className="w-6 h-6 text-emerald-400" />,
       color: 'from-emerald-500 to-teal-600',
       mood: '👋',
-      bg: 'bg-emerald-50/30'
+      bg: 'bg-emerald-50/10'
     },
     {
       id: 'goal',
-      question: (name: string) => `Mucho gusto, ${name}. Cuéntame, ¿cuál es tu meta principal de salud hoy?`,
+      question: (name: string) => `Mucho gusto, ${name}. Cuéntame, ¿cuál es tu meta principal de salud?`,
       placeholder: 'Ej: Bajar de peso, ganar músculo...',
-      icon: <Target className="w-6 h-6 text-violet-500" />,
+      icon: <Target className="w-6 h-6 text-violet-400" />,
       color: 'from-violet-500 to-purple-600',
       mood: '🎯',
-      bg: 'bg-violet-50/30'
+      bg: 'bg-violet-50/10'
+    },
+    {
+      id: 'biometric',
+      question: 'Para raciones precisas, ingresa tu Peso (kg), Altura (cm) y Edad.',
+      isBiometric: true, // Custom UI handling
+      icon: <Activity className="w-6 h-6 text-rose-400" />,
+      color: 'from-rose-500 to-pink-600',
+      mood: '🧘',
+      bg: 'bg-rose-50/10'
+    },
+    {
+      id: 'medical',
+      question: 'Importante: ¿Tienes alguna condición médica como Diabetes o Hipertensión?',
+      placeholder: 'Escribe condiciones o "Ninguna"...',
+      icon: <Shield className="w-6 h-6 text-blue-400" />,
+      color: 'from-blue-500 to-cyan-600',
+      mood: '🛡️',
+      bg: 'bg-blue-50/10'
     },
     {
       id: 'restrictions',
-      question: 'Entendido. Ahora, ¿tienes alguna alergia o restricción alimentaria importante?',
+      question: '¿Tienes alguna alergia o restricción alimentaria severa?',
       placeholder: 'Ej: Soya, Gluten, Maní...',
-      icon: <AlertTriangle className="w-6 h-6 text-orange-500" />,
+      icon: <AlertTriangle className="w-6 h-6 text-orange-400" />,
       color: 'from-orange-500 to-amber-600',
       mood: '⚠️',
-      bg: 'bg-orange-50/30'
+      bg: 'bg-orange-50/10'
+    },
+    {
+      id: 'dislikes',
+      question: 'Y aparte de alergias, ¿hay algún alimento que simplemente NO te guste?',
+      placeholder: 'Ej: Queso, Brócoli, Cebolla...',
+      icon: <Heart className="w-6 h-6 text-pink-400" />,
+      color: 'from-pink-500 to-rose-600',
+      mood: '👅',
+      bg: 'bg-pink-50/10'
     },
     {
       id: 'activity',
-      question: 'Y por último, ¿cómo describirías tu nivel de actividad física diaria?',
+      question: 'Por último, ¿cuál es tu nivel de actividad física diaria?',
       options: ['Sedentario', 'Moderado', 'Activo', 'Muy Activo'],
-      icon: <Activity className="w-6 h-6 text-blue-500" />,
-      color: 'from-blue-500 to-indigo-600',
+      icon: <Zap className="w-6 h-6 text-yellow-400" />,
+      color: 'from-yellow-500 to-orange-600',
       mood: '⚡',
-      bg: 'bg-blue-50/30'
+      bg: 'bg-yellow-50/10'
     }
   ];
 
@@ -73,19 +106,26 @@ export default function OnboardingRoko({ onComplete, isSubmitting = false }: Onb
   const handleNext = () => {
     const currentStepId = steps[step].id;
     const value = currentInput.trim();
-    if (!value && currentStepId !== 'restrictions') return;
+    
+    // Validation for non-optional steps
+    if (!value && !['restrictions', 'medical', 'dislikes', 'biometric'].includes(currentStepId)) return;
 
-    // Actualización funcional para evitar desfases de renderizado
     setFormData(prev => {
       const next = { ...prev };
       if (currentStepId === 'name') next.name = value;
       if (currentStepId === 'goal') next.goal = value;
+      if (currentStepId === 'medical') {
+        next.medicalConditions = value.split(',').filter(i => i.trim()).map(i => i.trim());
+      }
       if (currentStepId === 'restrictions') {
         next.restrictions = value.split(',').filter(i => i.trim()).map(i => ({ 
           foodItem: i.trim(), 
           reason: 'alergia', 
           severity: 'severa' 
         }));
+      }
+      if (currentStepId === 'dislikes') {
+        next.dislikedFoods = value.split(',').filter(i => i.trim()).map(i => i.trim());
       }
 
       if (step < steps.length - 1) {
@@ -271,6 +311,40 @@ export default function OnboardingRoko({ onComplete, isSubmitting = false }: Onb
                           </motion.button>
                         ))}
                       </div>
+                    ) : currentStep.isBiometric ? (
+                      <div className="space-y-4 max-w-lg mx-auto">
+                        <div className="grid grid-cols-3 gap-3">
+                          <input 
+                            type="number"
+                            placeholder="Peso (kg)"
+                            value={formData.weight || ''}
+                            onChange={(e) => setFormData({...formData, weight: e.target.value})}
+                            className="bg-white/[0.05] border border-white/10 rounded-2xl p-4 text-white text-center outline-none focus:border-rose-500/50"
+                          />
+                          <input 
+                            type="number"
+                            placeholder="Altura (cm)"
+                            value={formData.height || ''}
+                            onChange={(e) => setFormData({...formData, height: e.target.value})}
+                            className="bg-white/[0.05] border border-white/10 rounded-2xl p-4 text-white text-center outline-none focus:border-rose-500/50"
+                          />
+                          <input 
+                            type="number"
+                            placeholder="Edad"
+                            value={formData.age || ''}
+                            onChange={(e) => setFormData({...formData, age: e.target.value})}
+                            className="bg-white/[0.05] border border-white/10 rounded-2xl p-4 text-white text-center outline-none focus:border-rose-500/50"
+                          />
+                        </div>
+                        <motion.button
+                          onClick={handleNext}
+                          disabled={!formData.weight || !formData.height || !formData.age}
+                          className={`w-full py-4 bg-gradient-to-r ${currentStep.color} text-white font-bold rounded-2xl disabled:opacity-30`}
+                          whileHover={{ scale: 1.02 }}
+                        >
+                          Continuar
+                        </motion.button>
+                      </div>
                     ) : (
                       <div className="flex flex-col gap-4 max-w-lg mx-auto">
                         <div className="relative">
@@ -282,12 +356,12 @@ export default function OnboardingRoko({ onComplete, isSubmitting = false }: Onb
                             type="text"
                             value={currentInput}
                             onChange={(e) => setCurrentInput(e.target.value)}
-                            onKeyDown={(e) => e.key === 'Enter' && currentInput.trim() && handleNext()}
+                            onKeyDown={(e) => e.key === 'Enter' && (currentInput.trim() || ['restrictions', 'medical', 'dislikes'].includes(currentStepId)) && handleNext()}
                             placeholder={currentStep.placeholder}
                             className="w-full bg-white/[0.05] border border-white/10 rounded-2xl sm:rounded-[30px] py-4 sm:py-6 pl-14 sm:pl-16 pr-6 sm:pr-24 text-white font-medium text-base sm:text-lg placeholder:text-white/20 outline-none focus:border-white/30 focus:bg-white/[0.08] transition-all"
                           />
                         </div>
-                        {currentInput.trim().length > 0 && (
+                        {(currentInput.trim().length > 0 || ['restrictions', 'medical', 'dislikes'].includes(currentStepId)) && (
                           <motion.button
                             initial={{ opacity: 0, scale: 0.95 }}
                             animate={{ opacity: 1, scale: 1 }}

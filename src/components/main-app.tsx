@@ -199,6 +199,12 @@ export default function EatlyApp() {
     goal: 'Bajar de peso',
     activityLevel: 'Moderado',
     recentLogs: 'He comido sano hoy',
+    // New medical & bio fields (Eatly v7.1)
+    weight: 0,
+    height: 0,
+    age: 0,
+    dislikedFoods: [] as string[],
+    medicalConditions: [] as string[],
   });
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [showInstallGuide, setShowInstallGuide] = useState(false);
@@ -245,7 +251,24 @@ export default function EatlyApp() {
     const fetchData = async () => {
       try {
         setLoading(true);
-        const headers = { 'x-user-email': JSON.parse(localStorage.getItem('dietadvisor_user') || '{}').email, 'Content-Type': 'application/json' };
+
+        // 1. Load from cache first for instant UI (Memory Fix)
+        const cachedRestrictions = localStorage.getItem('eatly_restrictions');
+        const cachedFoods = localStorage.getItem('eatly_foods');
+        const cachedUserData = localStorage.getItem('dietadvisor_user_data');
+        
+        if (cachedRestrictions) setRestrictions(JSON.parse(cachedRestrictions));
+        if (cachedFoods) setFoods(JSON.parse(cachedFoods));
+        if (cachedUserData) {
+            const data = JSON.parse(cachedUserData);
+            console.log('[Eatly] Cargando perfil desde memoria local:', data.name);
+            setUserData(prev => ({ ...prev, ...data }));
+        }
+
+        const user = JSON.parse(localStorage.getItem('dietadvisor_user') || '{}');
+        if (!user.email) return;
+        
+        const headers = { 'x-user-email': user.email, 'Content-Type': 'application/json' };
         const [resRest, resFood, resOnboarding] = await Promise.all([
           fetch('/api/restrictions', { headers }),
           fetch('/api/foods', { headers }),
@@ -261,22 +284,23 @@ export default function EatlyApp() {
         }
 
         if (dataOnboarding.user) {
-          console.log('[Eatly] Cargando perfil del usuario:', dataOnboarding.user.name);
-          setUserData(prev => ({
-            ...prev,
-            ...dataOnboarding.user
-          }));
+          console.log('[Eatly] Refrescando perfil con datos de nube:', dataOnboarding.user.name);
+          setUserData(prev => ({ ...prev, ...dataOnboarding.user }));
+          // Persist the official cloud profile
+          localStorage.setItem('dietadvisor_user_data', JSON.stringify(dataOnboarding.user));
         }
 
         if (Array.isArray(dataRest)) {
           setRestrictions(dataRest);
+          localStorage.setItem('eatly_restrictions', JSON.stringify(dataRest));
         }
         if (Array.isArray(dataFood)) {
           setFoods(dataFood);
+          localStorage.setItem('eatly_foods', JSON.stringify(dataFood));
         }
       } catch (error: any) {
         console.error('Error fetching data from API:', error);
-        setErrorToast('Error de conexión con Roko: No se pudieron cargar tus datos.');
+        setErrorToast('Error de sincronización con Roko.');
       } finally {
         setLoading(false);
       }
@@ -314,6 +338,11 @@ export default function EatlyApp() {
       setErrorToast('Reintento de sincronización fallido.');
     }
   };
+
+  // Persist User Data locally whenever it changes (Anti-Jose Bug)
+  useEffect(() => {
+    localStorage.setItem('dietadvisor_user_data', JSON.stringify(userData));
+  }, [userData]);
 
   // Sync state changes with local storage as a cache
   useEffect(() => {
@@ -422,16 +451,28 @@ export default function EatlyApp() {
   };
 
   const deleteRestriction = async (id: string) => {
+    // 1. Optimistic UI: Filter instantly for best UX (Rodrigo's Suggestion)
+    const originalRestrictions = [...restrictions];
+    setRestrictions(prev => prev.filter(r => r.id !== id));
+    playSound('click');
+
     try {
       const user = JSON.parse(localStorage.getItem('dietadvisor_user') || '{}');
-      await fetch(`/api/restrictions/${id}`, {
+      const response = await fetch(`/api/restrictions/${id}`, {
         method: 'DELETE',
         headers: { 'x-user-email': user.email }
       });
-      setRestrictions(restrictions.filter((r) => r.id !== id));
-      playSound('click');
+
+      if (!response.ok) {
+        throw new Error('Server error when deleting');
+      }
+      
+      console.log('[Eatly] Restricción borrada con éxito en servidor.');
     } catch (error) {
       console.error('Error deleting restriction:', error);
+      // Revert if failed
+      setRestrictions(originalRestrictions);
+      setErrorToast('No se pudo borrar del servidor. Intentando sincronizar...');
     }
   };
 
@@ -2115,6 +2156,11 @@ export default function EatlyApp() {
                       { icon: Mail, label: 'Email', value: userData.email, key: 'email' },
                       { icon: Target, label: 'Meta', value: userData.goal, key: 'goal' },
                       { icon: Zap, label: 'Actividad', value: userData.activityLevel, key: 'activityLevel' },
+                      // New Precision Data v7.1
+                      { icon: Activity, label: 'Peso (kg)', value: userData.weight?.toString() || '', key: 'weight' },
+                      { icon: Activity, label: 'Altura (cm)', value: userData.height?.toString() || '', key: 'height' },
+                      { icon: User, label: 'Edad', value: userData.age?.toString() || '', key: 'age' },
+                      { icon: Shield, label: 'Condiciones Médicas', value: userData.medicalConditions?.join(', ') || 'Ninguna', key: 'medicalConditions' },
                       { icon: Edit3, label: 'Estado/Logs', value: userData.recentLogs, key: 'recentLogs' },
                     ].map((field) => (
                       <div key={field.key} className="bg-card rounded-2xl p-4 border border-border shadow-sm">
@@ -2124,7 +2170,12 @@ export default function EatlyApp() {
                           <input
                             type="text"
                             value={field.value}
-                            onChange={(e) => setUserData({ ...userData, [field.key]: e.target.value })}
+                            onChange={(e) => {
+                              const val = field.key === 'medicalConditions' 
+                                ? e.target.value.split(',').map(s => s.trim())
+                                : e.target.value;
+                              setUserData({ ...userData, [field.key]: val });
+                            }}
                             className="flex-1 text-foreground bg-transparent font-medium outline-none"
                           />
                           <Edit3 className="w-4 h-4 text-muted-foreground" />
