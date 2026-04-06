@@ -194,7 +194,7 @@ Si no estás seguro, responde "Otro".`;
     safety: 'safe' | 'warning' | 'danger';
     reason: string;
   }> {
-    const apiKey = process.env.GROQ_VISION_API_KEY;
+    const apiKey = process.env.GROQ_VISION_API_KEY || process.env.GROQ_API_KEY_1 || process.env.GROQ_API_KEY;
     const userContext = restrictions.map(r => `${r.foodItem} (${r.reason})`).join(', ');
     
     // Medical & Biometric context for Roko's internal reasoning
@@ -203,8 +203,19 @@ Si no estás seguro, responde "Otro".`;
     const dislikes = userData.dislikedFoods?.length ? userData.dislikedFoods.join(', ') : 'Ninguno';
 
     if (!apiKey) {
-      console.error('[Roko Vision] ERROR: GROQ_VISION_API_KEY no detectada.');
-      throw new Error('Configuración incompleta: El servidor no tiene tu llave de visión dedicada.');
+      console.error('[Roko Vision] ERROR: No hay ninguna llave de Groq detectada.');
+      return {
+        name: 'Error de Configuración',
+        brand: 'Roko Vision',
+        calories: 0,
+        proteins: 0,
+        fats: 0,
+        carbs: 0,
+        ingredients: '',
+        verdict: 'No tengo llaves para ver. Por favor, configura las variables de entorno.',
+        safety: 'warning',
+        reason: 'Falta la API Key en el servidor.'
+      };
     }
 
     const systemPrompt = `Eres Roko, el experto en nutrición de Antigravity. Tu misión es analizar esta imagen de comida/producto. Estilo humano, experto, rudo y liberal 18+.
