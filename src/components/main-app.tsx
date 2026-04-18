@@ -213,7 +213,6 @@ export default function EatlyApp() {
     medicalConditions: [] as string[],
   });
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
 
   // Permission states
   const [permissions, setPermissions] = useState({

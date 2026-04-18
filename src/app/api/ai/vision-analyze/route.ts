@@ -1,13 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { NeuralEngine } from '@/lib/neural-engine';
 
-export const config = {
-  api: {
-    bodyParser: {
-      sizeLimit: '10mb',
-    },
-  },
-};
 
 export async function POST(req: NextRequest) {
   try {
