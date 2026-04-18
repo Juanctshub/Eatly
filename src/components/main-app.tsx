@@ -585,6 +585,7 @@ export default function EatlyApp() {
   const deleteRestriction = async (id: string) => {
     // 1. Optimistic UI: Filter instantly for best UX (Rodrigo's Suggestion)
     const originalRestrictions = [...restrictions];
+    const restrictionToDelete = restrictions.find(r => r.id === id);
     setRestrictions(prev => prev.filter(r => r.id !== id));
     playSound('click');
 
@@ -597,6 +598,14 @@ export default function EatlyApp() {
 
       if (!response.ok) {
         throw new Error('Server error when deleting');
+      }
+
+      // Update AI Memory
+      if (restrictionToDelete) {
+        setUserData(prev => ({
+          ...prev,
+          recentLogs: `Has eliminado la restricción sobre "${restrictionToDelete.foodItem}". (Memoria de v7.5)`
+        }));
       }
       
       console.log('[Eatly] Restricción borrada con éxito en servidor.');
@@ -671,10 +680,21 @@ export default function EatlyApp() {
   const deleteFood = async (id: string) => {
     try {
       const user = JSON.parse(localStorage.getItem('dietadvisor_user') || '{}');
+      const foodToDelete = foods.find(f => f.id === id);
+      
       await fetch(`/api/foods/${id}`, {
         method: 'DELETE',
         headers: { 'x-user-email': user.email }
       });
+
+      // Update AI Memory
+      if (foodToDelete) {
+        setUserData(prev => ({
+          ...prev,
+          recentLogs: `Has eliminado "${foodToDelete.name}" de tus alimentos disponibles. (Memoria de v7.5)`
+        }));
+      }
+
       setFoods(foods.filter((f) => f.id !== id));
       playSound('click');
     } catch (error) {
@@ -736,11 +756,15 @@ export default function EatlyApp() {
 
       if (!response.ok) throw new Error('Error al registrar');
 
-      setErrorToast(`¡Delicioso! Roko registró tu ${suggestion.name} en el diario.`);
+      // SUCCESS NOTIFICATION (v7.5)
+      setErrorToast(`¡Buen provecho! ✅ ${suggestion.name} se ha guardado en tu diario.`);
       playSound('success');
       vibrate([50, 100, 50]);
+      
       setShowRecipeDetail(false);
-      refreshAllData(); // Refresh the log and memory
+      
+      // Force refresh data to keep everything in sync (including the new "Tu Diario de Hoy" section)
+      refreshAllData();
     } catch (error: any) {
       console.error('Error logging food:', error);
       setErrorToast(error.message === 'Session expired' ? 'Sesión expirada. Por favor, inicia sesión de nuevo.' : 'No se pudo registrar en el diario.');
@@ -1113,41 +1137,64 @@ export default function EatlyApp() {
       </div>
 
       {/* Quick Stats - Card Style */}
+      </motion.div>
+      
+      {/* Tu Diario de Hoy - NEW SECTION v7.5 */}
       <motion.div
-        className="grid grid-cols-2 gap-4 mt-6 px-4"
-        variants={staggerContainer}
+        className="px-4 mt-6"
+        variants={staggerItem}
         initial="initial"
         animate="animate"
       >
-        <motion.div
-          className="bg-card rounded-3xl p-5 shadow-sm border border-border relative overflow-hidden"
-          variants={staggerItem}
-          whileHover={{ y: -3, boxShadow: '0 12px 40px rgba(0,0,0,0.08)' }}
-        >
-          <div className="absolute top-0 right-0 w-20 h-20 bg-red-50 dark:bg-red-900/20 rounded-full -translate-y-1/2 translate-x-1/2" />
-          <div className="relative z-10">
-            <div className="w-12 h-12 bg-gradient-to-br from-red-400 to-rose-500 rounded-2xl flex items-center justify-center shadow-lg shadow-red-500/25 mb-3">
-              <Shield className="w-6 h-6 text-white" />
+        <div className="bg-gradient-to-br from-gray-900 to-gray-800 dark:from-gray-800 dark:to-gray-900 rounded-[2.5rem] p-6 shadow-xl shadow-black/10 border border-white/5 relative overflow-hidden group">
+          <div className="absolute top-0 right-0 w-32 h-32 bg-green-500/10 rounded-full blur-3xl" />
+          
+          <div className="flex items-center justify-between mb-5 relative z-10">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 bg-green-500/20 rounded-xl flex items-center justify-center">
+                <Calendar className="w-5 h-5 text-green-400" />
+              </div>
+              <div>
+                <h3 className="text-white font-bold">Resumen de Hoy</h3>
+                <p className="text-gray-400 text-[10px] uppercase font-bold tracking-widest">{new Date().toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric', month: 'short' })}</p>
+              </div>
             </div>
-            <p className="text-3xl font-bold text-gray-900 dark:text-white">{restrictions.length}</p>
-            <p className="text-sm text-gray-500 dark:text-gray-400 mt-0.5 font-medium">Restricciones activas</p>
+            <div className="text-right">
+              <p className="text-2xl font-black text-green-400">{foodLog.reduce((sum, l) => sum + (l.calories || 0), 0)}</p>
+              <p className="text-[10px] text-gray-400 font-bold uppercase">KCAL TOTALES</p>
+            </div>
           </div>
-        </motion.div>
 
-        <motion.div
-          className="bg-card rounded-3xl p-5 shadow-sm border border-border relative overflow-hidden"
-          variants={staggerItem}
-          whileHover={{ y: -3, boxShadow: '0 12px 40px rgba(0,0,0,0.08)' }}
-        >
-          <div className="absolute top-0 right-0 w-20 h-20 bg-green-50 dark:bg-green-900/20 rounded-full -translate-y-1/2 translate-x-1/2" />
-          <div className="relative z-10">
-            <div className="w-12 h-12 bg-gradient-to-br from-green-400 to-emerald-500 rounded-2xl flex items-center justify-center shadow-lg shadow-green-500/25 mb-3">
-              <Heart className="w-6 h-6 text-white" />
-            </div>
-            <p className="text-3xl font-bold text-gray-900 dark:text-white">{foods.length}</p>
-            <p className="text-sm text-gray-500 dark:text-gray-400 mt-0.5 font-medium">Alimentos disponibles</p>
+          <div className="space-y-3 relative z-10">
+            {foodLog.length === 0 ? (
+              <p className="text-gray-500 text-sm italic py-2 text-center">No has registrado alimentos hoy... todavía. 🍛</p>
+            ) : (
+              foodLog.slice(0, 3).map((log, i) => (
+                <motion.div 
+                  key={log.id || i}
+                  className="flex items-center gap-3 bg-white/5 rounded-2xl p-3 border border-white/5"
+                  initial={{ opacity: 0, x: -10 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ delay: i * 0.1 }}
+                >
+                  <span className="text-2xl">{log.imageEmoji || '🍛'}</span>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-white font-bold text-sm truncate">{log.name}</p>
+                    <p className="text-gray-500 text-[10px] uppercase font-black">{log.mealType || 'Alimento'}</p>
+                  </div>
+                  <div className="text-right">
+                    <p className="text-green-400 font-bold text-sm">+{log.calories || 0}</p>
+                    <p className="text-gray-600 text-[10px]">KCAL</p>
+                  </div>
+                </motion.div>
+              ))
+            )}
+            
+            {foodLog.length > 3 && (
+              <p className="text-center text-[10px] text-gray-400 font-bold uppercase pt-2">+{foodLog.length - 3} registros más hoy</p>
+            )}
           </div>
-        </motion.div>
+        </div>
       </motion.div>
 
       {/* Suggested for you */}
