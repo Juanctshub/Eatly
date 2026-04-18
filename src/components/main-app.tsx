@@ -702,7 +702,7 @@ export default function EatlyApp() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          userId: user.id || user.email,
+          userId: user.id, // STRICT ID REQUIREMENT
           name: suggestion.name,
           calories: suggestion.calories || 0,
           proteins: suggestion.proteins || 0,
@@ -720,9 +720,9 @@ export default function EatlyApp() {
       vibrate([50, 100, 50]);
       setShowRecipeDetail(false);
       refreshAllData(); // Refresh the log and memory
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error logging food:', error);
-      setErrorToast('No se pudo registrar en el diario.');
+      setErrorToast(error.message === 'Session expired' ? 'Sesión expirada. Por favor, inicia sesión de nuevo.' : 'No se pudo registrar en el diario.');
     } finally {
       setLoading(false);
     }
@@ -2959,14 +2959,31 @@ export default function EatlyApp() {
                   </ul>
                 </div>
 
-                {selectedRecipe.explanation && (
+                {selectedRecipe.instructions && selectedRecipe.instructions.length > 0 && (
                   <div>
                     <h3 className="font-bold text-lg mb-3 flex items-center gap-2">
                       <CheckCircle2 className="w-5 h-5 text-green-500" />
-                      Preparación
+                      Pasos de Preparación
                     </h3>
-                    <p className="text-muted-foreground leading-relaxed bg-green-500/5 p-4 rounded-2xl border border-green-500/10 italic">
-                      {selectedRecipe.explanation}
+                    <div className="space-y-4">
+                      {selectedRecipe.instructions.map((step: string, i: number) => (
+                        <div key={i} className="flex gap-4">
+                          <div className="flex-shrink-0 w-8 h-8 bg-green-500/10 text-green-600 rounded-lg flex items-center justify-center font-bold text-sm">
+                            {i + 1}
+                          </div>
+                          <p className="text-muted-foreground text-sm leading-relaxed pt-1">
+                            {step}
+                          </p>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+                
+                {selectedRecipe.explanation && (
+                  <div className="p-4 bg-muted rounded-2xl border border-border">
+                    <p className="text-xs text-muted-foreground italic leading-relaxed">
+                      💡 Roko dice: {selectedRecipe.explanation}
                     </p>
                   </div>
                 )}

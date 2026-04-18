@@ -7,9 +7,20 @@ export async function DELETE(
 ) {
   try {
     const { id } = params;
+    const email = req.headers.get('x-user-email');
 
-    if (!id) {
-      return NextResponse.json({ error: 'Falta el ID' }, { status: 400 });
+    if (!id || !email) {
+      return NextResponse.json({ error: 'Falta el ID o el Email de usuario' }, { status: 400 });
+    }
+
+    // Verify ownership before deleting
+    const restriction = await db.dietaryRestriction.findUnique({
+      where: { id },
+      include: { user: true }
+    });
+
+    if (!restriction || (restriction.user && restriction.user.email !== email)) {
+      return NextResponse.json({ error: 'No tienes permiso para borrar esta restricción' }, { status: 403 });
     }
 
     await db.dietaryRestriction.delete({
@@ -19,6 +30,6 @@ export async function DELETE(
     return NextResponse.json({ success: true });
   } catch (error: any) {
     console.error('[Restrictions API] Delete Error:', error.message);
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    return NextResponse.json({ error: 'Error del servidor al borrar' }, { status: 500 });
   }
 }

@@ -131,10 +131,14 @@ Responde ÚNICAMENTE con un objeto JSON válido con esta estructura:
     { 
       "name": "Nombre creativo del plato", 
       "ingredients": ["ingrediente 1 con cantidad (gr/ml)", "ingrediente 2 con cantidad (gr/ml)"], 
+      "instructions": ["paso 1 de preparación", "paso 2 de preparación"],
       "safetyReason": "Explicación de seguridad incluyendo por qué es apto para sus condiciones médicas", 
       "nutritionalBenefits": "Beneficio puntual basado en su meta (${config.userData?.goal})", 
       "prepTime": 15, 
       "calories": 300, 
+      "proteins": 25,
+      "carbs": 30,
+      "fats": 10,
       "imageEmoji": "🥘" 
     }
   ]
