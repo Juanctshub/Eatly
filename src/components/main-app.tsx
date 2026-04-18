@@ -1630,7 +1630,7 @@ export default function EatlyApp() {
                 >
                   <motion.button
                     onClick={() => deleteFood(food.id)}
-                    className="absolute top-2 right-2 w-8 h-8 bg-red-50 text-red-400 hover:text-red-500 hover:bg-red-100 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all z-10"
+                    className="absolute top-2 right-2 w-8 h-8 bg-red-50 text-red-400 hover:text-red-500 hover:bg-red-100 rounded-full flex items-center justify-center transition-all z-10 border border-red-100 shadow-sm"
                     whileHover={{ scale: 1.1 }}
                     whileTap={{ scale: 0.9 }}
                   >
@@ -2766,8 +2766,25 @@ export default function EatlyApp() {
                   }
                 } catch (e) { console.error('Auto-restriction failed', e); }
               } else {
-                setNewFood({ name: productName, category: '', mealType: '' });
-                addFood();
+                // Register in Pantry
+                setNewFood({ name: productName, category: '', mealType: 'Desayuno' });
+                addFood({ name: productName, category: 'General', mealType: 'Desayuno' });
+
+                // NEW: Register in Daily Log automatically
+                const user = JSON.parse(localStorage.getItem('dietadvisor_user') || '{}');
+                if (user.id) {
+                    fetch('/api/food-log', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json', 'x-user-email': user.email },
+                        body: JSON.stringify({
+                            userId: user.id,
+                            name: productName,
+                            calories: 100, // Estimated or default for quick log
+                            mealType: 'Snack',
+                            imageEmoji: analysis.emoji || '🥘'
+                        })
+                    }).then(() => refreshAllData());
+                }
               }
               setShowScanner(false);
             }}
@@ -2923,27 +2940,30 @@ export default function EatlyApp() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[100] bg-black/60 backdrop-blur-sm flex items-end justify-center sm:items-center p-0 sm:p-4"
+            onClick={() => setShowRecipeDetail(false)}
           >
             <motion.div
-              className="bg-background w-full max-w-lg rounded-t-[2.5rem] p-8 max-h-[90vh] overflow-y-auto border-t border-border shadow-2xl"
               initial={{ y: '100%' }}
               animate={{ y: 0 }}
               exit={{ y: '100%' }}
-              transition={{ type: 'spring', damping: 25, stiffness: 200 }}
+              className="bg-background w-full max-w-lg rounded-t-[32px] sm:rounded-[32px] p-6 max-h-[90vh] overflow-y-auto"
+              onClick={(e) => e.stopPropagation()}
             >
+              {/* Modal Content */}
               <div className="flex justify-between items-start mb-6">
-                <div className="flex items-center gap-4">
-                  <div className="w-16 h-16 bg-gradient-to-br from-green-400 to-emerald-500 rounded-2xl flex items-center justify-center text-3xl shadow-xl shadow-green-500/20">
-                    {selectedRecipe.imageEmoji || '🥘'}
-                  </div>
-                  <div>
-                    <h2 className="text-2xl font-black text-foreground">{selectedRecipe.name}</h2>
-                    <p className="text-sm text-muted-foreground font-medium uppercase tracking-wider">{selectedMealType}</p>
+                <div>
+                  <h2 className="text-2xl font-black text-foreground leading-tight">{selectedRecipe.name}</h2>
+                  <div className="flex items-center gap-2 mt-1">
+                    <span className="text-xs font-bold text-green-600 bg-green-50 dark:bg-green-900/30 px-2 py-1 rounded-lg">
+                      {selectedRecipe.calories || '---'} kcal
+                    </span>
+                    <span className="text-xs text-muted-foreground">• {selectedRecipe.mealType || 'Sugerencia'}</span>
                   </div>
                 </div>
                 <button 
                   onClick={() => setShowRecipeDetail(false)}
-                  className="p-2 bg-gray-100 dark:bg-gray-800 rounded-full"
+                  className="w-10 h-10 bg-muted rounded-full flex items-center justify-center"
                 >
                   <X className="w-5 h-5" />
                 </button>
@@ -2980,7 +3000,7 @@ export default function EatlyApp() {
                   </ul>
                 </div>
 
-                {selectedRecipe.instructions && selectedRecipe.instructions.length > 0 && (
+                {selectedRecipe?.instructions && Array.isArray(selectedRecipe.instructions) && selectedRecipe.instructions.length > 0 && (
                   <div>
                     <h3 className="font-bold text-lg mb-3 flex items-center gap-2">
                       <CheckCircle2 className="w-5 h-5 text-green-500" />
