@@ -369,11 +369,20 @@ export default function EatlyApp() {
           }
         }
       }
-      if (Array.isArray(dataRest)) setRestrictions(dataRest);
-      if (Array.isArray(dataFood)) setFoods(dataFood);
-      if (Array.isArray(dataLog)) setFoodLog(dataLog);
+      if (Array.isArray(dataRest)) {
+        setRestrictions(dataRest);
+        localStorage.setItem('eatly_restrictions', JSON.stringify(dataRest));
+      }
+      if (Array.isArray(dataFood)) {
+        setFoods(dataFood);
+        localStorage.setItem('eatly_foods', JSON.stringify(dataFood));
+      }
+      if (Array.isArray(dataLog)) {
+        setFoodLog(dataLog);
+        localStorage.setItem('eatly_food_log', JSON.stringify(dataLog));
+      }
 
-      console.log('[Eatly] Sincronización completa con éxito.');
+      console.log('[Eatly] Sincronización completa con éxito en caché y nube.');
     } catch (err: any) {
       console.error('Error refreshing data:', err);
       setErrorToast('Reintento de sincronización fallido.');
@@ -694,29 +703,31 @@ export default function EatlyApp() {
   };
 
   const deleteFood = async (id: string) => {
+    const originalFoods = [...foods];
+    setFoods(prev => prev.filter(f => f.id !== id));
+    playSound('click');
+
     try {
       const user = JSON.parse(localStorage.getItem('dietadvisor_user') || '{}');
-      const foodToDelete = foods.find(f => f.id === id);
-      
-      await fetch(`/api/foods/${id}`, {
+      const response = await fetch(`/api/foods/${id}`, {
         method: 'DELETE',
         headers: { 'x-user-email': user.email }
       });
 
-      // Update AI Memory and Persistence
-      if (foodToDelete) {
-        setUserData(prev => ({
-          ...prev,
-          recentLogs: `Has eliminado "${foodToDelete.name}" de tus alimentos disponibles. (v8.0 Sync)`
-        }));
+      if (response.ok) {
+        // Atomic Success: Ensure the local cache is clean and stays clean
+        const finalFoods = foods.filter(f => f.id !== id);
+        setFoods(finalFoods);
+        localStorage.setItem('eatly_foods', JSON.stringify(finalFoods));
+        setSuccessToast('Alimento eliminado definitivamente');
+      } else {
+        throw new Error('Server delete failed');
       }
-
-      const updatedFoods = foods.filter((f) => f.id !== id);
-      setFoods(updatedFoods);
-      localStorage.setItem('eatly_foods', JSON.stringify(updatedFoods));
-      playSound('click');
     } catch (error) {
       console.error('Error deleting food:', error);
+      setFoods(originalFoods); // Rollback if server fails
+      localStorage.setItem('eatly_foods', JSON.stringify(originalFoods));
+      setErrorToast('No se pudo eliminar del servidor');
     }
   };
 
@@ -789,7 +800,7 @@ export default function EatlyApp() {
       setShowRecipeDetail(false);
       
       // Force refresh data to keep everything in sync (including the new "Tu Diario de Hoy" section)
-      refreshAllData();
+      await refreshAllData();
     } catch (error: any) {
       console.error('Error logging food:', error);
       setErrorToast(error.message === 'Session expired' ? 'Sesión expirada. Por favor, inicia sesión de nuevo.' : 'No se pudo registrar en el diario.');
@@ -1219,10 +1230,19 @@ export default function EatlyApp() {
                 <p className="text-muted-foreground text-[10px] uppercase font-bold tracking-widest">{new Date().toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric', month: 'short' })}</p>
               </div>
             </div>
-            <div className="text-right">
-              <p className="text-2xl font-black text-green-600 dark:text-green-400">{foodLog.reduce((sum, l) => sum + (l.calories || 0), 0)}</p>
-              <p className="text-[10px] text-muted-foreground font-bold uppercase">KCAL TOTALES</p>
-            </div>
+            {/* Calories Card */}
+            <Card className="p-4 border-2 border-green-500/10 bg-card overflow-hidden relative">
+              <div className="absolute top-0 right-0 w-16 h-16 bg-green-500/5 rounded-bl-[3rem]" />
+              <p className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-1">Kcal Hoy</p>
+              <div className="flex items-baseline gap-1">
+                <p className="text-2xl font-black text-green-600 dark:text-green-400">
+                  {foodLog
+                    .filter(l => new Date(l.date || l.createdAt).toDateString() === new Date().toDateString())
+                    .reduce((sum, l) => sum + (l.calories || 0), 0)}
+                </p>
+                <p className="text-xs font-bold text-muted-foreground">/ {userData.dailyGoal || 2000}</p>
+              </div>
+            </Card>
           </div>
 
           <div className="space-y-3 relative z-10">
@@ -2054,15 +2074,17 @@ export default function EatlyApp() {
               animate={{ opacity: 1, x: 0 }}
               exit={{ opacity: 0, x: -20 }}
             >
-              <div>
-                <label className="block text-sm font-semibold text-muted-foreground mb-3">Alimento</label>
-                <input
-                  type="text"
-                  value={newRestriction.foodItem}
-                  onChange={(e) => setNewRestriction({ ...newRestriction, foodItem: e.target.value })}
-                  placeholder="Ej: Soya, Pimienta, Lactosa..."
-                  className="w-full px-5 py-4 rounded-2xl border-2 border-border bg-muted focus:border-green-500 focus:ring-0 outline-none transition-colors text-foreground placeholder:text-muted-foreground/50"
-                />
+              <div className="space-y-4">
+                <div>
+                  <label className="text-sm font-bold text-foreground mb-1.5 block">¿Qué alimento quieres añadir?</label>
+                  <input
+                    type="text"
+                    placeholder="Ej: Nueces de la India"
+                    className="w-full bg-muted border border-border rounded-2xl p-4 focus:ring-2 focus:ring-green-500/20 outline-none transition-all text-foreground"
+                    value={newRestriction.foodItem}
+                    onChange={(e) => setNewRestriction({ ...newRestriction, foodItem: e.target.value })}
+                  />
+                </div>
               </div>
 
               <div>
@@ -2138,13 +2160,13 @@ export default function EatlyApp() {
               exit={{ opacity: 0, x: -20 }}
             >
               <div>
-                <label className="block text-sm font-semibold text-muted-foreground mb-3">Alimento</label>
+                <label className="text-sm font-bold text-foreground mb-1.5 block">Nombre del alimento</label>
                 <input
                   type="text"
+                  placeholder="Ej: Fresas orgánicas"
+                  className="w-full bg-muted border border-border rounded-2xl p-4 focus:ring-2 focus:ring-green-500/20 outline-none transition-all text-foreground"
                   value={newFood.name}
                   onChange={(e) => setNewFood({ ...newFood, name: e.target.value })}
-                  placeholder="Ej: Pollo, Arroz, Brócoli..."
-                  className="w-full px-5 py-4 rounded-2xl border-2 border-border bg-muted focus:border-green-500 focus:ring-0 outline-none transition-colors text-foreground placeholder:text-muted-foreground/50"
                 />
               </div>
 
@@ -3086,6 +3108,36 @@ export default function EatlyApp() {
                   <X className="w-5 h-5" />
                 </button>
               </div>
+
+              <div className="space-y-3 relative z-10">
+            {foodLog.filter(l => new Date(l.date || l.createdAt).toDateString() === new Date().toDateString()).length > 0 ? (
+              foodLog
+                .filter(l => new Date(l.date || l.createdAt).toDateString() === new Date().toDateString())
+                .slice(0, 5)
+                .map((log, idx) => (
+                  <motion.div
+                    key={idx}
+                    className="flex items-center justify-between p-4 bg-muted border border-border rounded-2xl"
+                    initial={{ opacity: 0, x: -20 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ delay: idx * 0.1 }}
+                  >
+                    <div className="flex items-center gap-3">
+                      <span className="text-2xl">{log.imageEmoji || '🥘'}</span>
+                      <div>
+                        <p className="font-bold text-foreground text-sm">{log.name}</p>
+                        <p className="text-[10px] text-muted-foreground font-bold uppercase">{log.mealType}</p>
+                      </div>
+                    </div>
+                    <p className="text-sm font-black text-green-600 dark:text-green-400">+{log.calories} kcal</p>
+                  </motion.div>
+                ))
+            ) : (
+              <div className="py-8 text-center bg-muted/30 rounded-3xl border-2 border-dashed border-border">
+                <p className="text-sm text-muted-foreground font-medium italic">Aún no has registrado nada hoy...</p>
+              </div>
+            )}
+          </div>
 
               <div className="grid grid-cols-3 gap-3 mb-8">
                 <div className="bg-orange-50 dark:bg-orange-950/30 p-4 rounded-2xl border border-orange-100 dark:border-orange-900/40 text-center">
