@@ -9,18 +9,18 @@ export async function DELETE(
     const { id } = params;
     const email = req.headers.get('x-user-email');
 
-    if (!id || !email) {
-      return NextResponse.json({ error: 'Falta el ID o el Email de usuario' }, { status: 400 });
+    // Robust Ownership Check
+    const user = await db.user.findUnique({ where: { email } });
+    if (!user) {
+      return NextResponse.json({ error: 'Usuario no encontrado' }, { status: 404 });
     }
 
-    // Verify ownership before deleting
     const restriction = await db.dietaryRestriction.findUnique({
-      where: { id },
-      include: { user: true }
+      where: { id }
     });
 
-    if (!restriction || (restriction.user && restriction.user.email !== email)) {
-      return NextResponse.json({ error: 'No tienes permiso para borrar esta restricción' }, { status: 403 });
+    if (!restriction || restriction.userId !== user.id) {
+      return NextResponse.json({ error: 'No tienes permiso o la restricción no existe' }, { status: 403 });
     }
 
     await db.dietaryRestriction.delete({
@@ -30,6 +30,6 @@ export async function DELETE(
     return NextResponse.json({ success: true });
   } catch (error: any) {
     console.error('[Restrictions API] Delete Error:', error.message);
-    return NextResponse.json({ error: 'Error del servidor al borrar' }, { status: 500 });
+    return NextResponse.json({ error: 'Error al procesar el borrado' }, { status: 500 });
   }
 }

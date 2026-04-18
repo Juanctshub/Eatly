@@ -108,6 +108,7 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ 
       onboarding: user.preferences?.onboarding ?? false,
       user: {
+        id: user.id, // CRITICAL: Send the ID for frontend identification
         name: user.name,
         email: user.email,
         goal: user.goal,

@@ -294,8 +294,21 @@ export default function EatlyApp() {
         if (dataOnboarding.user) {
           console.log('[Eatly] Refrescando perfil con datos de nube:', dataOnboarding.user.name);
           setUserData(prev => ({ ...prev, ...dataOnboarding.user }));
+          
           // Persist the official cloud profile
           localStorage.setItem('dietadvisor_user_data', JSON.stringify(dataOnboarding.user));
+
+          // HEAL SESSION: Ensure 'dietadvisor_user' has the official ID
+          if (dataOnboarding.user.id) {
+            const session = JSON.parse(localStorage.getItem('dietadvisor_user') || '{}');
+            if (session.email === dataOnboarding.user.email) {
+              localStorage.setItem('dietadvisor_user', JSON.stringify({ ...session, id: dataOnboarding.user.id }));
+              
+              // PURGE OLD CACHE: Force new detailed suggestions
+              localStorage.removeItem('eatly_suggestions');
+              setSuggestions(null);
+            }
+          }
         }
 
         if (Array.isArray(dataRest)) {
@@ -341,6 +354,14 @@ export default function EatlyApp() {
 
       if (dataOnboarding.user) {
         setUserData(prev => ({ ...prev, ...dataOnboarding.user }));
+        
+        // HEAL SESSION: Ensure 'dietadvisor_user' has the official ID
+        if (dataOnboarding.user.id) {
+          const session = JSON.parse(localStorage.getItem('dietadvisor_user') || '{}');
+          if (session.email === dataOnboarding.user.email) {
+            localStorage.setItem('dietadvisor_user', JSON.stringify({ ...session, id: dataOnboarding.user.id }));
+          }
+        }
       }
       if (Array.isArray(dataRest)) setRestrictions(dataRest);
       if (Array.isArray(dataFood)) setFoods(dataFood);
