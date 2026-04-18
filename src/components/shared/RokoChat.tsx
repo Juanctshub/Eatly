@@ -46,6 +46,7 @@ interface AIChatProps {
   onClose: () => void;
   restrictions: Restriction[];
   foods: Food[];
+  foodLog?: any[];
   mealType?: string;
   userData: any;
   initialMessage?: string;
@@ -63,6 +64,7 @@ export default function AIChat({
   onClose, 
   restrictions, 
   foods, 
+  foodLog = [],
   mealType = 'almuerzo', 
   userData,
   initialMessage 
@@ -142,6 +144,7 @@ export default function AIChat({
           message: messageText.trim(),
           restrictions: restrictions.map(r => ({ foodItem: r.foodItem, reason: r.reason, severity: r.severity })),
           foods,
+          foodLog,
           mealType,
           userData,
           conversationHistory: messages.slice(-4).map(m => ({ role: m.role, content: m.content }))

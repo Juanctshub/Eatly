@@ -6,12 +6,13 @@ export const dynamic = 'force-dynamic';
 export async function POST(req: Request) {
   try {
     const body = await req.json();
-    const { message, restrictions, foods, mealType, userData, conversationHistory } = body;
+    const { message, restrictions, foods, foodLog, mealType, userData, conversationHistory } = body;
 
     console.log('--- NeuralEngine Chat Request ---');
     const result = await NeuralEngine.chat(message, {
       restrictions,
       foods,
+      foodLog,
       mealType,
       userData,
       conversationHistory

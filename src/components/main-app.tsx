@@ -169,6 +169,7 @@ export default function EatlyApp() {
   const [activeTab, setActiveTab] = useState('home');
   const [restrictions, setRestrictions] = useState<Restriction[]>([]);
   const [foods, setFoods] = useState<Food[]>([]);
+  const [foodLog, setFoodLog] = useState<any[]>([]);
   const [suggestions, setSuggestions] = useState<{ suggestions: Suggestion[]; generalTip: string } | null>(null);
   const [selectedMealType, setSelectedMealType] = useState('almuerzo');
   const [loading, setLoading] = useState(false);
@@ -274,14 +275,16 @@ export default function EatlyApp() {
         if (!user.email) return;
         
         const headers = { 'x-user-email': user.email, 'Content-Type': 'application/json' };
-        const [resRest, resFood, resOnboarding] = await Promise.all([
+        const [resRest, resFood, resLog, resOnboarding] = await Promise.all([
           fetch('/api/restrictions', { headers }),
           fetch('/api/foods', { headers }),
+          fetch('/api/food-log', { headers }),
           fetch('/api/user/onboarding', { headers })
         ]);
 
         const dataRest = await resRest.json();
         const dataFood = await resFood.json();
+        const dataLog = await resLog.json();
         const dataOnboarding = await resOnboarding.json();
 
         if (!dataOnboarding.onboarding) {
@@ -303,6 +306,9 @@ export default function EatlyApp() {
           setFoods(dataFood);
           localStorage.setItem('eatly_foods', JSON.stringify(dataFood));
         }
+        if (Array.isArray(dataLog)) {
+          setFoodLog(dataLog);
+        }
       } catch (error: any) {
         console.error('Error fetching data from API:', error);
         setErrorToast('Error de sincronización con Roko.');
@@ -321,14 +327,16 @@ export default function EatlyApp() {
       if (!user.email) return;
 
       const headers = { 'x-user-email': user.email, 'Content-Type': 'application/json' };
-      const [resRest, resFood, resOnboarding] = await Promise.all([
+      const [resRest, resFood, resLog, resOnboarding] = await Promise.all([
         fetch('/api/restrictions', { headers }),
         fetch('/api/foods', { headers }),
+        fetch('/api/food-log', { headers }),
         fetch('/api/user/onboarding', { headers })
       ]);
 
       const dataRest = await resRest.json();
       const dataFood = await resFood.json();
+      const dataLog = await resLog.json();
       const dataOnboarding = await resOnboarding.json();
 
       if (dataOnboarding.user) {
@@ -336,6 +344,7 @@ export default function EatlyApp() {
       }
       if (Array.isArray(dataRest)) setRestrictions(dataRest);
       if (Array.isArray(dataFood)) setFoods(dataFood);
+      if (Array.isArray(dataLog)) setFoodLog(dataLog);
 
       console.log('[Eatly] Sincronización completa con éxito.');
     } catch (err: any) {
@@ -355,6 +364,7 @@ export default function EatlyApp() {
     // Hydrate state from database data returned by login
     if (data.restrictions) setRestrictions(data.restrictions);
     if (data.foods) setFoods(data.foods);
+    if (data.foodLog) setFoodLog(data.foodLog);
     if (data.preferences) {
       setTheme(data.preferences.theme || 'light');
       setNotifications(prev => ({ ...prev, push: data.preferences.notifications }));
@@ -383,25 +393,62 @@ export default function EatlyApp() {
       const timeStr = `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}`;
 
       const mealTimes = [
-        { time: '08:30', label: 'el Desayuno 🥣' },
-        { time: '13:30', label: 'el Almuerzo 🍱' },
-        { time: '19:30', label: 'la Cena 🥗' }
+        { time: '08:30', label: 'el Desayuno 🥣', type: 'desayuno' },
+        { time: '13:30', label: 'el Almuerzo 🍱', type: 'almuerzo' },
+        { time: '19:30', label: 'la Cena 🥗', type: 'cena' }
       ];
 
       const currentMeal = mealTimes.find(m => m.time === timeStr);
 
       if (currentMeal && 'Notification' in window && Notification.permission === 'granted') {
-        new Notification('¡Es hora de comer! 🍎', {
-          body: `Roko dice que es momento de ${currentMeal.label}. ¡No olvides registrarlo!`,
-          icon: '/favicon.ico'
+        // Check if already logged today
+        const alreadyEaten = foodLog.some(log => {
+          const logDate = new Date(log.date);
+          return logDate.toDateString() === now.toDateString() && 
+                 log.mealType?.toLowerCase() === currentMeal.type;
         });
-        playSound('notification');
+
+        if (!alreadyEaten) {
+          new Notification('¡Es hora de comer! 🍎', {
+            body: `Roko dice que es momento de ${currentMeal.label}. ¡Aún no lo has registrado hoy!`,
+            icon: '/favicon.ico'
+          });
+          playSound('notification');
+        }
       }
     };
 
     const interval = setInterval(checkMealTime, 60000); // Check every minute
     return () => clearInterval(interval);
-  }, [isAuthenticated, notifications.push]);
+  }, [isAuthenticated, notifications.push, foodLog]);
+
+  const sendTestNotification = () => {
+    if (!('Notification' in window)) {
+      setErrorToast('Tu navegador no soporta notificaciones.');
+      return;
+    }
+
+    if (Notification.permission !== 'granted') {
+      Notification.requestPermission().then(permission => {
+        if (permission === 'granted') {
+          showTestNotify();
+        } else {
+          setErrorToast('Permiso de notificaciones denegado.');
+        }
+      });
+    } else {
+      showTestNotify();
+    }
+  };
+
+  const showTestNotify = () => {
+    new Notification('Roko Test 🤖', {
+      body: '¡Funciona jefe! Las notificaciones están activas.',
+      icon: '/favicon.ico'
+    });
+    playSound('notification');
+    setSuccessToast('Notificación de prueba enviada.');
+  };
 
   // Persist User Data locally whenever it changes (Anti-Jose Bug)
   useEffect(() => {
@@ -672,6 +719,7 @@ export default function EatlyApp() {
       playSound('success');
       vibrate([50, 100, 50]);
       setShowRecipeDetail(false);
+      refreshAllData(); // Refresh the log and memory
     } catch (error) {
       console.error('Error logging food:', error);
       setErrorToast('No se pudo registrar en el diario.');
@@ -1820,95 +1868,6 @@ export default function EatlyApp() {
           </motion.div>
         )}
       </AnimatePresence>
-
-      {/* Recipe Detail Modal */}
-      <AnimatePresence>
-        {showRecipeDetail && selectedRecipe && (
-          <motion.div
-            className="fixed inset-0 z-[150] bg-black/60 backdrop-blur-md flex items-end justify-center"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-          >
-            <motion.div
-              className="bg-background w-full max-w-lg rounded-t-[2.5rem] p-8 max-h-[90vh] overflow-y-auto border-t border-border"
-              initial={{ y: '100%' }}
-              animate={{ y: 0 }}
-              exit={{ y: '100%' }}
-              transition={{ type: 'spring', damping: 25, stiffness: 200 }}
-            >
-              <div className="flex justify-between items-start mb-6">
-                <div className="flex items-center gap-4">
-                  <div className="w-16 h-16 bg-gradient-to-br from-green-400 to-emerald-500 rounded-2xl flex items-center justify-center text-3xl shadow-xl shadow-green-500/20">
-                    {selectedRecipe.imageEmoji || '🥘'}
-                  </div>
-                  <div>
-                    <h2 className="text-2xl font-black text-foreground">{selectedRecipe.name}</h2>
-                    <p className="text-sm text-muted-foreground font-medium uppercase tracking-wider">{selectedMealType}</p>
-                  </div>
-                </div>
-                <button 
-                  onClick={() => setShowRecipeDetail(false)}
-                  className="p-2 bg-gray-100 dark:bg-gray-800 rounded-full"
-                >
-                  <X className="w-5 h-5" />
-                </button>
-              </div>
-
-              <div className="grid grid-cols-3 gap-3 mb-8">
-                <div className="bg-orange-50 dark:bg-orange-950/30 p-4 rounded-2xl border border-orange-100 dark:border-orange-900/40 text-center">
-                  <p className="text-[10px] font-bold text-orange-500 uppercase mb-1">Proteínas</p>
-                  <p className="text-lg font-black text-orange-700 dark:text-orange-400">{selectedRecipe.proteins || 0}g</p>
-                </div>
-                <div className="bg-emerald-50 dark:bg-emerald-950/30 p-4 rounded-2xl border border-emerald-100 dark:border-emerald-900/40 text-center">
-                  <p className="text-[10px] font-bold text-emerald-500 uppercase mb-1">Carbos</p>
-                  <p className="text-lg font-black text-emerald-700 dark:text-emerald-400">{selectedRecipe.carbs || 0}g</p>
-                </div>
-                <div className="bg-rose-50 dark:bg-rose-950/30 p-4 rounded-2xl border border-rose-100 dark:border-rose-900/40 text-center">
-                  <p className="text-[10px] font-bold text-rose-500 uppercase mb-1">Grasas</p>
-                  <p className="text-lg font-black text-rose-700 dark:text-rose-400">{selectedRecipe.fats || 0}g</p>
-                </div>
-              </div>
-
-              <div className="space-y-6">
-                <div>
-                  <h3 className="font-bold text-lg mb-3 flex items-center gap-2">
-                    <Utensils className="w-5 h-5 text-green-500" />
-                    Ingredientes
-                  </h3>
-                  <ul className="space-y-2">
-                    {selectedRecipe.ingredients?.map((ing: string, i: number) => (
-                      <li key={i} className="flex items-center gap-3 text-muted-foreground bg-gray-50 dark:bg-gray-900/50 p-3 rounded-xl border border-gray-100 dark:border-gray-800/50">
-                        <div className="w-2 h-2 bg-green-500 rounded-full" />
-                        {ing}
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-
-                <div>
-                  <h3 className="font-bold text-lg mb-3 flex items-center gap-2">
-                    <CheckCircle2 className="w-5 h-5 text-green-500" />
-                    Preparación
-                  </h3>
-                  <p className="text-muted-foreground leading-relaxed bg-green-500/5 p-4 rounded-2xl border border-green-500/10 italic">
-                    {selectedRecipe.explanation || 'Roko sugiere preparar este platillo fresco para mantener sus propiedades nutricionales.'}
-                  </p>
-                </div>
-                
-                <motion.button
-                  onClick={() => handleConfirmEaten(selectedRecipe)}
-                  className="w-full py-5 bg-gradient-to-r from-green-500 to-emerald-600 text-white font-black text-lg rounded-2xl shadow-xl shadow-green-500/30 flex items-center justify-center gap-3"
-                  whileHover={{ scale: 1.02 }}
-                  whileTap={{ scale: 0.98 }}
-                >
-                  Confirmar Consumo y Registrar
-                </motion.button>
-              </div>
-            </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
     </motion.div>
   );
 
@@ -2437,6 +2396,16 @@ export default function EatlyApp() {
                         </motion.button>
                       </div>
                     ))}
+
+                    <motion.button
+                      onClick={sendTestNotification}
+                      className="w-full mt-4 flex items-center justify-center gap-3 py-4 bg-blue-500/10 text-blue-600 rounded-2xl font-bold border-2 border-dashed border-blue-500/30 hover:bg-blue-500/20 transition-all"
+                      whileHover={{ scale: 1.02 }}
+                      whileTap={{ scale: 0.98 }}
+                    >
+                      <Bell className="w-5 h-5" />
+                      Probar Notificaciones
+                    </motion.button>
                   </motion.div>
                 ) : settingsSection === 'personalization' ? (
                   // Personalization Section
@@ -2795,6 +2764,7 @@ export default function EatlyApp() {
             onClose={() => setShowAIChat(false)}
             restrictions={restrictions}
             foods={foods}
+            foodLog={foodLog}
             mealType={selectedMealType}
             userData={userData}
             initialMessage={voiceInitialMessage}
@@ -2923,6 +2893,97 @@ export default function EatlyApp() {
         isOpen={showInstallGuide} 
         onClose={() => setShowInstallGuide(false)} 
       />
+
+      {/* Recipe Detail Modal - ROOT LEVEL */}
+      <AnimatePresence>
+        {showRecipeDetail && selectedRecipe && (
+          <motion.div
+            className="fixed inset-0 z-[160] bg-black/60 backdrop-blur-md flex items-end justify-center"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+          >
+            <motion.div
+              className="bg-background w-full max-w-lg rounded-t-[2.5rem] p-8 max-h-[90vh] overflow-y-auto border-t border-border shadow-2xl"
+              initial={{ y: '100%' }}
+              animate={{ y: 0 }}
+              exit={{ y: '100%' }}
+              transition={{ type: 'spring', damping: 25, stiffness: 200 }}
+            >
+              <div className="flex justify-between items-start mb-6">
+                <div className="flex items-center gap-4">
+                  <div className="w-16 h-16 bg-gradient-to-br from-green-400 to-emerald-500 rounded-2xl flex items-center justify-center text-3xl shadow-xl shadow-green-500/20">
+                    {selectedRecipe.imageEmoji || '🥘'}
+                  </div>
+                  <div>
+                    <h2 className="text-2xl font-black text-foreground">{selectedRecipe.name}</h2>
+                    <p className="text-sm text-muted-foreground font-medium uppercase tracking-wider">{selectedMealType}</p>
+                  </div>
+                </div>
+                <button 
+                  onClick={() => setShowRecipeDetail(false)}
+                  className="p-2 bg-gray-100 dark:bg-gray-800 rounded-full"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+
+              <div className="grid grid-cols-3 gap-3 mb-8">
+                <div className="bg-orange-50 dark:bg-orange-950/30 p-4 rounded-2xl border border-orange-100 dark:border-orange-900/40 text-center">
+                  <p className="text-[10px] font-bold text-orange-500 uppercase mb-1">Proteínas</p>
+                  <p className="text-lg font-black text-orange-700 dark:text-orange-400">{selectedRecipe.proteins || 0}g</p>
+                </div>
+                <div className="bg-emerald-50 dark:bg-emerald-950/30 p-4 rounded-2xl border border-emerald-100 dark:border-emerald-900/40 text-center">
+                  <p className="text-[10px] font-bold text-emerald-500 uppercase mb-1">Carbos</p>
+                  <p className="text-lg font-black text-emerald-700 dark:text-emerald-400">{selectedRecipe.carbs || 0}g</p>
+                </div>
+                <div className="bg-rose-50 dark:bg-rose-950/30 p-4 rounded-2xl border border-rose-100 dark:border-rose-900/40 text-center">
+                  <p className="text-[10px] font-bold text-rose-500 uppercase mb-1">Grasas</p>
+                  <p className="text-lg font-black text-rose-700 dark:text-rose-400">{selectedRecipe.fats || 0}g</p>
+                </div>
+              </div>
+
+              <div className="space-y-6">
+                <div>
+                  <h3 className="font-bold text-lg mb-3 flex items-center gap-2">
+                    <Utensils className="w-5 h-5 text-green-500" />
+                    Ingredientes
+                  </h3>
+                  <ul className="space-y-2">
+                    {selectedRecipe.ingredients?.map((ing: string, i: number) => (
+                      <li key={i} className="flex items-center gap-3 text-muted-foreground bg-gray-50 dark:bg-gray-900/50 p-3 rounded-xl border border-gray-100 dark:border-gray-800/50">
+                        <div className="w-2 h-2 bg-green-500 rounded-full" />
+                        {ing}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+
+                {selectedRecipe.explanation && (
+                  <div>
+                    <h3 className="font-bold text-lg mb-3 flex items-center gap-2">
+                      <CheckCircle2 className="w-5 h-5 text-green-500" />
+                      Preparación
+                    </h3>
+                    <p className="text-muted-foreground leading-relaxed bg-green-500/5 p-4 rounded-2xl border border-green-500/10 italic">
+                      {selectedRecipe.explanation}
+                    </p>
+                  </div>
+                )}
+                
+                <motion.button
+                  onClick={() => handleConfirmEaten(selectedRecipe)}
+                  className="w-full py-5 bg-gradient-to-r from-green-500 to-emerald-600 text-white font-black text-lg rounded-2xl shadow-xl shadow-green-500/30 flex items-center justify-center gap-3"
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.98 }}
+                >
+                  Confirmar Consumo y Registrar
+                </motion.button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
       </div>
     </EatlyAppContainer>
   );
