@@ -179,6 +179,11 @@ export default function EatlyApp() {
   const [showAIChat, setShowAIChat] = useState(false);
   const [showRestaurantMap, setShowRestaurantMap] = useState(false);
   const [showScanner, setShowScanner] = useState(false);
+  const [isAdmin, setIsAdmin] = useState(false);
+  const [showInstallGuide, setShowInstallGuide] = useState(false);
+  const [selectedRecipe, setSelectedRecipe] = useState<any>(null);
+  const [showRecipeDetail, setShowRecipeDetail] = useState(false);
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [isSyncing, setIsSyncing] = useState(false);
   const [errorToast, setErrorToast] = useState<string | null>(null);
   const [voiceInitialMessage, setVoiceInitialMessage] = useState<string | undefined>(undefined);
@@ -208,7 +213,7 @@ export default function EatlyApp() {
     medicalConditions: [] as string[],
   });
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
-  const [showInstallGuide, setShowInstallGuide] = useState(false);
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
 
   // Permission states
   const [permissions, setPermissions] = useState({
@@ -339,6 +344,65 @@ export default function EatlyApp() {
       setErrorToast('Reintento de sincronización fallido.');
     }
   };
+
+  // Handle successful authentication
+  const handleAuthSuccess = (data: any) => {
+    localStorage.setItem('dietadvisor_user', JSON.stringify({ 
+      id: data.id, 
+      email: data.email, 
+      name: data.name 
+    }));
+    
+    // Hydrate state from database data returned by login
+    if (data.restrictions) setRestrictions(data.restrictions);
+    if (data.foods) setFoods(data.foods);
+    if (data.preferences) {
+      setTheme(data.preferences.theme || 'light');
+      setNotifications(prev => ({ ...prev, push: data.preferences.notifications }));
+    }
+    
+    setUserData(data);
+    setIsAuthenticated(true);
+    
+    // Request notification permission
+    if ('Notification' in window && Notification.permission === 'default') {
+      Notification.requestPermission();
+    }
+    
+    playSound('success');
+    vibrate(100);
+  };
+
+  // Recordatorios de Comida (Meal Reminders) - Eatly v7.4
+  useEffect(() => {
+    if (!isAuthenticated || !notifications.push) return;
+
+    const checkMealTime = () => {
+      const now = new Date();
+      const hours = now.getHours();
+      const minutes = now.getMinutes();
+      const timeStr = `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}`;
+
+      const mealTimes = [
+        { time: '08:30', label: 'el Desayuno 🥣' },
+        { time: '13:30', label: 'el Almuerzo 🍱' },
+        { time: '19:30', label: 'la Cena 🥗' }
+      ];
+
+      const currentMeal = mealTimes.find(m => m.time === timeStr);
+
+      if (currentMeal && 'Notification' in window && Notification.permission === 'granted') {
+        new Notification('¡Es hora de comer! 🍎', {
+          body: `Roko dice que es momento de ${currentMeal.label}. ¡No olvides registrarlo!`,
+          icon: '/favicon.ico'
+        });
+        playSound('notification');
+      }
+    };
+
+    const interval = setInterval(checkMealTime, 60000); // Check every minute
+    return () => clearInterval(interval);
+  }, [isAuthenticated, notifications.push]);
 
   // Persist User Data locally whenever it changes (Anti-Jose Bug)
   useEffect(() => {
@@ -477,23 +541,24 @@ export default function EatlyApp() {
     }
   };
 
-  const addFood = async () => {
-    if (!newFood.name.trim()) return;
+  const addFood = async (foodData?: any) => {
+    const foodToSave = foodData || newFood;
+    if (!foodToSave.name.trim()) return;
 
     try {
       setLoading(true);
       const user = JSON.parse(localStorage.getItem('dietadvisor_user') || '{}');
       const email = user.email;
-      let category = newFood.category;
+      let category = foodToSave.category;
 
       // AI Categorization if empty
       if (!category) {
-        console.log('[AI] Categorizando alimento:', newFood.name);
+        console.log('[AI] Categorizando alimento:', foodToSave.name);
         try {
           const res = await fetch('/api/ai/categorize', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json', 'x-user-email': email },
-            body: JSON.stringify({ foodName: newFood.name }),
+            body: JSON.stringify({ foodName: foodToSave.name }),
           });
           const data = await res.json();
           if (data.success) {
@@ -512,7 +577,7 @@ export default function EatlyApp() {
           'x-user-email': email
         },
         body: JSON.stringify({
-          name: newFood.name,
+          name: foodToSave.name,
           category: category || 'General',
           mealType: selectedMealType
         }),
@@ -580,6 +645,40 @@ export default function EatlyApp() {
       });
     }
     setLoading(false);
+  };
+
+  const handleConfirmEaten = async (suggestion: any) => {
+    try {
+      setLoading(true);
+      const user = JSON.parse(localStorage.getItem('dietadvisor_user') || '{}');
+      
+      const response = await fetch('/api/food-log', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          userId: user.id || user.email,
+          name: suggestion.name,
+          calories: suggestion.calories || 0,
+          proteins: suggestion.proteins || 0,
+          fats: suggestion.fats || 0,
+          carbs: suggestion.carbs || 0,
+          mealType: selectedMealType || 'snack',
+          imageEmoji: suggestion.imageEmoji || '🥘'
+        }),
+      });
+
+      if (!response.ok) throw new Error('Error al registrar');
+
+      setErrorToast(`¡Delicioso! Roko registró tu ${suggestion.name} en el diario.`);
+      playSound('success');
+      vibrate([50, 100, 50]);
+      setShowRecipeDetail(false);
+    } catch (error) {
+      console.error('Error logging food:', error);
+      setErrorToast('No se pudo registrar en el diario.');
+    } finally {
+      setLoading(false);
+    }
   };
 
   // Handle logout
@@ -1642,19 +1741,42 @@ export default function EatlyApp() {
                   </motion.div>
                   <div className="flex-1">
                     <h3 className="font-bold text-foreground text-xl">{suggestion.name}</h3>
-                    <div className="flex items-center gap-4 mt-2 text-xs text-muted-foreground">
+                    <div className="flex items-center gap-4 mt-2 text-xs text-muted-foreground font-medium">
                       {suggestion.prepTime && (
-                        <span className="flex items-center gap-1">
-                          <Clock className="w-3 h-3" />
+                        <span className="flex items-center gap-1 bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded-md">
+                          <Clock className="w-3.5 h-3.5" />
                           {suggestion.prepTime} min
                         </span>
                       )}
                       {suggestion.calories && (
-                        <span className="flex items-center gap-1">
-                          <Flame className="w-3 h-3" />
+                        <span className="flex items-center gap-1 bg-orange-100 dark:bg-orange-900/30 text-orange-600 dark:text-orange-400 px-2 py-1 rounded-md">
+                          <Zap className="w-3.5 h-3.5" />
                           {suggestion.calories} kcal
                         </span>
                       )}
+                    </div>
+                    
+                    <div className="flex gap-2 mt-4">
+                      <motion.button
+                        onClick={() => {
+                          setSelectedRecipe(suggestion);
+                          setShowRecipeDetail(true);
+                          playSound('click');
+                        }}
+                        className="flex-1 py-2 bg-gray-100 dark:bg-gray-800 text-foreground text-xs font-bold rounded-xl hover:bg-gray-200"
+                        whileHover={{ scale: 1.02 }}
+                        whileTap={{ scale: 0.98 }}
+                      >
+                        Ver Detalle
+                      </motion.button>
+                      <motion.button
+                        onClick={() => handleConfirmEaten(suggestion)}
+                        className="flex-1 py-2 bg-green-500 text-white text-xs font-bold rounded-xl shadow-lg shadow-green-500/20"
+                        whileHover={{ scale: 1.02 }}
+                        whileTap={{ scale: 0.98 }}
+                      >
+                        Confirmar
+                      </motion.button>
                     </div>
                   </div>
                 </div>
@@ -1696,6 +1818,95 @@ export default function EatlyApp() {
                 </div>
               </motion.div>
             ))}
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Recipe Detail Modal */}
+      <AnimatePresence>
+        {showRecipeDetail && selectedRecipe && (
+          <motion.div
+            className="fixed inset-0 z-[150] bg-black/60 backdrop-blur-md flex items-end justify-center"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+          >
+            <motion.div
+              className="bg-background w-full max-w-lg rounded-t-[2.5rem] p-8 max-h-[90vh] overflow-y-auto border-t border-border"
+              initial={{ y: '100%' }}
+              animate={{ y: 0 }}
+              exit={{ y: '100%' }}
+              transition={{ type: 'spring', damping: 25, stiffness: 200 }}
+            >
+              <div className="flex justify-between items-start mb-6">
+                <div className="flex items-center gap-4">
+                  <div className="w-16 h-16 bg-gradient-to-br from-green-400 to-emerald-500 rounded-2xl flex items-center justify-center text-3xl shadow-xl shadow-green-500/20">
+                    {selectedRecipe.imageEmoji || '🥘'}
+                  </div>
+                  <div>
+                    <h2 className="text-2xl font-black text-foreground">{selectedRecipe.name}</h2>
+                    <p className="text-sm text-muted-foreground font-medium uppercase tracking-wider">{selectedMealType}</p>
+                  </div>
+                </div>
+                <button 
+                  onClick={() => setShowRecipeDetail(false)}
+                  className="p-2 bg-gray-100 dark:bg-gray-800 rounded-full"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+
+              <div className="grid grid-cols-3 gap-3 mb-8">
+                <div className="bg-orange-50 dark:bg-orange-950/30 p-4 rounded-2xl border border-orange-100 dark:border-orange-900/40 text-center">
+                  <p className="text-[10px] font-bold text-orange-500 uppercase mb-1">Proteínas</p>
+                  <p className="text-lg font-black text-orange-700 dark:text-orange-400">{selectedRecipe.proteins || 0}g</p>
+                </div>
+                <div className="bg-emerald-50 dark:bg-emerald-950/30 p-4 rounded-2xl border border-emerald-100 dark:border-emerald-900/40 text-center">
+                  <p className="text-[10px] font-bold text-emerald-500 uppercase mb-1">Carbos</p>
+                  <p className="text-lg font-black text-emerald-700 dark:text-emerald-400">{selectedRecipe.carbs || 0}g</p>
+                </div>
+                <div className="bg-rose-50 dark:bg-rose-950/30 p-4 rounded-2xl border border-rose-100 dark:border-rose-900/40 text-center">
+                  <p className="text-[10px] font-bold text-rose-500 uppercase mb-1">Grasas</p>
+                  <p className="text-lg font-black text-rose-700 dark:text-rose-400">{selectedRecipe.fats || 0}g</p>
+                </div>
+              </div>
+
+              <div className="space-y-6">
+                <div>
+                  <h3 className="font-bold text-lg mb-3 flex items-center gap-2">
+                    <Utensils className="w-5 h-5 text-green-500" />
+                    Ingredientes
+                  </h3>
+                  <ul className="space-y-2">
+                    {selectedRecipe.ingredients?.map((ing: string, i: number) => (
+                      <li key={i} className="flex items-center gap-3 text-muted-foreground bg-gray-50 dark:bg-gray-900/50 p-3 rounded-xl border border-gray-100 dark:border-gray-800/50">
+                        <div className="w-2 h-2 bg-green-500 rounded-full" />
+                        {ing}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+
+                <div>
+                  <h3 className="font-bold text-lg mb-3 flex items-center gap-2">
+                    <CheckCircle2 className="w-5 h-5 text-green-500" />
+                    Preparación
+                  </h3>
+                  <p className="text-muted-foreground leading-relaxed bg-green-500/5 p-4 rounded-2xl border border-green-500/10 italic">
+                    {selectedRecipe.explanation || 'Roko sugiere preparar este platillo fresco para mantener sus propiedades nutricionales.'}
+                  </p>
+                </div>
+                
+                <motion.button
+                  onClick={() => handleConfirmEaten(selectedRecipe)}
+                  className="w-full py-5 bg-gradient-to-r from-green-500 to-emerald-600 text-white font-black text-lg rounded-2xl shadow-xl shadow-green-500/30 flex items-center justify-center gap-3"
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.98 }}
+                >
+                  Confirmar Consumo y Registrar
+                </motion.button>
+              </div>
+            </motion.div>
           </motion.div>
         )}
       </AnimatePresence>
@@ -2542,9 +2753,34 @@ export default function EatlyApp() {
             restrictions={restrictions}
             userData={userData}
             onClose={() => setShowScanner(false)}
-            onAddFood={(name) => {
-              setNewFood({ name, category: '', mealType: '' });
-              addFood();
+            onAddFood={async (productName, analysis) => {
+              if (analysis?.safety === 'danger') {
+                // Auto-add to restrictions if dangerous (Rodrigo's safety logic)
+                const restrictionData = {
+                  foodItem: productName,
+                  reason: 'auto_security',
+                  severity: 'severa',
+                  notes: `Escaneado por Roko Vision. Veredicto: ${analysis.verdict}. Motivo: ${analysis.reason}`
+                };
+                
+                try {
+                  const user = JSON.parse(localStorage.getItem('dietadvisor_user') || '{}');
+                  const res = await fetch('/api/restrictions', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'x-user-email': user.email },
+                    body: JSON.stringify(restrictionData),
+                  });
+                  const saved = await res.json();
+                  if (saved.id) {
+                    setRestrictions([saved, ...restrictions]);
+                    setSuccessToast(`🛡️ ¡SEGURIDAD! ${productName} añadido a tus restricciones por peligro.`);
+                  }
+                } catch (e) { console.error('Auto-restriction failed', e); }
+              } else {
+                setNewFood({ name: productName, category: '', mealType: '' });
+                addFood();
+              }
+              setShowScanner(false);
             }}
             playSound={playSound}
             vibrate={vibrate}

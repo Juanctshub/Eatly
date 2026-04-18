@@ -5,15 +5,18 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Leaf, Mail, Lock, User, ArrowRight, Eye, EyeOff, Loader2, CheckCircle2, AlertCircle } from 'lucide-react';
 
 interface AuthPageProps {
-  onAuthSuccess: (user: { id: string; email: string; name: string }) => void;
+  onAuthSuccess: (userData: any) => void;
 }
 
 export function AuthPage({ onAuthSuccess }: AuthPageProps) {
   const [isLogin, setIsLogin] = useState(true);
   const [showPassword, setShowPassword] = useState(false);
+  const [showResetModal, setShowResetModal] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
+  const [resetEmail, setResetEmail] = useState('');
+  const [resetPassword, setResetPassword] = useState('');
   const [formData, setFormData] = useState({
     name: '',
     email: '',
@@ -57,50 +60,61 @@ export function AuthPage({ onAuthSuccess }: AuthPageProps) {
     setSuccess('');
 
     try {
-      // Offline local storage logic
-      const usersStorage = localStorage.getItem('eatly_local_users');
-      let users = usersStorage ? JSON.parse(usersStorage) : [];
-      
-      const emailLower = formData.email.trim().toLowerCase();
+      const endpoint = isLogin ? '/api/auth/login' : '/api/auth/register';
+      const response = await fetch(endpoint, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          email: formData.email.trim().toLowerCase(),
+          password: formData.password,
+          name: formData.name.trim()
+        }),
+      });
 
-      // Delay to simulate processing
-      await new Promise(r => setTimeout(r, 600));
+      const data = await response.json();
 
-      if (isLogin) {
-        // Find user
-        const user = users.find((u: any) => u.email === emailLower && u.password === formData.password);
-        if (user) {
-          setSuccess('¡Inicio de sesión exitoso!');
-          setTimeout(() => {
-            onAuthSuccess({ id: user.id, email: user.email, name: user.name });
-          }, 500);
-        } else {
-          setError('Email o contraseña incorrectos. Verifica tus datos.');
-        }
-      } else {
-        // Register user
-        const userExists = users.some((u: any) => u.email === emailLower);
-        if (userExists) {
-          setError('Este email ya está registrado. Intenta iniciar sesión o usa otro email.');
-        } else {
-          const newUser = {
-            id: crypto.randomUUID(),
-            email: emailLower,
-            name: formData.name.trim(),
-            password: formData.password,
-          };
-          users.push(newUser);
-          localStorage.setItem('eatly_local_users', JSON.stringify(users));
-          
-          setSuccess('¡Cuenta creada exitosamente!');
-          setTimeout(() => {
-            onAuthSuccess({ id: newUser.id, email: newUser.email, name: newUser.name });
-          }, 500);
-        }
+      if (!response.ok) {
+        throw new Error(data.error || 'Error al procesar la solicitud');
       }
-    } catch (err) {
+
+      setSuccess(isLogin ? '¡Inicio de sesión exitoso!' : '¡Cuenta creada exitosamente!');
+      
+      // Give the user a moment to see the success message
+      setTimeout(() => {
+        onAuthSuccess(data.user);
+      }, 800);
+
+    } catch (err: any) {
       console.error('Auth error:', err);
-      setError('Error al procesar los datos localmente.');
+      setError(err.message || 'Error de conexión con el servidor.');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleResetPassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!resetEmail || resetPassword.length < 6) {
+      setError('Ingresa un email válido y una contraseña de al menos 6 caracteres');
+      return;
+    }
+
+    setIsLoading(true);
+    try {
+      const response = await fetch('/api/auth/reset-password', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: resetEmail, newPassword: resetPassword }),
+      });
+
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error);
+
+      setSuccess('Contraseña actualizada correctamente');
+      setShowResetModal(false);
+      setIsLogin(true);
+    } catch (err: any) {
+      setError(err.message);
     } finally {
       setIsLoading(false);
     }
@@ -298,7 +312,11 @@ export function AuthPage({ onAuthSuccess }: AuthPageProps) {
 
             {isLogin && (
               <motion.div className="text-right" variants={itemVariants}>
-                <button type="button" className="text-sm text-green-600 font-medium hover:text-green-700 transition-colors">
+                <button 
+                  type="button" 
+                  onClick={() => setShowResetModal(true)}
+                  className="text-sm text-green-600 font-medium hover:text-green-700 transition-colors"
+                >
                   ¿Olvidaste tu contraseña?
                 </button>
               </motion.div>
@@ -364,6 +382,75 @@ export function AuthPage({ onAuthSuccess }: AuthPageProps) {
         </motion.div>
       </motion.div>
 
+      {/* Reset Password Modal */}
+      <AnimatePresence>
+        {showResetModal && (
+          <motion.div
+            className="fixed inset-0 z-50 flex items-center justify-center p-6 bg-black/40 backdrop-blur-md"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+          >
+            <motion.div
+              className="bg-white rounded-[2.5rem] p-8 w-full max-w-md shadow-2xl space-y-6"
+              initial={{ scale: 0.9, y: 20 }}
+              animate={{ scale: 1, y: 0 }}
+              exit={{ scale: 0.9, y: 20 }}
+            >
+              <div className="text-center">
+                <div className="w-16 h-16 bg-green-100 rounded-2xl flex items-center justify-center mx-auto mb-4">
+                  <Lock className="w-8 h-8 text-green-600" />
+                </div>
+                <h2 className="text-2xl font-bold text-gray-900">Restablecer Clave</h2>
+                <p className="text-gray-500 text-sm mt-2">Dinos tu email y la nueva clave para tu cuenta</p>
+              </div>
+
+              <form onSubmit={handleResetPassword} className="space-y-4">
+                <div className="space-y-2">
+                  <label className="text-sm font-medium text-gray-700">Email asociado</label>
+                  <input
+                    type="email"
+                    required
+                    value={resetEmail}
+                    onChange={(e) => setResetEmail(e.target.value)}
+                    placeholder="tu@email.com"
+                    className="w-full px-5 py-4 bg-gray-50 border-2 border-transparent focus:border-green-500 rounded-2xl outline-none transition-all"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <label className="text-sm font-medium text-gray-700">Nueva contraseña</label>
+                  <input
+                    type="password"
+                    required
+                    minLength={6}
+                    value={resetPassword}
+                    onChange={(e) => setResetPassword(e.target.value)}
+                    placeholder="Nueva clave"
+                    className="w-full px-5 py-4 bg-gray-50 border-2 border-transparent focus:border-green-500 rounded-2xl outline-none transition-all"
+                  />
+                </div>
+                
+                <div className="flex gap-3 pt-2">
+                  <button
+                    type="button"
+                    onClick={() => setShowResetModal(false)}
+                    className="flex-1 py-4 bg-gray-100 text-gray-600 font-bold rounded-2xl"
+                  >
+                    Cancelar
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={isLoading}
+                    className="flex-[2] py-4 bg-green-500 text-white font-bold rounded-2xl shadow-lg shadow-green-500/30"
+                  >
+                    {isLoading ? 'Cambiando...' : 'Actualizar clave'}
+                  </button>
+                </div>
+              </form>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }

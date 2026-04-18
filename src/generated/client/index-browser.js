@@ -161,6 +161,19 @@ exports.Prisma.UserScalarFieldEnum = {
   recentLogs: 'recentLogs'
 };
 
+exports.Prisma.FoodLogScalarFieldEnum = {
+  id: 'id',
+  userId: 'userId',
+  name: 'name',
+  calories: 'calories',
+  proteins: 'proteins',
+  fats: 'fats',
+  carbs: 'carbs',
+  mealType: 'mealType',
+  imageEmoji: 'imageEmoji',
+  createdAt: 'createdAt'
+};
+
 exports.Prisma.UserPreferencesScalarFieldEnum = {
   id: 'id',
   userId: 'userId',
@@ -238,6 +251,7 @@ exports.Prisma.ModelName = {
   Session: 'Session',
   VerificationToken: 'VerificationToken',
   User: 'User',
+  FoodLog: 'FoodLog',
   UserPreferences: 'UserPreferences',
   DietaryRestriction: 'DietaryRestriction',
   AvailableFood: 'AvailableFood',

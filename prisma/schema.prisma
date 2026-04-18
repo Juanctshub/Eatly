@@ -62,7 +62,24 @@ model User {
   sessions      Session[]
   restrictions  DietaryRestriction[]
   foods         AvailableFood[]
+  foodLogs      FoodLog[] // NEW: Relation to consumption history
   preferences   UserPreferences?
+}
+
+// ... (previous models remains same)
+
+model FoodLog {
+  id          String   @id @default(cuid())
+  userId      String
+  name        String
+  calories    Int?
+  proteins    Float?
+  fats        Float?
+  carbs       Float?
+  mealType    String   // desayuno, almuerzo, cena, snack
+  imageEmoji  String?
+  createdAt   DateTime @default(now())
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
 model UserPreferences {
