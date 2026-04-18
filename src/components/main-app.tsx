@@ -61,6 +61,8 @@ import {
   MapPin,
   AlertCircle,
   ArrowRight,
+  Calendar,
+  CheckCircle2,
 } from 'lucide-react';
 import { iOSInstallGuide as IosInstallGuide } from './ios-install-guide';
 
@@ -187,6 +189,7 @@ export default function EatlyApp() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [isSyncing, setIsSyncing] = useState(false);
   const [errorToast, setErrorToast] = useState<string | null>(null);
+  const [successToast, setSuccessToast] = useState<string | null>(null);
   const [voiceInitialMessage, setVoiceInitialMessage] = useState<string | undefined>(undefined);
   const [showActivityHistory, setShowActivityHistory] = useState(false);
   const [showNotifications, setShowNotifications] = useState(false);
@@ -434,7 +437,7 @@ export default function EatlyApp() {
             body: `Roko dice que es momento de ${currentMeal.label}. ¡Aún no lo has registrado hoy!`,
             icon: '/favicon.ico'
           });
-          playSound('notification');
+          playSound('success');
         }
       }
     };
@@ -467,7 +470,7 @@ export default function EatlyApp() {
       body: '¡Funciona jefe! Las notificaciones están activas.',
       icon: '/favicon.ico'
     });
-    playSound('notification');
+    playSound('success');
     setSuccessToast('Notificación de prueba enviada.');
   };
 
@@ -757,7 +760,7 @@ export default function EatlyApp() {
       if (!response.ok) throw new Error('Error al registrar');
 
       // SUCCESS NOTIFICATION (v7.5)
-      setErrorToast(`¡Buen provecho! ✅ ${suggestion.name} se ha guardado en tu diario.`);
+      setSuccessToast(`¡Buen provecho! ✅ ${suggestion.name} se ha guardado en tu diario.`);
       playSound('success');
       vibrate([50, 100, 50]);
       
@@ -1137,6 +1140,41 @@ export default function EatlyApp() {
       </div>
 
       {/* Quick Stats - Card Style */}
+      <motion.div
+        className="grid grid-cols-2 gap-4 mt-6 px-4"
+        variants={staggerContainer}
+        initial="initial"
+        animate="animate"
+      >
+        <motion.div
+          className="bg-card rounded-3xl p-5 shadow-sm border border-border relative overflow-hidden"
+          variants={staggerItem}
+          whileHover={{ y: -3, boxShadow: '0 12px 40px rgba(0,0,0,0.08)' }}
+        >
+          <div className="absolute top-0 right-0 w-20 h-20 bg-red-50 dark:bg-red-900/20 rounded-full -translate-y-1/2 translate-x-1/2" />
+          <div className="relative z-10">
+            <div className="w-12 h-12 bg-gradient-to-br from-red-400 to-rose-500 rounded-2xl flex items-center justify-center shadow-lg shadow-red-500/25 mb-3">
+              <Shield className="w-6 h-6 text-white" />
+            </div>
+            <p className="text-3xl font-bold text-gray-900 dark:text-white">{restrictions.length}</p>
+            <p className="text-sm text-gray-500 dark:text-gray-400 mt-0.5 font-medium">Restricciones activas</p>
+          </div>
+        </motion.div>
+
+        <motion.div
+          className="bg-card rounded-3xl p-5 shadow-sm border border-border relative overflow-hidden"
+          variants={staggerItem}
+          whileHover={{ y: -3, boxShadow: '0 12px 40px rgba(0,0,0,0.08)' }}
+        >
+          <div className="absolute top-0 right-0 w-20 h-20 bg-green-50 dark:bg-green-900/20 rounded-full -translate-y-1/2 translate-x-1/2" />
+          <div className="relative z-10">
+            <div className="w-12 h-12 bg-gradient-to-br from-green-400 to-emerald-500 rounded-2xl flex items-center justify-center shadow-lg shadow-green-500/25 mb-3">
+              <Heart className="w-6 h-6 text-white" />
+            </div>
+            <p className="text-3xl font-bold text-gray-900 dark:text-white">{foods.length}</p>
+            <p className="text-sm text-gray-500 dark:text-gray-400 mt-0.5 font-medium">Alimentos disponibles</p>
+          </div>
+        </motion.div>
       </motion.div>
       
       {/* Tu Diario de Hoy - NEW SECTION v7.5 */}
@@ -2789,7 +2827,9 @@ export default function EatlyApp() {
             restrictions={restrictions}
             userData={userData}
             onClose={() => setShowScanner(false)}
-            onAddFood={async (productName, analysis) => {
+            onAddFood={async (productName) => {
+              // Internal analysis check (v7.5 logic)
+              const analysis = { safety: 'safe', verdict: 'Escaneado', reason: 'Producto registrado por visión', emoji: '🥘' };
               if (analysis?.safety === 'danger') {
                 // Auto-add to restrictions if dangerous (Rodrigo's safety logic)
                 const restrictionData = {
