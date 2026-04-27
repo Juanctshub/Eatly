@@ -1,4 +1,6 @@
 'use client';
+// Version 2.2.0 - Forced Clean Build (Card Reference Purge)
+
 
 import { useState, useEffect, useCallback } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
