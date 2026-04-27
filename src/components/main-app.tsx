@@ -1231,7 +1231,7 @@ export default function EatlyApp() {
               </div>
             </div>
             {/* Calories Card */}
-            <Card className="p-4 border-2 border-green-500/10 bg-card overflow-hidden relative">
+            <div className="p-4 border-2 border-green-500/10 bg-card rounded-3xl overflow-hidden relative shadow-sm">
               <div className="absolute top-0 right-0 w-16 h-16 bg-green-500/5 rounded-bl-[3rem]" />
               <p className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-1">Kcal Hoy</p>
               <div className="flex items-baseline gap-1">
@@ -1242,7 +1242,7 @@ export default function EatlyApp() {
                 </p>
                 <p className="text-xs font-bold text-muted-foreground">/ {userData.dailyGoal || 2000}</p>
               </div>
-            </Card>
+            </div>
           </div>
 
           <div className="space-y-3 relative z-10">
@@ -1280,7 +1280,7 @@ export default function EatlyApp() {
       {/* Suggested for you */}
       <motion.div variants={staggerItem}>
         <div className="flex items-center justify-between mb-4">
-          <h2 className="text-lg font-bold text-gray-900 dark:text-white">Sugerido para ti</h2>
+          <h2 className="text-lg font-bold text-foreground">Sugerido para ti</h2>
           <motion.button
             onClick={() => setActiveTab('suggestions')}
             className="text-sm text-green-600 dark:text-green-400 font-semibold flex items-center gap-1"
@@ -1296,14 +1296,14 @@ export default function EatlyApp() {
             .map((suggestion: any, index: number) => (
               <motion.div
                 key={index}
-                className="flex-shrink-0 w-40 bg-white dark:bg-gray-800 rounded-3xl p-4 shadow-sm border border-gray-100/80 dark:border-gray-700"
+                className="flex-shrink-0 w-40 bg-card rounded-3xl p-4 shadow-sm border border-border"
                 initial={{ opacity: 0, x: 20 }}
                 animate={{ opacity: 1, x: 0 }}
                 transition={{ delay: index * 0.08 }}
                 whileHover={{ y: -4, boxShadow: '0 12px 30px rgba(0,0,0,0.1)' }}
               >
                 <div className="text-4xl mb-3">{suggestion.imageEmoji}</div>
-                <h3 className="font-semibold text-gray-900 dark:text-white text-sm line-clamp-2 leading-tight">{suggestion.name}</h3>
+                <h3 className="font-semibold text-foreground text-sm line-clamp-2 leading-tight">{suggestion.name}</h3>
                 <div className="flex items-center gap-1.5 mt-2 text-xs text-gray-500 dark:text-gray-400 font-medium">
                   <Clock className="w-3.5 h-3.5" />
                   {suggestion.prepTime} min
@@ -1332,7 +1332,7 @@ export default function EatlyApp() {
             <AlertTriangle className="w-7 h-7 text-white" />
           </div>
           <div className="text-left flex-1 relative z-10">
-            <p className="font-semibold text-gray-900 dark:text-white text-lg">Agregar restricción</p>
+            <p className="font-semibold text-foreground text-lg">Agregar restricción</p>
             <p className="text-sm text-gray-500 dark:text-gray-400">Registra alimentos que no puedes comer</p>
           </div>
           <div className="w-10 h-10 bg-gray-100 dark:bg-gray-700 rounded-full flex items-center justify-center group-hover:bg-red-100 dark:group-hover:bg-red-900/30 transition-colors relative z-10">
@@ -1418,7 +1418,7 @@ export default function EatlyApp() {
       {/* Active Restrictions */}
       {restrictions.length > 0 && (
         <motion.div
-          className="bg-white rounded-3xl p-5 shadow-sm border border-gray-100/80"
+          className="bg-card rounded-3xl p-5 shadow-sm border border-border"
           variants={staggerItem}
         >
           <div className="flex items-center justify-between mb-4">
@@ -1426,7 +1426,7 @@ export default function EatlyApp() {
               <div className="w-8 h-8 bg-red-100 rounded-lg flex items-center justify-center">
                 <Shield className="w-4 h-4 text-red-500" />
               </div>
-              <h2 className="font-bold text-gray-900">Tus restricciones</h2>
+              <h2 className="font-bold text-foreground">Tus restricciones</h2>
             </div>
             <motion.button
               onClick={() => setActiveTab('restrictions')}
@@ -1442,7 +1442,7 @@ export default function EatlyApp() {
               return (
                 <motion.span
                   key={r.id}
-                  className="px-4 py-2 bg-gradient-to-r from-red-50 to-rose-50 text-red-600 rounded-full text-sm font-semibold border border-red-100"
+                  className="px-4 py-2 bg-red-500/10 text-red-600 dark:text-red-400 rounded-full text-sm font-semibold border border-red-100 dark:border-red-900/30"
                   initial={{ opacity: 0, scale: 0.8 }}
                   animate={{ opacity: 1, scale: 1 }}
                   whileHover={{ scale: 1.05 }}
@@ -1818,7 +1818,7 @@ export default function EatlyApp() {
               }}
               className={`flex-1 py-4 px-3 rounded-2xl text-sm font-medium transition-all ${selectedMealType === meal.id
                 ? 'bg-gradient-to-br from-green-500 to-emerald-500 text-white shadow-lg shadow-green-500/40'
-                : 'bg-muted text-muted-foreground hover:bg-muted/80 dark:bg-white/5 dark:text-gray-300'
+                : 'bg-muted text-muted-foreground hover:bg-muted/80'
                 }`}
               whileHover={{ scale: 1.02 }}
               whileTap={{ scale: 0.98 }}
@@ -1938,13 +1938,13 @@ export default function EatlyApp() {
                     <h3 className="font-bold text-foreground text-xl">{suggestion.name}</h3>
                     <div className="flex items-center gap-4 mt-2 text-xs text-muted-foreground font-medium">
                       {suggestion.prepTime && (
-                        <span className="flex items-center gap-1 bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded-md">
+                        <span className="flex items-center gap-1 bg-muted px-2 py-1 rounded-md">
                           <Clock className="w-3.5 h-3.5" />
                           {suggestion.prepTime} min
                         </span>
                       )}
                       {suggestion.calories && (
-                        <span className="flex items-center gap-1 bg-orange-100 dark:bg-orange-900/30 text-orange-600 dark:text-orange-400 px-2 py-1 rounded-md">
+                        <span className="flex items-center gap-1 bg-muted text-orange-600 dark:text-orange-400 px-2 py-1 rounded-md">
                           <Zap className="w-3.5 h-3.5" />
                           {suggestion.calories} kcal
                         </span>
@@ -2088,7 +2088,7 @@ export default function EatlyApp() {
               </div>
 
               <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-3">Razón</label>
+                <label className="block text-sm font-semibold text-muted-foreground mb-3">Razón</label>
                 <div className="grid grid-cols-2 gap-2">
                   {reasonOptions.map((option) => (
                     <motion.button
@@ -2109,7 +2109,7 @@ export default function EatlyApp() {
               </div>
 
               <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-3">Severidad</label>
+                <label className="block text-sm font-semibold text-muted-foreground mb-3">Severidad</label>
                 <div className="flex gap-2">
                   {severityOptions.map((option) => (
                     <motion.button
@@ -3162,7 +3162,7 @@ export default function EatlyApp() {
                   </h3>
                   <ul className="space-y-2">
                     {selectedRecipe.ingredients?.map((ing: string, i: number) => (
-                      <li key={i} className="flex items-center gap-3 text-muted-foreground bg-gray-50 dark:bg-gray-900/50 p-3 rounded-xl border border-gray-100 dark:border-gray-800/50">
+                      <li key={i} className="flex items-center gap-3 text-muted-foreground bg-muted p-3 rounded-xl border border-border">
                         <div className="w-2 h-2 bg-green-500 rounded-full" />
                         {ing}
                       </li>
@@ -3220,7 +3220,7 @@ export default function EatlyApp() {
 // Wrapper to provide ThemeContext if needed (though it seems already provided globally)
 function EatlyAppContainer({ children }: { children: React.ReactNode }) {
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-950 text-gray-900 dark:text-gray-100 pb-safe">
+    <div className="min-h-screen bg-background text-foreground pb-safe">
       {children}
       <div className="fixed inset-x-0 bottom-0 pointer-events-none z-[150]">
         <InstallPwaPrompt />
