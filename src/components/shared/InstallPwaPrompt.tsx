@@ -36,8 +36,7 @@ export default function InstallPwaPrompt() {
         <motion.div
           initial={{ opacity: 0, y: 50 }}
           animate={{ opacity: 1, y: 0 }}
-          exit={{ opacity: 0, y: 50 }}
-          className="fixed bottom-24 left-6 right-6 z-[200]"
+          className="fixed bottom-24 left-6 right-6 z-[200] pointer-events-auto"
         >
           <div className="bg-[#1a1a1c]/90 backdrop-blur-2xl border border-white/10 rounded-3xl p-5 shadow-[0_20px_50px_rgba(0,0,0,0.5)] overflow-hidden relative">
             {/* Glossy overlay */}
@@ -45,6 +44,7 @@ export default function InstallPwaPrompt() {
             
             <button 
               onClick={(e) => { e.preventDefault(); e.stopPropagation(); dismissPrompt(); }}
+              onTouchEnd={(e) => { e.preventDefault(); e.stopPropagation(); dismissPrompt(); }}
               className="absolute top-2 right-2 px-3 py-1 bg-red-500/20 text-red-200 text-xs font-bold rounded-full hover:bg-red-500/40 transition-colors z-20 cursor-pointer flex items-center gap-1"
             >
               <X className="w-3 h-3" /> Cerrar
