@@ -51,6 +51,7 @@ export default function BarcodeScanner({
   const [loading, setLoading] = useState(false);
   const [product, setProduct] = useState<Product | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [cameraLoading, setCameraLoading] = useState(false);
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const streamRef = useRef<MediaStream | null>(null);
@@ -66,15 +67,21 @@ export default function BarcodeScanner({
   // Start camera
   const startCamera = useCallback(async () => {
     setError(null);
+    setCameraLoading(true);
     try {
+      if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+        throw new Error('Navegador no soporta cámara o necesitas HTTPS.');
+      }
       const stream = await navigator.mediaDevices.getUserMedia({
-        video: { facingMode: 'environment', width: { ideal: 1280 }, height: { ideal: 720 } },
+        video: { facingMode: 'environment' }, // simplified to avoid device issues
       });
       streamRef.current = stream;
       setCameraActive(true);
-    } catch (err) {
+    } catch (err: any) {
       console.error('Error accessing camera:', err);
-      setError('No se pudo acceder a la cámara. Verifica los permisos.');
+      setError(`No se pudo acceder a la cámara. ${err.message || 'Verifica los permisos.'}`);
+    } finally {
+      setCameraLoading(false);
     }
   }, []);
 
@@ -229,9 +236,10 @@ export default function BarcodeScanner({
                   </div>
                   <button
                     onClick={startCamera}
-                    className="px-8 py-4 bg-green-500 text-black font-bold rounded-2xl hover:bg-green-400 transition-all active:scale-95 shadow-[0_0_20px_rgba(34,197,94,0.3)]"
+                    disabled={cameraLoading}
+                    className="px-8 py-4 bg-green-500 text-black font-bold rounded-2xl hover:bg-green-400 transition-all active:scale-95 shadow-[0_0_20px_rgba(34,197,94,0.3)] disabled:opacity-50"
                   >
-                    Activar Ojo de Roko
+                    {cameraLoading ? 'Conectando...' : 'Activar Ojo de Roko'}
                   </button>
                 </>
               )}

@@ -3,9 +3,17 @@ import { db } from '@/lib/db';
 
 export async function POST(req: NextRequest) {
   try {
-    const { userId, name, calories, proteins, fats, carbs, mealType, imageEmoji } = await req.json();
+    const email = req.headers.get('x-user-email');
+    const { userId: bodyUserId, name, calories, proteins, fats, carbs, mealType, imageEmoji } = await req.json();
 
-    if (!userId || !name || !mealType) {
+    let user;
+    if (email) {
+      user = await db.user.findUnique({ where: { email } });
+    }
+    
+    const finalUserId = user?.id || bodyUserId;
+
+    if (!finalUserId || !name || !mealType) {
       return NextResponse.json(
         { error: 'Datos incompletos para el registro de comida' },
         { status: 400 }
@@ -14,7 +22,7 @@ export async function POST(req: NextRequest) {
 
     const log = await db.foodLog.create({
       data: {
-        userId,
+        userId: finalUserId,
         name,
         calories: calories ? Math.round(calories) : null,
         proteins: proteins ? parseFloat(proteins.toString()) : null,
@@ -38,15 +46,25 @@ export async function POST(req: NextRequest) {
 
 export async function GET(req: NextRequest) {
   try {
-    const { searchParams } = new URL(req.url);
-    const userId = searchParams.get('userId');
+    const email = req.headers.get('x-user-email');
+    let user;
+    
+    if (email) {
+      user = await db.user.findUnique({ where: { email } });
+    } else {
+      const { searchParams } = new URL(req.url);
+      const userId = searchParams.get('userId');
+      if (userId) {
+        user = await db.user.findUnique({ where: { id: userId } });
+      }
+    }
 
-    if (!userId) {
-      return NextResponse.json({ error: 'UserId requerido' }, { status: 400 });
+    if (!user) {
+      return NextResponse.json({ error: 'UserId o email requerido' }, { status: 400 });
     }
 
     const logs = await db.foodLog.findMany({
-      where: { userId },
+      where: { userId: user.id },
       orderBy: { createdAt: 'desc' },
       take: 20
     });
