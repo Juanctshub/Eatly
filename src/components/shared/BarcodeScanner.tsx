@@ -14,7 +14,8 @@ import {
   Utensils,
   Zap,
   Info,
-  ScanLine
+  ScanLine,
+  Upload
 } from 'lucide-react';
 
 interface Product {
@@ -52,9 +53,11 @@ export default function BarcodeScanner({
   const [product, setProduct] = useState<Product | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [cameraLoading, setCameraLoading] = useState(false);
+  const [noCameraDevice, setNoCameraDevice] = useState(false);
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const streamRef = useRef<MediaStream | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   // States for AI Analysis
   const [aiAnalysis, setAiAnalysis] = useState<{
@@ -70,7 +73,8 @@ export default function BarcodeScanner({
     setCameraLoading(true);
     try {
       if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-        throw new Error('Navegador no soporta cámara o necesitas HTTPS.');
+        setNoCameraDevice(true);
+        throw new Error('Tu navegador no soporta cámara. Usa la opción de subir foto.');
       }
       let stream;
       try {
@@ -79,9 +83,14 @@ export default function BarcodeScanner({
         });
       } catch (err: any) {
         if (err.name === 'NotFoundError' || err.name === 'OverconstrainedError') {
-          stream = await navigator.mediaDevices.getUserMedia({
-            video: true,
-          });
+          try {
+            stream = await navigator.mediaDevices.getUserMedia({ video: true });
+          } catch {
+            setNoCameraDevice(true);
+            throw new Error('No se encontró cámara. Usa la opción de subir foto.');
+          }
+        } else if (err.name === 'NotAllowedError') {
+          throw new Error('Permiso de cámara denegado. Actívalo en los ajustes del navegador.');
         } else {
           throw err;
         }
@@ -91,11 +100,72 @@ export default function BarcodeScanner({
       setCameraActive(true);
     } catch (err: any) {
       console.error('Error accessing camera:', err);
-      setError(`No se pudo acceder a la cámara. ${err.message || 'Verifica los permisos.'}`);
+      setError(err.message || 'No se pudo acceder a la cámara.');
     } finally {
       setCameraLoading(false);
     }
   }, []);
+
+  // Handle photo upload from gallery
+  const handleFileUpload = useCallback(async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setLoading(true);
+    setError(null);
+    setProduct(null);
+    setAiAnalysis(null);
+
+    try {
+      const reader = new FileReader();
+      const base64Image = await new Promise<string>((resolve, reject) => {
+        reader.onload = () => resolve(reader.result as string);
+        reader.onerror = reject;
+        reader.readAsDataURL(file);
+      });
+
+      if (vibrate) vibrate();
+      if (playSound) playSound('click');
+
+      const response = await fetch('/api/ai/vision-analyze', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ image: base64Image, restrictions, userData }),
+      });
+
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error || 'Fallo en Roko Vision.');
+
+      setProduct({
+        code: 'vision_ai',
+        product_name: data.name,
+        brand: data.brand,
+        ingredients_text: data.ingredients,
+        nutriments: {
+          energy_100g: data.calories * 4.184,
+          proteins_100g: data.proteins,
+          fat_100g: data.fats,
+          carbohydrates_100g: data.carbs,
+        }
+      });
+
+      setAiAnalysis({
+        safety: data.safety,
+        verdict: data.verdict,
+        reason: data.reason,
+        ingredients: data.ingredients
+      });
+
+      if (playSound) playSound('success');
+    } catch (err: any) {
+      console.error('Upload Scan Error:', err);
+      setError(`Roko Vision: ${err.message || 'Error al analizar la imagen.'}`);
+      if (playSound) playSound('error');
+    } finally {
+      setLoading(false);
+      if (fileInputRef.current) fileInputRef.current.value = '';
+    }
+  }, [restrictions, userData, vibrate, playSound]);
 
   // Connect stream to video element
   useEffect(() => {
@@ -240,19 +310,42 @@ export default function BarcodeScanner({
               className="w-full h-full object-cover"
             />
           ) : (
-            <div className="w-full h-full flex flex-col items-center justify-center bg-zinc-900 gap-6">
+            <div className="w-full h-full flex flex-col items-center justify-center bg-zinc-900 gap-4 px-6">
               {!product && !loading && (
                 <>
                   <div className="w-24 h-24 rounded-full bg-green-500/10 flex items-center justify-center border border-green-500/20 animate-pulse">
                     <Camera className="w-10 h-10 text-green-400" />
                   </div>
+                  
+                  {error && (
+                    <p className="text-red-400 text-xs text-center px-4 bg-red-500/10 py-2 rounded-xl">{error}</p>
+                  )}
+
                   <button
                     onClick={startCamera}
                     disabled={cameraLoading}
-                    className="px-8 py-4 bg-green-500 text-black font-bold rounded-2xl hover:bg-green-400 transition-all active:scale-95 shadow-[0_0_20px_rgba(34,197,94,0.3)] disabled:opacity-50"
+                    className="px-8 py-4 bg-green-500 text-black font-bold rounded-2xl hover:bg-green-400 transition-all active:scale-95 shadow-[0_0_20px_rgba(34,197,94,0.3)] disabled:opacity-50 w-full max-w-xs"
                   >
-                    {cameraLoading ? 'Conectando...' : 'Activar Ojo de Roko'}
+                    {cameraLoading ? 'Conectando...' : 'Activar Cámara'}
                   </button>
+
+                  <div className="text-white/30 text-xs">o</div>
+
+                  <button
+                    onClick={() => fileInputRef.current?.click()}
+                    className="px-8 py-4 bg-white/10 text-white font-bold rounded-2xl hover:bg-white/20 transition-all active:scale-95 border border-white/20 w-full max-w-xs flex items-center justify-center gap-2"
+                  >
+                    <Upload className="w-5 h-5" /> Subir Foto de Galería
+                  </button>
+
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept="image/*"
+                    capture="environment"
+                    onChange={handleFileUpload}
+                    className="hidden"
+                  />
                 </>
               )}
             </div>

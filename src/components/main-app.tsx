@@ -845,8 +845,16 @@ export default function EatlyApp() {
             const stream = await navigator.mediaDevices.getUserMedia({ video: true });
             stream.getTracks().forEach(track => track.stop());
             granted = true;
-          } catch {
-            granted = false;
+          } catch (camErr: any) {
+            // If no camera hardware, check the permission state instead
+            if (camErr.name === 'NotFoundError' && navigator.permissions) {
+              try {
+                const camPerm = await navigator.permissions.query({ name: 'camera' as PermissionName });
+                granted = camPerm.state === 'granted' || camPerm.state === 'prompt';
+              } catch { granted = false; }
+            } else {
+              granted = false;
+            }
           }
           break;
 
