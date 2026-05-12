@@ -72,9 +72,21 @@ export default function BarcodeScanner({
       if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
         throw new Error('Navegador no soporta cámara o necesitas HTTPS.');
       }
-      const stream = await navigator.mediaDevices.getUserMedia({
-        video: { facingMode: 'environment' }, // simplified to avoid device issues
-      });
+      let stream;
+      try {
+        stream = await navigator.mediaDevices.getUserMedia({
+          video: { facingMode: 'environment' },
+        });
+      } catch (err: any) {
+        if (err.name === 'NotFoundError' || err.name === 'OverconstrainedError') {
+          stream = await navigator.mediaDevices.getUserMedia({
+            video: true,
+          });
+        } else {
+          throw err;
+        }
+      }
+      
       streamRef.current = stream;
       setCameraActive(true);
     } catch (err: any) {

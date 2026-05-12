@@ -33,12 +33,11 @@ export async function GET(req: NextRequest) {
       out body center;
     `;
 
-    const response = await fetch('https://overpass-api.de/api/interpreter', {
-      method: 'POST',
-      body: `data=${encodeURIComponent(query)}`,
+    const response = await fetch(`https://overpass-api.de/api/interpreter?data=${encodeURIComponent(query)}`, {
+      method: 'GET',
       headers: {
-        'Content-Type': 'application/x-www-form-urlencoded',
         'Accept': 'application/json',
+        'User-Agent': 'EatlyPWA/1.0 (Contact: eatly@example.com)',
       },
     });
 

@@ -44,10 +44,10 @@ export default function InstallPwaPrompt() {
             <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-green-500/50 to-transparent" />
             
             <button 
-              onClick={(e) => { e.stopPropagation(); dismissPrompt(); }}
-              className="absolute top-3 right-3 p-2 bg-white/10 rounded-full hover:bg-white/20 transition-colors z-10 cursor-pointer"
+              onClick={(e) => { e.preventDefault(); e.stopPropagation(); dismissPrompt(); }}
+              className="absolute top-2 right-2 px-3 py-1 bg-red-500/20 text-red-200 text-xs font-bold rounded-full hover:bg-red-500/40 transition-colors z-20 cursor-pointer flex items-center gap-1"
             >
-              <X className="w-4 h-4 text-white/60" />
+              <X className="w-3 h-3" /> Cerrar
             </button>
 
             <div className="flex items-start gap-4">
