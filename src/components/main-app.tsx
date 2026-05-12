@@ -842,18 +842,21 @@ export default function EatlyApp() {
       switch (type) {
         case 'camera':
           try {
-            const stream = await navigator.mediaDevices.getUserMedia({ video: true });
-            stream.getTracks().forEach(track => track.stop());
+            const camStream = await navigator.mediaDevices.getUserMedia({ video: true });
+            camStream.getTracks().forEach(track => track.stop());
             granted = true;
+            setErrorToast(null);
           } catch (camErr: any) {
-            // If no camera hardware, check the permission state instead
-            if (camErr.name === 'NotFoundError' && navigator.permissions) {
-              try {
-                const camPerm = await navigator.permissions.query({ name: 'camera' as PermissionName });
-                granted = camPerm.state === 'granted' || camPerm.state === 'prompt';
-              } catch { granted = false; }
+            if (camErr.name === 'NotFoundError') {
+              // No camera hardware detected - but permission is conceptually OK
+              granted = true;
+              setErrorToast('No se detectó cámara en este dispositivo. Puedes subir fotos desde la galería en el escáner.');
+            } else if (camErr.name === 'NotAllowedError') {
+              granted = false;
+              setErrorToast('Permiso de cámara denegado. Ve a Ajustes de Safari > Permisos de sitios web para activarlo.');
             } else {
               granted = false;
+              setErrorToast(`Error de cámara: ${camErr.message}`);
             }
           }
           break;
