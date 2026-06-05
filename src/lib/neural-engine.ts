@@ -170,9 +170,50 @@ Responde ÚNICAMENTE con un objeto JSON válido con esta estructura:
   }
 
   /**
-   * Categorizes a food item using AI
+   * Local dictionary-based categorization for fast response times
+   */
+  static categorizeFoodLocal(foodName: string): string | null {
+    const name = foodName.toLowerCase().trim();
+    if (/huevo|pollo|carne|pescado|atun|marisco|camaron|pavo|cerdo|res|tofu|soya|soja|maní|peanut|almendra|nuez|pistacho|legumbre|lenteja|garbanzo|frijol/.test(name)) {
+      return 'Proteína';
+    }
+    if (/pan|arroz|pasta|trigo|gluten|papa|camote|yuca|cereal|avena|maiz|tortilla|harina/.test(name)) {
+      return 'Carbohidrato';
+    }
+    if (/lechuga|espinaca|tomate|cebolla|ajo|zanahoria|brocoli|pepino|calabacin|pimiento|acelga|verdura/.test(name)) {
+      return 'Vegetal';
+    }
+    if (/manzana|platano|banana|fresa|naranja|limon|uva|mango|piña|fruta/.test(name)) {
+      return 'Fruta';
+    }
+    if (/leche|queso|yogur|lactosa|crema|mantequilla|ghee/.test(name)) {
+      return 'Lácteo';
+    }
+    if (/aceite|aguacate|palta|nuez|semilla|grasa|tocino|ghee/.test(name)) {
+      return 'Grasa';
+    }
+    if (/azucar|chocolate|dulce|caramelo|galleta|pastel|miel/.test(name)) {
+      return 'Dulce';
+    }
+    if (/agua|jugo|refresco|gaseosa|coca|pepsi|te|cafe|cerveza|vino|alcohol|bebida/.test(name)) {
+      return 'Bebida';
+    }
+    if (/sal|pimienta|oregano|comino|mostaza|salsa|condimento|especia/.test(name)) {
+      return 'Condimento';
+    }
+    return null;
+  }
+
+  /**
+   * Categorizes a food item using AI (falls back to local first)
    */
   static async categorizeFood(foodName: string): Promise<string> {
+    const localCat = this.categorizeFoodLocal(foodName);
+    if (localCat) {
+      console.log(`[NeuralEngine] Categorización local exitosa para "${foodName}": ${localCat}`);
+      return localCat;
+    }
+
     const systemPrompt = `Eres un experto en nutrición. Tu única tarea es categorizar el alimento que te proporcione el usuario.
 Responde ÚNICAMENTE con una (1) palabra de esta lista: 
 [Proteína, Carbohidrato, Vegetal, Fruta, Lácteo, Grasa, Dulce, Bebida, Condimento].

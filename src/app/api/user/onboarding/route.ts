@@ -65,8 +65,8 @@ export async function POST(req: NextRequest) {
     if (restrictions && Array.isArray(restrictions) && restrictions.length > 0) {
       try {
         await db.dietaryRestriction.deleteMany({ where: { userId } });
-        for (const r of restrictions) {
-          if (!r.foodItem) continue;
+        const promises = restrictions.map(async (r) => {
+          if (!r.foodItem) return;
           let category = 'Otro';
           try { category = await NeuralEngine.categorizeFood(r.foodItem); } catch (e) {}
           await db.dietaryRestriction.create({
@@ -79,8 +79,11 @@ export async function POST(req: NextRequest) {
               notes: 'Configurado en onboarding'
             }
           });
-        }
-      } catch (err: any) {}
+        });
+        await Promise.all(promises);
+      } catch (err: any) {
+        console.error('[Onboarding API] Error saving restrictions:', err.message);
+      }
     }
 
     return NextResponse.json({ success: true, userId });

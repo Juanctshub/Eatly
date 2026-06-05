@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, memo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   X, 
@@ -59,7 +59,7 @@ const quickActions = [
   { label: 'Modo Vida', icon: Lightbulb, prompt: 'Consejos de salud para mis condiciones actuales.' },
 ];
 
-export default function AIChat({ 
+function AIChat({ 
   isOpen, 
   onClose, 
   restrictions, 
@@ -333,3 +333,5 @@ export default function AIChat({
     </motion.div>
   );
 }
+
+export default memo(AIChat);

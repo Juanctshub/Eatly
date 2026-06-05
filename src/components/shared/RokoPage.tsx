@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, memo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   X,
@@ -48,7 +48,7 @@ interface RokoPageProps {
   };
 }
 
-export default function RokoPage({
+function RokoPage({
   restrictions,
   foods,
   mealType,
@@ -329,3 +329,5 @@ export default function RokoPage({
     </div>
   );
 }
+
+export default memo(RokoPage);

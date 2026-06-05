@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useState, useEffect, useCallback, useMemo, memo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import dynamic from 'next/dynamic';
 import {
@@ -109,7 +109,7 @@ function createCustomIcon(type: string) {
   };
 }
 
-export default function RestaurantMap({ isOpen, onClose, restrictions, playSound, vibrate }: RestaurantMapProps) {
+function RestaurantMap({ isOpen, onClose, restrictions, playSound, vibrate }: RestaurantMapProps) {
   const [restaurants, setRestaurants] = useState<Restaurant[]>([]);
   const [filteredRestaurants, setFilteredRestaurants] = useState<Restaurant[]>([]);
   const [loading, setLoading] = useState(false);
@@ -686,3 +686,5 @@ export default function RestaurantMap({ isOpen, onClose, restrictions, playSound
     </motion.div>
   );
 }
+
+export default memo(RestaurantMap);

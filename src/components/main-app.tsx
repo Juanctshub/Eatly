@@ -166,6 +166,8 @@ const staggerItem = {
   animate: { opacity: 1, y: 0 },
 };
 
+let globalAudioContext: AudioContext | null = null;
+
 export default function EatlyApp() {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -772,7 +774,10 @@ export default function EatlyApp() {
       
       const response = await fetch('/api/food-log', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+          'Content-Type': 'application/json',
+          ...(user.email ? { 'x-user-email': user.email } : {})
+        },
         body: JSON.stringify({
           userId: user.id, // STRICT ID REQUIREMENT
           name: suggestion.name,
@@ -945,19 +950,36 @@ export default function EatlyApp() {
   // Play sound feedback
   const playSound = useCallback((type: 'success' | 'error' | 'click' = 'click') => {
     if (!soundEnabled) return;
-
-    const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
-    const oscillator = audioContext.createOscillator();
-    const gainNode = audioContext.createGain();
-
-    oscillator.connect(gainNode);
-    gainNode.connect(audioContext.destination);
-
-    oscillator.frequency.value = type === 'success' ? 800 : type === 'error' ? 300 : 600;
-    gainNode.gain.value = 0.1;
-
-    oscillator.start();
-    oscillator.stop(audioContext.currentTime + 0.1);
+    try {
+      if (!globalAudioContext) {
+        const AudioCtx = window.AudioContext || (window as any).webkitAudioContext;
+        if (AudioCtx) {
+          globalAudioContext = new AudioCtx();
+        }
+      }
+      
+      const ctx = globalAudioContext;
+      if (!ctx) return;
+      
+      if (ctx.state === 'suspended') {
+        ctx.resume();
+      }
+      
+      const oscillator = ctx.createOscillator();
+      const gainNode = ctx.createGain();
+      
+      oscillator.connect(gainNode);
+      gainNode.connect(ctx.destination);
+      
+      oscillator.frequency.value = type === 'success' ? 800 : type === 'error' ? 300 : 600;
+      gainNode.gain.setValueAtTime(0.08, ctx.currentTime);
+      gainNode.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.15);
+      
+      oscillator.start();
+      oscillator.stop(ctx.currentTime + 0.15);
+    } catch (e) {
+      console.warn('[Eatly] Audio Context play failed:', e);
+    }
   }, [soundEnabled]);
 
   // Vibration feedback

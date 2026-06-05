@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useRef, useCallback, useEffect } from 'react';
+import { useState, useRef, useCallback, useEffect, memo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   X, 
@@ -40,7 +40,7 @@ interface BarcodeScannerProps {
   vibrate?: () => void;
 }
 
-export default function BarcodeScanner({ 
+function BarcodeScanner({ 
   onClose, 
   onAddFood, 
   restrictions,
@@ -552,3 +552,5 @@ function NutritionCard({ label, value, unit, icon, color }: { label: string, val
     </div>
   );
 }
+
+export default memo(BarcodeScanner);

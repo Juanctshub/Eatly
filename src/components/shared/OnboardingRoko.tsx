@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, memo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   Sparkles, 
@@ -21,7 +21,7 @@ interface OnboardingProps {
   isSubmitting?: boolean;
 }
 
-export default function OnboardingRoko({ onComplete, isSubmitting = false }: OnboardingProps) {
+function OnboardingRoko({ onComplete, isSubmitting = false }: OnboardingProps) {
   const [step, setStep] = useState(0);
   const [formData, setFormData] = useState({
     name: '',
@@ -113,40 +113,37 @@ export default function OnboardingRoko({ onComplete, isSubmitting = false }: Onb
     // Validation for non-optional steps
     if (!value && !['restrictions', 'medical', 'dislikes', 'biometric'].includes(currentStepId)) return;
 
-    setFormData(prev => {
-      const next = { ...prev };
-      if (currentStepId === 'name') next.name = value;
-      if (currentStepId === 'goal') next.goal = value;
-      if (currentStepId === 'medical') {
-        next.medicalConditions = value.split(',').filter(i => i.trim()).map(i => i.trim());
-      }
-      if (currentStepId === 'restrictions') {
-        next.restrictions = value.split(',').filter(i => i.trim()).map(i => ({ 
-          foodItem: i.trim(), 
-          reason: 'alergia', 
-          severity: 'severa' 
-        }));
-      }
-      if (currentStepId === 'dislikes') {
-        next.dislikedFoods = value.split(',').filter(i => i.trim()).map(i => i.trim());
-      }
+    const next = { ...formData };
+    if (currentStepId === 'name') next.name = value;
+    if (currentStepId === 'goal') next.goal = value;
+    if (currentStepId === 'medical') {
+      next.medicalConditions = value.split(',').filter(i => i.trim()).map(i => i.trim());
+    }
+    if (currentStepId === 'restrictions') {
+      next.restrictions = value.split(',').filter(i => i.trim()).map(i => ({ 
+        foodItem: i.trim(), 
+        reason: 'alergia', 
+        severity: 'severa' 
+      }));
+    }
+    if (currentStepId === 'dislikes') {
+      next.dislikedFoods = value.split(',').filter(i => i.trim()).map(i => i.trim());
+    }
 
-      if (step < steps.length - 1) {
-        setCurrentInput('');
-        setStep(step + 1);
-      } else {
-        onComplete(next);
-      }
-      return next;
-    });
+    setFormData(next);
+
+    if (step < steps.length - 1) {
+      setCurrentInput('');
+      setStep(step + 1);
+    } else {
+      onComplete(next);
+    }
   };
 
   const handleOptionClick = (option: string) => {
-    setFormData(prev => {
-      const finalData = { ...prev, activityLevel: option };
-      onComplete(finalData);
-      return finalData;
-    });
+    const finalData = { ...formData, activityLevel: option };
+    setFormData(finalData);
+    onComplete(finalData);
   };
 
   useEffect(() => {
@@ -406,3 +403,5 @@ export default function OnboardingRoko({ onComplete, isSubmitting = false }: Onb
     </div>
   );
 }
+
+export default memo(OnboardingRoko);
