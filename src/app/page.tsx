@@ -22,23 +22,33 @@ function AppContent() {
   // Check for existing session on mount
   useEffect(() => {
     const checkSession = () => {
-      const savedUser = localStorage.getItem('dietadvisor_user');
-      if (savedUser) {
-        try {
-          const user = JSON.parse(savedUser);
-          setUserData(user);
-          setAppState('loading');
-          return;
-        } catch {
-          localStorage.removeItem('dietadvisor_user');
+      try {
+        const savedUser = localStorage.getItem('dietadvisor_user');
+        if (savedUser) {
+          try {
+            const user = JSON.parse(savedUser);
+            setUserData(user);
+            setAppState('loading');
+            return;
+          } catch {
+            try {
+              localStorage.removeItem('dietadvisor_user');
+            } catch {}
+          }
         }
+      } catch (e) {
+        console.warn('[Home] Failed to read from localStorage:', e);
       }
     };
 
     // Start splash screen
     const splashTimer = setTimeout(() => {
       checkSession();
-      if (!localStorage.getItem('dietadvisor_user')) {
+      let hasUser = false;
+      try {
+        hasUser = !!localStorage.getItem('dietadvisor_user');
+      } catch {}
+      if (!hasUser) {
         setAppState('auth');
       }
     }, 1000); 
@@ -53,10 +63,13 @@ function AppContent() {
       'eatly_foods', 
       'dietadvisor_user'
     ];
-    keysToRemove.forEach(k => localStorage.removeItem(k));
-
-    // 2. Save the new authenticated user
-    localStorage.setItem('dietadvisor_user', JSON.stringify(user));
+    try {
+      keysToRemove.forEach(k => localStorage.removeItem(k));
+      // 2. Save the new authenticated user
+      localStorage.setItem('dietadvisor_user', JSON.stringify(user));
+    } catch (e) {
+      console.warn('[Home] Failed to save session to localStorage:', e);
+    }
     setUserData(user);
     setAppState('loading');
     console.log('[Eatly] Nueva sesión iniciada para:', user.email);

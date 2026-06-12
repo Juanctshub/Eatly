@@ -19,21 +19,29 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     setMounted(true);
     // Default to LIGHT mode always
-    const savedTheme = localStorage.getItem('eatly_theme') as Theme;
-    if (savedTheme === 'dark') {
-      setThemeState('dark');
-      document.documentElement.classList.add('dark');
-    } else {
-      // Always default to light mode
-      setThemeState('light');
-      document.documentElement.classList.remove('dark');
-      localStorage.setItem('eatly_theme', 'light');
+    try {
+      const savedTheme = localStorage.getItem('eatly_theme') as Theme;
+      if (savedTheme === 'dark') {
+        setThemeState('dark');
+        document.documentElement.classList.add('dark');
+      } else {
+        // Always default to light mode
+        setThemeState('light');
+        document.documentElement.classList.remove('dark');
+        localStorage.setItem('eatly_theme', 'light');
+      }
+    } catch (e) {
+      console.warn('[ThemeContext] Failed to read/write theme from localStorage:', e);
     }
   }, []);
 
   const setTheme = (newTheme: Theme) => {
     setThemeState(newTheme);
-    localStorage.setItem('eatly_theme', newTheme);
+    try {
+      localStorage.setItem('eatly_theme', newTheme);
+    } catch (e) {
+      console.warn('[ThemeContext] Failed to save theme to localStorage:', e);
+    }
     document.documentElement.classList.toggle('dark', newTheme === 'dark');
   };
 

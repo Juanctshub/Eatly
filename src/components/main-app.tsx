@@ -492,16 +492,28 @@ export default function EatlyApp() {
 
   // Persist User Data locally whenever it changes (Anti-Jose Bug)
   useEffect(() => {
-    localStorage.setItem('dietadvisor_user_data', JSON.stringify(userData));
+    try {
+      localStorage.setItem('dietadvisor_user_data', JSON.stringify(userData));
+    } catch (e) {
+      console.warn('[Eatly] Failed to write userData to localStorage:', e);
+    }
   }, [userData]);
 
   // Sync state changes with local storage as a cache
   useEffect(() => {
-    localStorage.setItem('eatly_restrictions', JSON.stringify(restrictions));
+    try {
+      localStorage.setItem('eatly_restrictions', JSON.stringify(restrictions));
+    } catch (e) {
+      console.warn('[Eatly] Failed to write restrictions to localStorage:', e);
+    }
   }, [restrictions]);
 
   useEffect(() => {
-    localStorage.setItem('eatly_foods', JSON.stringify(foods));
+    try {
+      localStorage.setItem('eatly_foods', JSON.stringify(foods));
+    } catch (e) {
+      console.warn('[Eatly] Failed to write foods to localStorage:', e);
+    }
   }, [foods]);
 
   const handleTabChange = (tabId: string) => {
