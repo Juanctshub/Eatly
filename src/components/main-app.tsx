@@ -734,8 +734,8 @@ export default function EatlyApp({ currentUser }: { currentUser?: any }) {
   };
 
   const addFood = async (foodData?: any) => {
-    const foodToSave = foodData || newFood;
-    if (!foodToSave.name.trim()) return;
+    const foodToSave = (foodData && typeof foodData.name === 'string') ? foodData : newFood;
+    if (!foodToSave.name || !foodToSave.name.trim()) return;
 
     try {
       setLoading(true);
