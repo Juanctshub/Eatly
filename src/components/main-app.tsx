@@ -630,7 +630,7 @@ export default function EatlyApp({ currentUser }: { currentUser?: any }) {
   };
 
   const addRestriction = async () => {
-    if (!newRestriction.foodItem.trim()) return;
+    if (!(newRestriction.foodItem || '').trim()) return;
 
     try {
       setLoading(true);
@@ -2281,7 +2281,7 @@ export default function EatlyApp({ currentUser }: { currentUser?: any }) {
 
               <motion.button
                 onClick={addRestriction}
-                disabled={!newRestriction.foodItem.trim()}
+                disabled={!(newRestriction.foodItem || '').trim()}
                 className="w-full bg-gradient-to-r from-green-500 to-emerald-500 text-white py-4 rounded-2xl font-semibold shadow-lg shadow-green-500/30 disabled:opacity-50 disabled:shadow-none"
                 whileHover={{ scale: 1.02 }}
                 whileTap={{ scale: 0.98 }}
@@ -2342,7 +2342,7 @@ export default function EatlyApp({ currentUser }: { currentUser?: any }) {
 
               <motion.button
                 onClick={addFood}
-                disabled={!newFood.name.trim()}
+                disabled={!(newFood.name || '').trim()}
                 className="w-full bg-gradient-to-r from-green-500 to-emerald-500 text-white py-4 rounded-2xl font-semibold shadow-lg shadow-green-500/30 disabled:opacity-50 disabled:shadow-none"
                 whileHover={{ scale: 1.02 }}
                 whileTap={{ scale: 0.98 }}
