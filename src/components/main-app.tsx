@@ -168,10 +168,24 @@ const staggerItem = {
 
 let globalAudioContext: AudioContext | null = null;
 
-export default function EatlyApp() {
+export default function EatlyApp({ currentUser }: { currentUser?: any }) {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { theme, toggleTheme, setTheme } = useTheme();
+
+  // Get active session user with fallback (iOS Private Browsing safety)
+  const getSessionUser = useCallback(() => {
+    try {
+      const cached = localStorage.getItem('dietadvisor_user');
+      if (cached) {
+        const parsed = JSON.parse(cached);
+        if (parsed && parsed.email) return parsed;
+      }
+    } catch (e) {
+      console.warn('[Eatly] Failed to read dietadvisor_user from localStorage:', e);
+    }
+    return currentUser || {};
+  }, [currentUser]);
   const [activeTab, setActiveTab] = useState('home');
   const [restrictions, setRestrictions] = useState<Restriction[]>([]);
   const [foods, setFoods] = useState<Food[]>([]);
@@ -220,6 +234,18 @@ export default function EatlyApp() {
     dislikedFoods: [] as string[],
     medicalConditions: [] as string[],
   });
+  
+  // Sync userData with currentUser prop on mount/change
+  useEffect(() => {
+    if (currentUser) {
+      setUserData(prev => ({
+        ...prev,
+        name: currentUser.name || prev.name,
+        email: currentUser.email || prev.email
+      }));
+    }
+  }, [currentUser]);
+
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
   // Permission states
@@ -266,21 +292,44 @@ export default function EatlyApp() {
         setLoading(true);
 
         // 1. Load from cache first for instant UI (Memory Fix)
-        const cachedRestrictions = localStorage.getItem('eatly_restrictions');
-        const cachedFoods = localStorage.getItem('eatly_foods');
-        const cachedFoodLog = localStorage.getItem('eatly_food_log');
-        const cachedUserData = localStorage.getItem('dietadvisor_user_data');
+        let cachedRestrictions = null;
+        let cachedFoods = null;
+        let cachedFoodLog = null;
+        let cachedUserData = null;
+
+        try {
+          cachedRestrictions = localStorage.getItem('eatly_restrictions');
+          cachedFoods = localStorage.getItem('eatly_foods');
+          cachedFoodLog = localStorage.getItem('eatly_food_log');
+          cachedUserData = localStorage.getItem('dietadvisor_user_data');
+        } catch (e) {
+          console.warn('[Eatly] Failed to read initial cache from localStorage:', e);
+        }
         
-        if (cachedRestrictions) setRestrictions(JSON.parse(cachedRestrictions));
-        if (cachedFoods) setFoods(JSON.parse(cachedFoods));
-        if (cachedFoodLog) setFoodLog(JSON.parse(cachedFoodLog));
+        if (cachedRestrictions) {
+          try {
+            setRestrictions(JSON.parse(cachedRestrictions));
+          } catch {}
+        }
+        if (cachedFoods) {
+          try {
+            setFoods(JSON.parse(cachedFoods));
+          } catch {}
+        }
+        if (cachedFoodLog) {
+          try {
+            setFoodLog(JSON.parse(cachedFoodLog));
+          } catch {}
+        }
         if (cachedUserData) {
+          try {
             const data = JSON.parse(cachedUserData);
             console.log('[Eatly] Cargando perfil desde memoria local:', data.name);
             setUserData(prev => ({ ...prev, ...data }));
+          } catch {}
         }
 
-        const user = JSON.parse(localStorage.getItem('dietadvisor_user') || '{}');
+        const user = getSessionUser();
         if (!user.email) return;
         
         const headers = { 'x-user-email': user.email, 'Content-Type': 'application/json' };
@@ -305,16 +354,22 @@ export default function EatlyApp() {
           setUserData(prev => ({ ...prev, ...dataOnboarding.user }));
           
           // Persist the official cloud profile
-          localStorage.setItem('dietadvisor_user_data', JSON.stringify(dataOnboarding.user));
+          try {
+            localStorage.setItem('dietadvisor_user_data', JSON.stringify(dataOnboarding.user));
+          } catch {}
 
           // HEAL SESSION: Ensure 'dietadvisor_user' has the official ID
           if (dataOnboarding.user.id) {
-            const session = JSON.parse(localStorage.getItem('dietadvisor_user') || '{}');
+            const session = getSessionUser();
             if (session.email === dataOnboarding.user.email) {
-              localStorage.setItem('dietadvisor_user', JSON.stringify({ ...session, id: dataOnboarding.user.id }));
+              try {
+                localStorage.setItem('dietadvisor_user', JSON.stringify({ ...session, id: dataOnboarding.user.id }));
+              } catch {}
               
               // PURGE OLD CACHE: Force new detailed suggestions
-              localStorage.removeItem('eatly_suggestions');
+              try {
+                localStorage.removeItem('eatly_suggestions');
+              } catch {}
               setSuggestions(null);
             }
           }
@@ -322,15 +377,21 @@ export default function EatlyApp() {
 
         if (Array.isArray(dataRest)) {
           setRestrictions(dataRest);
-          localStorage.setItem('eatly_restrictions', JSON.stringify(dataRest));
+          try {
+            localStorage.setItem('eatly_restrictions', JSON.stringify(dataRest));
+          } catch {}
         }
         if (Array.isArray(dataFood)) {
           setFoods(dataFood);
-          localStorage.setItem('eatly_foods', JSON.stringify(dataFood));
+          try {
+            localStorage.setItem('eatly_foods', JSON.stringify(dataFood));
+          } catch {}
         }
         if (Array.isArray(dataLog)) {
           setFoodLog(dataLog);
-          localStorage.setItem('eatly_food_log', JSON.stringify(dataLog));
+          try {
+            localStorage.setItem('eatly_food_log', JSON.stringify(dataLog));
+          } catch {}
         }
       } catch (error: any) {
         console.error('Error fetching data from API:', error);
@@ -341,12 +402,12 @@ export default function EatlyApp() {
     };
 
     fetchData();
-  }, []);
+  }, [currentUser]);
 
   const refreshAllData = async () => {
     try {
       console.log('[Eatly] Refrescando datos para el perfil activo...');
-      const user = JSON.parse(localStorage.getItem('dietadvisor_user') || '{}');
+      const user = getSessionUser();
       if (!user.email) return;
 
       const headers = { 'x-user-email': user.email, 'Content-Type': 'application/json' };
@@ -367,23 +428,33 @@ export default function EatlyApp() {
         
         // HEAL SESSION: Ensure 'dietadvisor_user' has the official ID
         if (dataOnboarding.user.id) {
-          const session = JSON.parse(localStorage.getItem('dietadvisor_user') || '{}');
-          if (session.email === dataOnboarding.user.email) {
-            localStorage.setItem('dietadvisor_user', JSON.stringify({ ...session, id: dataOnboarding.user.id }));
+          try {
+            const session = getSessionUser();
+            if (session.email === dataOnboarding.user.email) {
+              localStorage.setItem('dietadvisor_user', JSON.stringify({ ...session, id: dataOnboarding.user.id }));
+            }
+          } catch (e) {
+            console.warn('[Eatly] Failed to heal session in localStorage:', e);
           }
         }
       }
       if (Array.isArray(dataRest)) {
         setRestrictions(dataRest);
-        localStorage.setItem('eatly_restrictions', JSON.stringify(dataRest));
+        try {
+          localStorage.setItem('eatly_restrictions', JSON.stringify(dataRest));
+        } catch {}
       }
       if (Array.isArray(dataFood)) {
         setFoods(dataFood);
-        localStorage.setItem('eatly_foods', JSON.stringify(dataFood));
+        try {
+          localStorage.setItem('eatly_foods', JSON.stringify(dataFood));
+        } catch {}
       }
       if (Array.isArray(dataLog)) {
         setFoodLog(dataLog);
-        localStorage.setItem('eatly_food_log', JSON.stringify(dataLog));
+        try {
+          localStorage.setItem('eatly_food_log', JSON.stringify(dataLog));
+        } catch {}
       }
 
       console.log('[Eatly] Sincronización completa con éxito en caché y nube.');
@@ -531,7 +602,7 @@ export default function EatlyApp() {
       setLoading(true);
       console.log('[Eatly] Onboarding completado:', data);
 
-      const user = JSON.parse(localStorage.getItem('dietadvisor_user') || '{}');
+      const user = getSessionUser();
       const email = user.email;
 
       const response = await fetch('/api/user/onboarding', {
@@ -563,7 +634,7 @@ export default function EatlyApp() {
 
     try {
       setLoading(true);
-      const user = JSON.parse(localStorage.getItem('dietadvisor_user') || '{}');
+      const user = getSessionUser();
       const email = user.email;
 
       const response = await fetch('/api/restrictions', {
@@ -580,7 +651,9 @@ export default function EatlyApp() {
       const saved = await response.json();
       const updatedRestrictions = [saved, ...restrictions];
       setRestrictions(updatedRestrictions);
-      localStorage.setItem('eatly_restrictions', JSON.stringify(updatedRestrictions));
+      try {
+        localStorage.setItem('eatly_restrictions', JSON.stringify(updatedRestrictions));
+      } catch {}
       setNewRestriction({ foodItem: '', reason: 'alergia', severity: 'moderada', notes: '' });
       setShowAddModal(false);
       playSound('success');
@@ -595,7 +668,7 @@ export default function EatlyApp() {
   const addQuickRestriction = async (cr: any) => {
     try {
       setLoading(true);
-      const user = JSON.parse(localStorage.getItem('dietadvisor_user') || '{}');
+      const user = getSessionUser();
       const res = await fetch('/api/restrictions', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'x-user-email': user.email },
@@ -606,7 +679,9 @@ export default function EatlyApp() {
       if (data.id) {
         const updatedRestrictions = [data, ...restrictions];
         setRestrictions(updatedRestrictions);
-        localStorage.setItem('eatly_restrictions', JSON.stringify(updatedRestrictions));
+        try {
+          localStorage.setItem('eatly_restrictions', JSON.stringify(updatedRestrictions));
+        } catch {}
         playSound('success');
         vibrate(50);
       }
@@ -625,7 +700,7 @@ export default function EatlyApp() {
     playSound('click');
 
     try {
-      const user = JSON.parse(localStorage.getItem('dietadvisor_user') || '{}');
+      const user = getSessionUser();
       const response = await fetch(`/api/restrictions/${id}`, {
         method: 'DELETE',
         headers: { 'x-user-email': user.email }
@@ -645,7 +720,9 @@ export default function EatlyApp() {
       
       const updatedRestrictions = restrictions.filter(r => r.id !== id);
       setRestrictions(updatedRestrictions);
-      localStorage.setItem('eatly_restrictions', JSON.stringify(updatedRestrictions));
+      try {
+        localStorage.setItem('eatly_restrictions', JSON.stringify(updatedRestrictions));
+      } catch {}
       
       console.log('[Eatly] Restricción borrada y sincronizada.');
     } catch (error) {
@@ -662,7 +739,7 @@ export default function EatlyApp() {
 
     try {
       setLoading(true);
-      const user = JSON.parse(localStorage.getItem('dietadvisor_user') || '{}');
+      const user = getSessionUser();
       const email = user.email;
       let category = foodToSave.category;
 
@@ -705,7 +782,9 @@ export default function EatlyApp() {
       if (dataFinal.id) {
         const updatedFoods = [dataFinal, ...foods];
         setFoods(updatedFoods);
-        localStorage.setItem('eatly_foods', JSON.stringify(updatedFoods));
+        try {
+          localStorage.setItem('eatly_foods', JSON.stringify(updatedFoods));
+        } catch {}
         setNewFood({ name: '', category: '', mealType: '' });
         setShowAddModal(false);
         playSound('success');
@@ -724,7 +803,7 @@ export default function EatlyApp() {
     playSound('click');
 
     try {
-      const user = JSON.parse(localStorage.getItem('dietadvisor_user') || '{}');
+      const user = getSessionUser();
       const response = await fetch(`/api/foods/${id}`, {
         method: 'DELETE',
         headers: { 'x-user-email': user.email }
@@ -734,7 +813,9 @@ export default function EatlyApp() {
         // Atomic Success: Ensure the local cache is clean and stays clean
         const finalFoods = foods.filter(f => f.id !== id);
         setFoods(finalFoods);
-        localStorage.setItem('eatly_foods', JSON.stringify(finalFoods));
+        try {
+          localStorage.setItem('eatly_foods', JSON.stringify(finalFoods));
+        } catch {}
         setSuccessToast('Alimento eliminado definitivamente');
       } else {
         throw new Error('Server delete failed');
@@ -742,7 +823,9 @@ export default function EatlyApp() {
     } catch (error) {
       console.error('Error deleting food:', error);
       setFoods(originalFoods); // Rollback if server fails
-      localStorage.setItem('eatly_foods', JSON.stringify(originalFoods));
+      try {
+        localStorage.setItem('eatly_foods', JSON.stringify(originalFoods));
+      } catch {}
       setErrorToast('No se pudo eliminar del servidor');
     }
   };
@@ -752,7 +835,7 @@ export default function EatlyApp() {
     try {
       const foodsForMeal = foods.filter((f) => f.mealType === selectedMealType || !f.mealType);
 
-      const user = JSON.parse(localStorage.getItem('dietadvisor_user') || '{}');
+      const user = getSessionUser();
       const res = await fetch('/api/suggestions', {
         method: 'POST',
         headers: {
@@ -782,7 +865,7 @@ export default function EatlyApp() {
   const handleConfirmEaten = async (suggestion: any) => {
     try {
       setLoading(true);
-      const user = JSON.parse(localStorage.getItem('dietadvisor_user') || '{}');
+      const user = getSessionUser();
       
       const response = await fetch('/api/food-log', {
         method: 'POST',
@@ -2949,7 +3032,7 @@ export default function EatlyApp() {
                 };
                 
                 try {
-                  const user = JSON.parse(localStorage.getItem('dietadvisor_user') || '{}');
+                  const user = getSessionUser();
                   const res = await fetch('/api/restrictions', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json', 'x-user-email': user.email },
@@ -2967,7 +3050,7 @@ export default function EatlyApp() {
                 addFood({ name: productName, category: 'General', mealType: 'Desayuno' });
 
                 // NEW: Register in Daily Log automatically
-                const user = JSON.parse(localStorage.getItem('dietadvisor_user') || '{}');
+                const user = getSessionUser();
                 if (user.id) {
                     fetch('/api/food-log', {
                         method: 'POST',
