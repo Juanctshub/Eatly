@@ -926,20 +926,28 @@ export default function EatlyApp() {
             ...prev,
             camera: { granted: cameraStatus.state === 'granted', loading: false }
           }));
+        } catch {
+          // Permissions API query for camera not supported on some browsers (like Safari/iOS)
+        }
 
+        try {
           const micStatus = await navigator.permissions.query({ name: 'microphone' as PermissionName });
           setPermissions(prev => ({
             ...prev,
             microphone: { granted: micStatus.state === 'granted', loading: false }
           }));
+        } catch {
+          // Permissions API query for microphone not supported
+        }
 
+        try {
           const geoStatus = await navigator.permissions.query({ name: 'geolocation' as PermissionName });
           setPermissions(prev => ({
             ...prev,
             location: { granted: geoStatus.state === 'granted', loading: false }
           }));
         } catch {
-          // Permissions API not fully supported
+          // Permissions API query for geolocation not supported
         }
       }
     };

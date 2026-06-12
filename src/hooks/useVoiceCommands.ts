@@ -66,18 +66,30 @@ export function useVoiceCommands({
 
   useEffect(() => {
     isMountedRef.current = true;
+    let timerId: NodeJS.Timeout | null = null;
     
     // Check if Speech Recognition is supported
-    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    const SpeechRecognition = typeof window !== 'undefined' && (window.SpeechRecognition || window.webkitSpeechRecognition);
     
     if (!SpeechRecognition) {
-      setIsSupported(false);
-      setError('Tu navegador no soporta reconocimiento de voz. Usa Chrome, Edge o Safari para esta función.');
-      return;
+      timerId = setTimeout(() => {
+        if (isMountedRef.current) {
+          setIsSupported(false);
+          setError('Tu navegador no soporta reconocimiento de voz. Usa Chrome, Edge o Safari para esta función.');
+        }
+      }, 0);
+      return () => {
+        isMountedRef.current = false;
+        if (timerId) clearTimeout(timerId);
+      };
     }
     
-    setIsSupported(true);
-    setError(null);
+    timerId = setTimeout(() => {
+      if (isMountedRef.current) {
+        setIsSupported(true);
+        setError(null);
+      }
+    }, 0);
     
     // Create recognition instance
     const recognition = new SpeechRecognition();
@@ -156,6 +168,7 @@ export function useVoiceCommands({
     
     return () => {
       isMountedRef.current = false;
+      if (timerId) clearTimeout(timerId);
       if (recognitionRef.current) {
         try {
           recognitionRef.current.abort();
