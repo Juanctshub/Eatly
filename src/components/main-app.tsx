@@ -2280,7 +2280,7 @@ export default function EatlyApp({ currentUser }: { currentUser?: any }) {
               </div>
 
               <motion.button
-                onClick={addRestriction}
+                onClick={() => addRestriction()}
                 disabled={!(newRestriction.foodItem || '').trim()}
                 className="w-full bg-gradient-to-r from-green-500 to-emerald-500 text-white py-4 rounded-2xl font-semibold shadow-lg shadow-green-500/30 disabled:opacity-50 disabled:shadow-none"
                 whileHover={{ scale: 1.02 }}
@@ -2341,7 +2341,7 @@ export default function EatlyApp({ currentUser }: { currentUser?: any }) {
               </div>
 
               <motion.button
-                onClick={addFood}
+                onClick={() => addFood()}
                 disabled={!(newFood.name || '').trim()}
                 className="w-full bg-gradient-to-r from-green-500 to-emerald-500 text-white py-4 rounded-2xl font-semibold shadow-lg shadow-green-500/30 disabled:opacity-50 disabled:shadow-none"
                 whileHover={{ scale: 1.02 }}
